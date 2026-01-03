@@ -1,0 +1,716 @@
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Gümrük Yönetim Sistemi vFinal</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+      :root {
+        --bg: radial-gradient(circle at 20% 20%, #0d1117 0%, #000 100%);
+        --card: rgba(255,255,255,0.08);
+        --accent: #00f6d2;
+        --accent-glow: 0 0 15px rgba(0,246,210,.6);
+        --text: #e2e8f0;
+        --muted: #8b9cb3;
+        --border: rgba(255,255,255,0.15);
+        --danger: #ff4757;
+        --success: #2ecc71;
+        --warning: #f1c40f;
+      }
+
+      * { box-sizing:border-box; font-family: 'Segoe UI', Inter, sans-serif; }
+      body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); display:flex; justify-content:center; padding:20px; }
+      .app { width:100%; max-width:1450px; }
+
+      header {
+        display:flex; justify-content:space-between; align-items:center; padding:15px; border-radius:18px; 
+        background:var(--card); box-shadow: var(--accent-glow); margin-bottom:20px; border: 1px solid var(--border);
+      }
+      .header-left img, .right-images img { height:65px; border-radius:10px; box-shadow:0 0 8px rgba(0,0,0,0.5); }
+      .header-center h1 { margin:0; font-size:22px; color:var(--accent); text-transform: uppercase; text-shadow: var(--accent-glow); }
+
+      .main-container { padding:20px; border-radius:16px; background:var(--card); border: 1px solid var(--border); backdrop-filter:blur(20px); }
+      .card-section { background: rgba(0,0,0,0.4); padding: 18px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
+      h3 { color: var(--accent); margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 8px; font-size: 15px; text-transform: uppercase; }
+      h4 { color: var(--warning); margin: 15px 0 5px 0; font-size: 13px; border-left: 3px solid var(--warning); padding-left: 10px; }
+      
+      input, select { background: #0d1117 !important; color: #fff !important; border: 1px solid var(--border); padding: 10px; border-radius: 8px; margin: 5px 0; width: 100%; outline: none; }
+      
+      .btn { padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; text-transform: uppercase; font-size: 10px; }
+      .btn-primary { background: var(--accent); color: #000; }
+      .btn-danger { background: var(--danger); color: #fff; }
+      .btn-warning { background: var(--warning); color: #000; }
+      .btn-success { background: var(--success); color: #000; }
+
+      table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+      th { text-align: left; color: var(--accent); border-bottom: 1px solid var(--border); padding: 10px; font-size: 12px; }
+      td { padding: 10px; border-bottom: 1px solid var(--border); font-size: 11px; }
+
+      .tag { background: rgba(0,246,210,0.1); color: var(--accent); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--accent); margin: 3px; font-size: 10px; display: inline-flex; align-items:center; gap:5px; }
+      .hidden { display: none !important; }
+      
+      footer { margin-top:20px; padding: 15px; border-top: 1px solid var(--border); color: var(--accent); font-weight: bold; }
+
+      .filter-area {
+        margin-bottom: 15px;
+        padding: 10px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 8px;
+        text-align: center;
+      }
+      .filter-area select, .filter-area input { width: auto; display: inline-block; }
+
+      .task-filter {
+        display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; align-items: center;
+      }
+
+      @media print {
+        body * { visibility: hidden; }
+        #print-area, #print-area * { visibility: visible; }
+        #print-area {
+          position: absolute;
+          left: 20px;
+          top: 20px;
+          width: 280px;
+          height: 330px;
+          background: #fff;
+          padding: 18px;
+          border: 2px solid #000;
+          box-shadow: 0 0 10px rgba(0,0,0,0.5);
+          color: #000;
+          font-family: Arial, sans-serif;
+          font-size: 9px;
+          line-height: 1.3;
+          overflow: hidden;
+        }
+        #print-area h1 { font-size: 13px; margin: 8px 0; }
+        #print-area h2 { font-size: 11px; margin: 10px 0; }
+        #print-area p { font-size: 10px; margin: 15px 0; }
+      }
+    </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="header-left">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/b/b4/Flag_of_Turkey.svg">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/f/f8/Flag_of_the_Customs_Administration_of_Turkey.svg">
+      </div>
+      <div class="header-center">
+        <h1>Gümrük Yolluk Yönetim Sistemi</h1>
+        <p id="user-display">Giriş Bekleniyor...</p>
+      </div>
+      <div class="header-right">
+        <div class="right-images">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/6/61/G%C3%9CMR%C3%9CK_%C4%B0LK_LOGOlogo.png">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/b/b1/T.C._G%C3%9CMR%C3%9CKLER%C4%B0_TURKISH_CUSTOMS..png">
+          <img src="https://i.pinimg.com/1200x/b7/3f/34/b73f34bfd2705436fb27183f5ad3d665.jpg">
+        </div>
+      </div>
+    </header>
+
+    <div class="main-container">
+      <div id="login-screen">
+        <div style="max-width:320px; margin: 50px auto; text-align: center;">
+          <h3 style="color:var(--accent)">Güvenli Giriş</h3>
+          <input type="text" id="username" placeholder="Kullanıcı Adı">
+          <input type="password" id="password" placeholder="Şifre">
+          <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="app.login()">SİSTEME GİR</button>
+        </div>
+      </div>
+
+      <div id="panel-content" class="hidden">
+        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
+            <button class="btn btn-danger" onclick="location.reload()">ÇIKIŞ YAP</button>
+            <button class="btn btn-warning" onclick="app.changePassword()">ŞİFRE DEĞİŞTİR</button>
+            <div id="admin-toggle-area" class="hidden">
+                <label style="font-size:12px; color:var(--warning)">ŞEF ONAYINI DEVRE DIŞI BIRAK:</label>
+                <input type="checkbox" id="bypass-sef" style="width:auto;" onchange="app.db.bypassSef = this.checked; app.save()">
+            </div>
+            <button class="btn btn-primary" onclick="app.exportExcel()">EXCEL AKTAR</button>
+        </div>
+
+        <div class="card-section">
+            <h3>Personel Hakediş Özet Tablosu</h3>
+            <div class="filter-area">
+                <label style="color:var(--accent); margin-right:10px;">Hakediş Ayı:</label>
+                <select id="ay-filtre" onchange="app.seciliAy = this.value; app.render()"></select>
+            </div>
+            <h4>GÜMRÜK</h4>
+            <table><thead><tr><th>Sicil</th><th>Ad Soyad</th><th>Ünvan</th><th>Mesai</th><th>Yolluk</th><th>Toplam</th></tr></thead><tbody id="stats-gumruk"></tbody></table>
+            <h4>MUHAFAZA</h4>
+            <table><thead><tr><th>Sicil</th><th>Ad Soyad</th><th>Ünvan</th><th>Mesai</th><th>Yolluk</th><th>Toplam</th></tr></thead><tbody id="stats-muhafaza"></tbody></table>
+            <h4>KİM</h4>
+            <table><thead><tr><th>Sicil</th><th>Ad Soyad</th><th>Ünvan</th><th>Mesai</th><th>Yolluk</th><th>Toplam</th></tr></thead><tbody id="stats-kim"></tbody></table>
+        </div>
+
+        <div id="admin-section" class="hidden">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                <div class="card-section">
+                    <h3>Personel Kayıt & Düzenleme</h3>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:5px;">
+                        <input type="text" id="p-sicil" placeholder="Sicil">
+                        <input type="text" id="p-ad" placeholder="Ad Soyad">
+                        <select id="p-birim">
+                            <option value="Gümrük">Gümrük</option>
+                            <option value="Muhafaza">Muhafaza</option>
+                            <option value="KİM">KİM</option>
+                        </select>
+                        <select id="p-unvan">
+                            <option>Gümrük Memuru</option><option>Gümrük Muayene Memuru</option><option>Gümrük Muhafaza Memuru</option>
+                            <option>Gümrük Şefi</option><option>Kısım Amiri</option><option>Bölge Amiri</option>
+                            <option>Gümrük Müdür Yardımcısı</option><option>Gümrük Müdürü</option><option>KİM Müdürü</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" style="width:100%" onclick="app.addPersonel()">YENİ PERSONEL EKLE</button>
+                    <div style="max-height: 300px; overflow-y: auto; margin-top:10px; border-top:1px solid var(--border);">
+                        <table style="font-size:10px;"><tbody id="p-manage-body"></tbody></table>
+                    </div>
+                </div>
+                <div class="card-section">
+                    <h3>Hizmet Ücret Kalemleri</h3>
+                    <div style="display:flex; gap:5px;">
+                        <input type="text" id="y-ad" placeholder="Gemi Mesaisi vb.">
+                        <input type="number" id="y-tutar" placeholder="TL">
+                        <select id="y-tip" style="width:80px"><option>Mesai</option><option>Yolluk</option></select>
+                        <button class="btn btn-primary" onclick="app.addYolluk()">KAYDET</button>
+                    </div>
+                    <div id="y-list" style="margin-top:10px;"></div>
+                </div>
+            </div>
+
+            <div class="card-section">
+                <h3>Sistem Giriş Yetkileri (Kullanıcılar)</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:5px; margin-bottom:10px;">
+                    <input type="text" id="acc-user" placeholder="Yeni Kullanıcı Adı">
+                    <input type="password" id="acc-pass" placeholder="Şifre">
+                    <select id="acc-rol">
+                        <option>Admin</option>
+                        <option>Gümrük Müdürü</option>
+                        <option>Gümrük Müdür Yardımcısı</option>
+                        <option>Gümrük Şefi</option>
+                        <option>Gümrük Memuru</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="app.addAccount()">YETKİ VER / EKLE</button>
+                </div>
+                <table style="width:100%; font-size:11px;">
+                    <thead><tr style="text-align:left; color:var(--accent);"><th>Kullanıcı Adı</th><th>Şifre</th><th>Yetki Rolü</th><th>İşlem</th></tr></thead>
+                    <tbody id="acc-list-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="record-section" class="card-section hidden">
+            <h3>Görevlendirme Formu</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px;">
+                <div>Gümrük Personelleri<select id="sel-g" multiple size="8" onchange="app.selectMultiple(this)"></select></div>
+                <div>Muhafaza Personelleri<select id="sel-m" multiple size="8" onchange="app.selectMultiple(this)"></select></div>
+                <div>KİM Personelleri<select id="sel-k" multiple size="8" onchange="app.selectMultiple(this)"></select></div>
+            </div>
+            <div id="selected-list" style="margin: 10px 0; padding:10px; border:1px dashed var(--border); border-radius:8px;"></div>
+            <div style="margin-top:10px;">
+                <button class="btn btn-danger" style="font-size:10px; padding:5px 10px;" onclick="app.selectedPs=[]; app.render()">TÜM SEÇİLENLERİ TEMİZLE</button>
+            </div>
+            
+            <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:15px; margin-top:10px;">
+                <div>
+                    <label style="font-size:11px; color:var(--accent)">Hakediş Kalemleri (CTRL ile Çoklu Seçim):</label>
+                    <select id="task-types" multiple style="height:110px"></select>
+                </div>
+                <div>
+                    <label style="font-size:11px; color:var(--accent)">Beyanname / Karar / Referans No:</label>
+                    <input type="text" id="task-no" placeholder="Evrak No Girin">
+                    <button class="btn btn-primary" style="width:100%; height:42px; margin-top:10px;" onclick="app.saveTask()">GÖREVİ KAYDET VE HAVALE ET</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-section" id="task-list-section">
+            <h3>İşlem Takip Listesi</h3>
+            <div class="task-filter">
+                <input type="text" id="search-text" placeholder="Arama (Ad, Ref, Evrak No)" onkeyup="app.taskFilter.arama = this.value; app.render()">
+                <select id="durum-filter" onchange="app.taskFilter.durum = this.value; app.render()">
+                    <option value="">Tüm Durumlar</option>
+                    <option>Taslak</option><option>Şef Onayında</option><option>Müdür Yrd. Onayında</option><option>Onaylandı</option><option>Reddedildi</option><option>Silme Talebinde</option>
+                </select>
+                <input type="month" id="tarih-baslangic" onchange="app.taskFilter.baslangic = this.value; app.render()">
+                <input type="month" id="tarih-bitis" onchange="app.taskFilter.bitis = this.value; app.render()">
+                <button class="btn btn-warning" style="font-size:9px;" onclick="app.taskFilter = {arama:'', durum:'', baslangic:'', bitis:''}; document.getElementById('search-text').value=''; document.getElementById('durum-filter').value=''; document.getElementById('tarih-baslangic').value=''; document.getElementById('tarih-bitis').value=''; app.render()">FİLTREYİ TEMİZLE</button>
+            </div>
+            <table>
+                <thead><tr><th>Referans</th><th>Evrak No</th><th>Görevliler</th><th>Toplam Tutar</th><th>Durum</th><th>EBYS</th><th>Dekont</th><th>İşlem</th></tr></thead>
+                <tbody id="main-list"></tbody>
+            </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="print-area"></div>
+    <footer>Serhan SAYGIN — Gümrük Memuru</footer>
+  </div>
+
+  <script>
+    const app = {
+        db: JSON.parse(localStorage.getItem('gumruk_final_v60')) || {
+            accounts: [
+                {rol: "Admin", user: "Admin", pass: "admin123"},
+                {rol: "Gümrük Şefi", user: "Şef1", pass: "123"},
+                {rol: "Gümrük Memuru", user: "Memur1", pass: "123"},
+                {rol: "Gümrük Müdür Yardımcısı", user: "MüdürYrd1", pass: "123"},
+                {rol: "Gümrük Müdürü", user: "Mudur", pass: "123"}
+            ],
+            personeller: [], yolluklar: [], kayitlar: [], bypassSef: false
+        },
+        user: null,
+        selectedPs: [],
+        seciliAy: null,
+        taskFilter: {arama: '', durum: '', baslangic: '', bitis: ''},
+        unvanlar: ["Gümrük Memuru", "Gümrük Muayene Memuru", "Gümrük Muhafaza Memuru", "Gümrük Şefi", "Kısım Amiri", "Bölge Amiri", "Gümrük Müdür Yardımcısı", "Gümrük Müdürü", "KİM Müdürü"],
+
+        login() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const acc = this.db.accounts.find(x => x.user === u && x.pass === p);
+            if(acc) {
+                this.user = acc;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('panel-content').classList.remove('hidden');
+                document.getElementById('user-display').innerText = `Yetkili: ${acc.user} (${acc.rol})`;
+
+                if(acc.rol === 'Admin') {
+                    document.getElementById('admin-section').classList.remove('hidden');
+                    document.getElementById('admin-toggle-area').classList.remove('hidden');
+                    document.getElementById('bypass-sef').checked = this.db.bypassSef;
+                    document.getElementById('record-section').classList.remove('hidden');
+                }
+                if(acc.rol === 'Gümrük Memuru' || acc.rol === 'Admin') {
+                    document.getElementById('record-section').classList.remove('hidden');
+                }
+                if(acc.rol === 'Gümrük Müdürü') {
+                    document.getElementById('record-section').classList.add('hidden');
+                    document.getElementById('admin-section').classList.add('hidden');
+                    document.getElementById('admin-toggle-area').classList.add('hidden');
+                    document.getElementById('task-list-section').classList.add('hidden');
+                }
+
+                this.render();
+            } else alert("Kullanıcı adı veya şifre hatalı!");
+        },
+
+       changePassword() {
+            if (!this.user) return alert("Giriş yapmadınız!");
+            const yeni = prompt("Yeni şifrenizi girin:");
+            if (yeni && yeni.trim() !== "") {
+                // Veritabanındaki asıl kullanıcıyı buluyoruz
+                const accIndex = this.db.accounts.findIndex(x => x.user === this.user.user);
+                
+                if (accIndex > -1) {
+                    // Hem ana veritabanını hem de mevcut oturumu güncelliyoruz
+                    this.db.accounts[accIndex].pass = yeni.trim();
+                    this.user.pass = yeni.trim();
+                    this.save(); // LocalStorage'a kalıcı olarak yazar
+                    alert("Şifreniz başarıyla değiştirildi!");
+                }
+            } else {
+                alert("Şifre boş olamaz!");
+            }
+        },
+
+        selectMultiple(el) {
+            const selectedOptions = Array.from(el.selectedOptions).map(opt => opt.value);
+            selectedOptions.forEach(value => {
+                if (value && !this.selectedPs.includes(value)) {
+                    this.selectedPs.push(value);
+                }
+            });
+            el.selectedIndex = -1;
+            this.render();
+        },
+
+        addPersonel() {
+            const s = document.getElementById('p-sicil').value.trim();
+            const a = document.getElementById('p-ad').value.trim();
+            const b = document.getElementById('p-birim').value;
+            const u = document.getElementById('p-unvan').value;
+            if(s && a) { 
+                this.db.personeller.push({sicil:s, ad:a, birim:b, unvan:u}); 
+                this.save(); 
+            }
+        },
+
+        addYolluk() {
+            const ad = document.getElementById('y-ad').value.trim();
+            const tutar = document.getElementById('y-tutar').value;
+            const tip = document.getElementById('y-tip').value;
+            if(ad && tutar && !isNaN(tutar)) { 
+                this.db.yolluklar.push({ad: ad, tutar: parseFloat(tutar), tip: tip}); 
+                document.getElementById('y-ad').value = "";
+                document.getElementById('y-tutar').value = "";
+                this.save(); 
+            } else {
+                alert("Lütfen geçerli bir kalem adı ve tutar girin!");
+            }
+        },
+
+        addAccount() {
+            const u = document.getElementById('acc-user').value.trim();
+            const p = document.getElementById('acc-pass').value;
+            const r = document.getElementById('acc-rol').value;
+
+            if (u && p) {
+                if (this.db.accounts.some(acc => acc.user === u)) {
+                    alert("Bu kullanıcı adı zaten mevcut!");
+                    return;
+                }
+                this.db.accounts.push({ user: u, pass: p, rol: r });
+                document.getElementById('acc-user').value = "";
+                document.getElementById('acc-pass').value = "";
+                this.save();
+            } else {
+                alert("Kullanıcı adı ve şifre boş bırakılamaz!");
+            }
+        },
+
+        deleteAccount(index) {
+            if (confirm("Bu kullanıcının sistem erişimini tamamen kaldırmak istediğinize emin misiniz?")) {
+                this.db.accounts.splice(index, 1);
+                this.save();
+            }
+        },
+
+        generateRef() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            const count = this.db.kayitlar.filter(x => x.ref && x.ref.includes(dateStr)).length + 1;
+            return `GM-${year}-${month}-${day}/${count}`;
+        },
+
+        saveTask() {
+            const selTypes = Array.from(document.getElementById('task-types').selectedOptions).map(o => this.db.yolluklar[o.value]);
+            if(this.selectedPs.length === 0 || selTypes.length === 0) return alert("Hata: Personel ve Ücret seçilmelidir!");
+            
+            const personelSayisi = this.selectedPs.length;
+
+            let toplamMesai = 0, toplamYolluk = 0;
+            selTypes.forEach(t => {
+                if (t.tip === "Mesai") toplamMesai += t.tutar;
+                else toplamYolluk += t.tutar;
+            });
+
+            const ilkDurum = this.db.bypassSef ? "Müdür Yrd. Onayında" : "Taslak";
+            const now = new Date();
+            const ayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+            this.db.kayitlar.push({
+                ref: this.generateRef(),
+                no: document.getElementById('task-no').value || "Belirtilmedi",
+                personeller: [...this.selectedPs],
+                personelSayisi: personelSayisi,
+                toplamMesai: toplamMesai,
+                toplamYolluk: toplamYolluk,
+                mTotal: toplamMesai,
+                yTotal: toplamYolluk,
+                durum: ilkDurum,
+                ebys: "", 
+                dekont: "",
+                tarih: ayStr
+            });
+            this.selectedPs = [];
+            this.save();
+        },
+
+        deleteTask(ref) {
+            if(confirm("Bu görevlendirmeyi tamamen silmek istediğinize emin misiniz? (Geri alınamaz)")) {
+                this.db.kayitlar = this.db.kayitlar.filter(x => x.ref !== ref);
+                this.save();
+            }
+        },
+
+        process(ref, s) { 
+            this.db.kayitlar.find(x=>x.ref===ref).durum = s; 
+            this.save(); 
+        },
+
+        updateExtra(ref, key) {
+            const v = prompt(`${key} No Giriniz:`);
+            if(v) { 
+                this.db.kayitlar.find(x=>x.ref===ref)[key.toLowerCase()] = v; 
+                this.save(); 
+            }
+        },
+
+        printDoc(ref) {
+            const l = this.db.kayitlar.find(x=>x.ref===ref);
+            const area = document.getElementById('print-area');
+            area.innerHTML = `
+                <div style="text-align:center;">
+                    <h1>GÖREV VE TAHAKKUK FORMU</h1>
+                    <h2>REF: ${l.ref}</h2>
+                    
+                    <div style="margin:15px 0; text-align:left;">
+                        <b>GÖREVLİ PERSONEL LİSTESİ:</b><br>
+                        ${l.personeller.map(p => {
+                            const d = this.db.personeller.find(x => x.ad === p);
+                            const sicil = d ? d.sicil : '';
+                            const unvan = d ? d.unvan : '';
+                            return sicil ? `${sicil} - ${p} (${unvan})` : `${p} (${unvan})`;
+                        }).join('<br>')}
+                    </div>
+
+                    <div style="text-align:center; margin:20px 0;">
+                        <p>
+                            ${l.no} nolu evraka istinaden gerçekleştirilen hizmet karşılığında<br>
+                            toplam <b style="font-size:12px;">${(l.mTotal + l.yTotal).toFixed(2)} TL</b> ödeme yapılması uygundur.
+                        </p>
+                    </div>
+
+                    <div style="margin-top:30px; display:flex; justify-content:space-between;">
+                        <div>EBYS: ${l.ebys || '________________'}</div>
+                        <div>DEKONT: ${l.dekont || '________________'}</div>
+                    </div>
+
+                    <div style="margin-top:40px; text-align:right;">
+                        ONAYLAYAN MAKAM<br><br><br>
+                        ..............................
+                    </div>
+
+                    <div style="position:absolute; bottom:10px; right:10px; font-size:8px; color:#666;">
+                        TARİH: ${new Date().toLocaleDateString('tr-TR')}
+                    </div>
+                </div>`;
+            window.print();
+        },
+
+        mevcutAy() {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+        },
+
+        mevcutAylar() {
+            const aylar = [...new Set(this.db.kayitlar
+                .filter(k => k.durum === "Onaylandı" && k.tarih)
+                .map(k => k.tarih))];
+            aylar.sort((a,b) => b.localeCompare(a));
+            return aylar.length > 0 ? aylar : [this.mevcutAy()];
+        },
+
+        save() { 
+            // 1. ADIM: Tarayıcı hafızasına (Local Storage) kaydet. 
+            // Bu sayede internet olmasa bile veriler bilgisayarında kalır.
+            localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db)); 
+            this.render(); 
+
+            // 2. ADIM: Google Sheets'e (Bulut Yedek) gönder.
+            // Bu kısım senin verdiğin URL'yi kullanarak veriyi tabloya yazar.
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbwsLev6waaR7iNzrwDpA-DkUuKL0NHYraLPQAp_7OMtup2a2LVHCUQ0p0Us--w4942_/exec';
+            
+            fetch(scriptURL, {
+                method: 'POST',
+                mode: 'no-cors', 
+                cache: 'no-cache',
+                body: JSON.stringify({
+                    user: this.user ? this.user.user : 'Sistem',
+                    action: 'Veri Yedekleme',
+                    payload: this.db
+                })
+            })
+            .then(() => {
+                console.log("Google Sheets yedeklemesi başarıyla gönderildi.");
+            })
+            .catch(err => {
+                console.error("Yedekleme hatası:", err);
+            });
+        },
+        render() {
+            const opt = (b) => this.db.personeller
+                .filter(x => x.birim === b)
+                .map(p => {
+                    const selected = this.selectedPs.includes(p.ad) ? ' selected' : '';
+                    return `<option value="${p.ad}"${selected}>${p.ad} (${p.unvan})</option>`;
+                })
+                .join('');
+
+            if(document.getElementById('sel-g')) {
+                document.getElementById('sel-g').innerHTML = opt('Gümrük');
+                document.getElementById('sel-m').innerHTML = opt('Muhafaza');
+                document.getElementById('sel-k').innerHTML = opt('KİM');
+                document.getElementById('task-types').innerHTML = this.db.yolluklar.map((y,i)=>`<option value="${i}">${y.ad} (${y.tip} - ${y.tutar} TL)</option>`).join('');
+            }
+
+            if(document.getElementById('selected-list')) {
+                document.getElementById('selected-list').innerHTML = this.selectedPs.map(p => `<span class="tag">${p} <b onclick="app.selectedPs=app.selectedPs.filter(x=>x!=='${p}');app.render()" style="cursor:pointer;color:red">X</b></span>`).join('');
+            }
+
+            if (document.getElementById('ay-filtre')) {
+                if (!this.seciliAy) this.seciliAy = this.mevcutAy();
+                const aylar = this.mevcutAylar();
+                if (!aylar.includes(this.seciliAy) && aylar.length > 0) this.seciliAy = aylar[0];
+
+                const ayIsimleri = {"01":"Ocak","02":"Şubat","03":"Mart","04":"Nisan","05":"Mayıs","06":"Haziran","07":"Temmuz","08":"Ağustos","09":"Eylül","10":"Ekim","11":"Kasım","12":"Aralık"};
+
+                document.getElementById('ay-filtre').innerHTML = aylar.map(ay => {
+                    const [y, m] = ay.split('-');
+                    const isim = `${ayIsimleri[m]} ${y}`;
+                    return `<option value="${ay}" ${ay === this.seciliAy ? 'selected' : ''}>${isim}</option>`;
+                }).join('');
+            }
+
+            const hedefAy = this.seciliAy || this.mevcutAy();
+            const stats = { "Gümrük": [], "Muhafaza": [], "KİM": [] };
+
+            this.db.personeller.forEach(p => {
+                let toplamBireyselMesai = 0;
+                let toplamBireyselYolluk = 0;
+
+                this.db.kayitlar
+                    .filter(k => k.durum === "Onaylandı" && k.tarih === hedefAy)
+                    .forEach(k => {
+                        if (k.personeller.includes(p.ad)) {
+                            const payMesai = k.toplamMesai / k.personelSayisi;
+                            const payYolluk = k.toplamYolluk / k.personelSayisi;
+                            toplamBireyselMesai += payMesai;
+                            toplamBireyselYolluk += payYolluk;
+                        }
+                    });
+
+                const toplam = toplamBireyselMesai + toplamBireyselYolluk;
+
+                stats[p.birim].push(`<tr>
+                    <td>${p.sicil || '-'}</td>
+                    <td>${p.ad}</td>
+                    <td>${p.unvan}</td>
+                    <td style="color:var(--accent)">${toplamBireyselMesai.toFixed(2)} TL</td>
+                    <td style="color:var(--warning)">${toplamBireyselYolluk.toFixed(2)} TL</td>
+                    <td style="color:var(--success); font-weight:bold">${toplam.toFixed(2)} TL</td>
+                </tr>`);
+            });
+
+            const bosMesaj = '<tr><td colspan="6" style="text-align:center; color:var(--muted)">Bu ay onaylanmış görev yok</td></tr>';
+            document.getElementById('stats-gumruk').innerHTML = stats["Gümrük"].join('') || bosMesaj;
+            document.getElementById('stats-muhafaza').innerHTML = stats["Muhafaza"].join('') || bosMesaj;
+            document.getElementById('stats-kim').innerHTML = stats["KİM"].join('') || bosMesaj;
+
+            if (document.getElementById('p-manage-body')) {
+                document.getElementById('p-manage-body').innerHTML = this.db.personeller.map((p,i)=>`
+                    <tr>
+                        <td><input value="${p.sicil}" onchange="app.db.personeller[${i}].sicil=this.value; app.save()"></td>
+                        <td><input value="${p.ad}" onchange="app.db.personeller[${i}].ad=this.value; app.save()"></td>
+                        <td><select onchange="app.db.personeller[${i}].unvan=this.value; app.save()">${this.unvanlar.map(u=>`<option ${p.unvan==u?'selected':''}>${u}</option>`).join('')}</select></td>
+                        <td><button onclick="app.db.personeller.splice(${i},1);app.save()">X</button></td>
+                    </tr>`).join('');
+            }
+
+            if (document.getElementById('acc-list-body')) {
+                document.getElementById('acc-list-body').innerHTML = this.db.accounts.map((a, i) => `
+                    <tr>
+                        <td><input value="${a.user}" onchange="app.db.accounts[${i}].user = this.value; app.save();"></td>
+                        <td><input type="password" value="${a.pass}" onchange="app.db.accounts[${i}].pass = this.value; app.save();"></td>
+                        <td><b>${a.rol}</b></td>
+                        <td><button class="btn btn-danger" style="padding:4px 8px; font-size:9px;" onclick="app.deleteAccount(${i})">SİL</button></td>
+                    </tr>
+                `).join('');
+            }
+
+            const yListEl = document.getElementById('y-list');
+            if (yListEl) {
+                yListEl.innerHTML = this.db.yolluklar.map((y,i)=>`
+                    <div style="font-size:11px; padding:4px 0; border-bottom:1px solid var(--border);">
+                        ${y.ad} (${y.tip}) - ${y.tutar} TL 
+                        <button onclick="app.db.yolluklar.splice(${i},1);app.save()" style="float:right; font-size:9px; padding:2px 6px;">X</button>
+                    </div>`).join('');
+            }
+
+            let filtered = this.db.kayitlar.slice();
+
+            if (this.taskFilter.arama) {
+                const term = this.taskFilter.arama.toLowerCase();
+                filtered = filtered.filter(k => 
+                    k.ref.toLowerCase().includes(term) ||
+                    k.no.toLowerCase().includes(term) ||
+                    k.personeller.some(p => p.toLowerCase().includes(term))
+                );
+            }
+
+            if (this.taskFilter.durum) {
+                filtered = filtered.filter(k => k.durum === this.taskFilter.durum);
+            }
+
+            if (this.taskFilter.baslangic || this.taskFilter.bitis) {
+                filtered = filtered.filter(k => {
+                    if (!k.tarih) return false;
+                    if (this.taskFilter.baslangic && k.tarih < this.taskFilter.baslangic) return false;
+                    if (this.taskFilter.bitis && k.tarih > this.taskFilter.bitis) return false;
+                    return true;
+                });
+            }
+
+            filtered.reverse();
+
+            document.getElementById('main-list').innerHTML = filtered.map(l => {
+                let btns = "";
+                const r = this.user ? this.user.rol : "";
+                const isAdmin = r === "Admin";
+                const isMudurYrd = r.includes("Müdür Yardımcısı");
+                const isMemur = r.includes("Memuru");
+
+                if (isMemur || isAdmin || isMudurYrd) {
+                    if (l.durum === "Onaylandı") {
+                        if (isMemur) {
+                            btns += `<button class="btn btn-warning" style="margin-right:5px;" onclick="app.process('${l.ref}','Silme Talebinde')">SİLME TALEP ET</button>`;
+                        } else if (isMudurYrd || isAdmin) {
+                            btns += `<button class="btn btn-danger" style="margin-right:5px;" onclick="app.deleteTask('${l.ref}')">SİL</button>`;
+                        }
+                    } else {
+                        btns += `<button class="btn btn-danger" style="margin-right:5px;" onclick="app.deleteTask('${l.ref}')">SİL</button>`;
+                    }
+                }
+
+                if (r !== "Gümrük Müdürü" && (isMemur || isAdmin || isMudurYrd || r.includes("Şefi"))) {
+                    if(l.durum === "Taslak") {
+                        const nextStep = this.db.bypassSef ? 'Müdür Yrd. Onayında' : 'Şef Onayında';
+                        btns += `<button class="btn btn-warning" onclick="app.process('${l.ref}','${nextStep}')">HAVALE</button>`;
+                    }
+                    if(l.durum === "Şef Onayında" && (r.includes("Şefi") || isAdmin)) {
+                        btns += `<button class="btn btn-success" onclick="app.process('${l.ref}','Müdür Yrd. Onayında')">ONAYLA</button> <button class="btn btn-danger" onclick="app.process('${l.ref}','Reddedildi')">RED</button>`;
+                    }
+                    if(l.durum === "Müdür Yrd. Onayında" && (isMudurYrd || isAdmin)) {
+                        btns += `<button class="btn btn-success" onclick="app.process('${l.ref}','Onaylandı')">KESİN ONAY</button> <button class="btn btn-danger" onclick="app.process('${l.ref}','Reddedildi')">RED</button>`;
+                    }
+                    if(l.durum === "Onaylandı") {
+                        btns += `<button class="btn btn-primary" onclick="app.printDoc('${l.ref}')">YAZDIR</button>`;
+                    }
+                    if (l.durum === "Silme Talebinde" && (isMudurYrd || isAdmin)) {
+                        btns += `<button class="btn btn-danger" style="margin-right:5px;" onclick="app.deleteTask('${l.ref}')">TALEBİ ONAYLA (SİL)</button>`;
+                        btns += `<button class="btn btn-primary" onclick="app.process('${l.ref}','Onaylandı')">TALEBİ REDDET</button>`;
+                    }
+                }
+
+                const canEdit = (l.durum === "Onaylandı" && (isMemur || isAdmin));
+
+                return `<tr>
+                    <td><b>${l.ref}</b></td><td>${l.no}</td>
+                    <td>${l.personeller.map(p=>`<span class="tag">${p}</span>`).join('')}</td>
+                    <td>${(l.toplamMesai + l.toplamYolluk).toFixed(2)} TL</td>
+                    <td style="color:var(--warning); font-weight:bold">${l.durum}</td>
+                    <td>${l.ebys} ${canEdit?`<button onclick="app.updateExtra('${l.ref}','EBYS')">✎</button>`:''}</td>
+                    <td>${l.dekont} ${canEdit?`<button onclick="app.updateExtra('${l.ref}','Dekont')">✎</button>`:''}</td>
+                    <td>${btns}</td>
+                </tr>`;
+            }).join('');
+        },
+
+        exportExcel() {
+            const ws = XLSX.utils.json_to_sheet(this.db.kayitlar);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Döküm");
+            XLSX.writeFile(wb, "Gumruk_Yolluk_Sistemi.xlsx");
+        }
+    };
+    app.render();
+  </script>
+</body>
+</html>
