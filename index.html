@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Gümrük Yönetim Sistemi vFinal</title>
+    <title>Yolluk Yönetim Sistemi Serhan SAYGIN</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
       :root {
@@ -98,7 +98,7 @@
         <img src="https://upload.wikimedia.org/wikipedia/commons/f/f8/Flag_of_the_Customs_Administration_of_Turkey.svg">
       </div>
       <div class="header-center">
-        <h1>Gümrük Yolluk Yönetim Sistemi</h1>
+        <h1>Yolluk Yönetim Sistemi</h1>
         <p id="user-display">Giriş Bekleniyor...</p>
       </div>
       <div class="header-right">
@@ -122,7 +122,7 @@
 
       <div id="panel-content" class="hidden">
         <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
-            <button class="btn btn-danger" onclick="location.reload()">ÇIKIŞ YAP</button>
+            <button class="btn btn-danger" onclick="localStorage.removeItem('currentUser'); location.reload();">ÇIKIŞ YAP</button>
             <button class="btn btn-warning" onclick="app.changePassword()">ŞİFRE DEĞİŞTİR</button>
             <div id="admin-toggle-area" class="hidden">
                 <label style="font-size:12px; color:var(--warning)">ŞEF ONAYINI DEVRE DIŞI BIRAK:</label>
