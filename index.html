@@ -247,8 +247,11 @@
     </div>
 
     <div id="print-area"></div>
-    <footer>Serhan SAYGIN — Gümrük Memuru</footer>
-  </div>
+    <footer>
+    <a href="https://www.linkedin.com/in/serhansaygin/" target="_blank" style="color: var(--accent); text-decoration: none;">
+        Serhan SAYGIN — Gümrük Memuru
+    </a>
+</footer>
 
   <script>
     const app = {
@@ -274,6 +277,9 @@
             const acc = this.db.accounts.find(x => x.user === u && x.pass === p);
             if(acc) {
                 this.user = acc;
+                // BU SATIRI EKLEDİK: Kullanıcıyı tarayıcıya kaydet
+                localStorage.setItem('currentUser', JSON.stringify(this.user));
+
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('panel-content').classList.remove('hidden');
                 document.getElementById('user-display').innerText = `Yetkili: ${acc.user} (${acc.rol})`;
@@ -296,6 +302,25 @@
 
                 this.render();
             } else alert("Kullanıcı adı veya şifre hatalı!");
+        },
+checkSession() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                this.user = JSON.parse(savedUser);
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('panel-content').classList.remove('hidden');
+                document.getElementById('user-display').innerText = `Yetkili: ${this.user.user} (${this.user.rol})`;
+                
+                if(this.user.rol === 'Admin') {
+                    document.getElementById('admin-section').classList.remove('hidden');
+                    document.getElementById('admin-toggle-area').classList.remove('hidden');
+                    document.getElementById('record-section').classList.remove('hidden');
+                }
+                if(this.user.rol === 'Gümrük Memuru' || this.user.rol === 'Admin') {
+                    document.getElementById('record-section').classList.remove('hidden');
+                }
+                this.render();
+            }
         },
 
        changePassword() {
@@ -710,7 +735,8 @@
             XLSX.writeFile(wb, "Gumruk_Yolluk_Sistemi.xlsx");
         }
     };
-    app.render();
+   app.checkSession(); // Önce bunu çalıştır
+    app.render();       // Sonra bunu
   </script>
 </body>
 </html>
