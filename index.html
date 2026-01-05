@@ -554,22 +554,21 @@ loadFromCloud() {
     fetch(scriptURL)
         .then(res => res.text())
         .then(data => {
-            // Veri boş mu veya hatalı mı kontrol et
+            // Veri gerçekten var mı ve boş değil mi?
             if (data && data.trim() !== "" && data !== "null" && data !== "undefined") {
                 try {
                     const cloudData = JSON.parse(data);
                     
-                    // KRİTİK KONTROL: Eğer gelen veride personeller ve accounts varsa kabul et
-                    if (cloudData && Array.isArray(cloudData.personeller) && Array.isArray(cloudData.accounts)) {
+                    // KRİTİK KONTROL: Verinin içinde 'kayitlar' ve 'personeller' listesi var mı?
+                    if (cloudData && Array.isArray(cloudData.kayitlar) && Array.isArray(cloudData.personeller)) {
                         this.db = cloudData;
+                        // Yerel hafızayı da güncelle ki login ekranı yeni verileri görsün
                         localStorage.setItem('gumruk_final_v60', data);
                         this.render();
-                        console.log("Veriler buluttan başarıyla çekildi.");
-                    } else {
-                        console.warn("Bulut verisi eksik veya hatalı formatta, yerel verilerle devam ediliyor.");
+                        console.log("Bulut verileri başarıyla senkronize edildi.");
                     }
                 } catch(e) {
-                    console.error("Veri ayrıştırma (JSON) hatası:", e);
+                    console.error("Bulut verisi ayrıştırma hatası:", e);
                 }
             }
         })
