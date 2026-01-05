@@ -760,12 +760,20 @@ loadFromCloud() {
         }
     };
 
-// DOSYANIN EN SONU - app.exportExcel fonksiyonundan sonra:
-app.checkSession(); // 1. Mevcut oturumu kontrol et
-setTimeout(() => {
-    app.loadFromCloud(); // 2. Yarım saniye sonra verileri buluttan çek
-}, 500);
+// DOSYANIN EN ALTINDAKİ TAM GÖRÜNÜM ŞÖYLE OLMALI:
+try {
+    app.checkSession(); 
+    setTimeout(() => {
+        // Buluttan çekmeden önce yerel verinin bozulmadığından emin ol
+        if(!app.db || !app.db.kayitlar) {
+            app.db = { accounts: [{rol: "Admin", user: "Admin", pass: "admin123"}], personeller: [], yolluklar: [], kayitlar: [], bypassSef: false };
+        }
+        app.loadFromCloud();
+    }, 1000); // 1 saniye bekle ki her şey otursun
+} catch(e) {
+    console.error("Başlatma hatası:", e);
+}
 
-  </script>
+</script>
 </body>
 </html>
