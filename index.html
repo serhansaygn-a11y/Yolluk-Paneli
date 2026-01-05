@@ -378,29 +378,40 @@ checkSession() {
             }
         },
 
-        addAccount() {
+              addAccount() {
             const u = document.getElementById('acc-user').value.trim();
             const p = document.getElementById('acc-pass').value;
             const r = document.getElementById('acc-rol').value;
 
-            if (u && p) {
-                if (this.db.accounts.some(acc => acc.user === u)) {
-                    alert("Bu kullanıcı adı zaten mevcut!");
-                    return;
-                }
-                this.db.accounts.push({ user: u, pass: p, rol: r });
-                document.getElementById('acc-user').value = "";
-                document.getElementById('acc-pass').value = "";
-                this.save();
-            } else {
+            if (!u || !p) {
                 alert("Kullanıcı adı ve şifre boş bırakılamaz!");
+                return;
             }
+
+            if (this.db.accounts.some(acc => acc.user === u)) {
+                alert("Bu kullanıcı adı zaten mevcut!");
+                return;
+            }
+
+            this.db.accounts.push({ user: u, pass: p, rol: r });
+
+            // Alanları temizle
+            document.getElementById('acc-user').value = "";
+            document.getElementById('acc-pass').value = "";
+
+            // Listeyi güncelle ve buluta kaydet
+            this.render();  // Kullanıcı listesini yenile
+            this.save();    // <--- EN ÖNEMLİ KISIM: Buluta gönder!
+            
+            alert("Yeni kullanıcı başarıyla eklendi ve buluta kaydedildi!");
         },
 
         deleteAccount(index) {
-            if (confirm("Bu kullanıcının sistem erişimini tamamen kaldırmak istediğinize emin misiniz?")) {
+            if (confirm("Bu kullanıcıyı silmek istediğinize emin misiniz?")) {
                 this.db.accounts.splice(index, 1);
-                this.save();
+                this.render();
+                this.save();  // Silme de buluta yansısın
+                alert("Kullanıcı silindi ve değişiklik buluta kaydedildi!");
             }
         },
 
