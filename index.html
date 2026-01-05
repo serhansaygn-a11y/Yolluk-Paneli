@@ -523,14 +523,12 @@ checkSession() {
             return aylar.length > 0 ? aylar : [this.mevcutAy()];
         },
 
-        save() { 
-            // 1. ADIM: Tarayıcı hafızasına (Local Storage) kaydet. 
-            // Bu sayede internet olmasa bile veriler bilgisayarında kalır.
+save() { 
+            // 1. ADIM: Yerel hafızaya kaydet. 
             localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db)); 
             this.render(); 
 
             // 2. ADIM: Google Sheets'e (Bulut Yedek) gönder.
-            // Bu kısım senin verdiğin URL'yi kullanarak veriyi tabloya yazar.
             const scriptURL = 'https://script.google.com/macros/s/AKfycbwsLev6waaR7iNzrwDpA-DkUuKL0NHYraLPQAp_7OMtup2a2LVHCUQ0p0Us--w4942_/exec';
             
             fetch(scriptURL, {
@@ -550,6 +548,30 @@ checkSession() {
                 console.error("Yedekleme hatası:", err);
             });
         },
+
+loadFromCloud() {
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwsLev6waaR7iNzrwDpA-DkUuKL0NHYraLPQAp_7OMtup2a2LVHCUQ0p0Us--w4942_/exec';
+    fetch(scriptURL)
+        .then(res => res.text())
+        .then(data => {
+            if (data && data.trim() !== "" && data !== "null") {
+                try {
+                    // Buluttan gelen veriyi al
+                    const cloudData = JSON.parse(data);
+                    this.db = cloudData;
+                    
+                    // KRİTİK NOKTA: Yerel hafızayı güncelle ki checkSession yeni şifreleri görsün
+                    localStorage.setItem('gumruk_final_v60', data);
+                    
+                    this.render();
+                    console.log("Veriler buluttan başarıyla çekildi ve yerel hafıza güncellendi.");
+                } catch(e) {
+                    console.error("Veri ayrıştırma hatası:", e);
+                }
+            }
+        })
+        .catch(err => console.error("Bulut verisi çekilemedi:", err));
+},
         render() {
             const opt = (b) => this.db.personeller
                 .filter(x => x.birim === b)
@@ -735,8 +757,12 @@ checkSession() {
             XLSX.writeFile(wb, "Gumruk_Yolluk_Sistemi.xlsx");
         }
     };
-   app.checkSession(); // Önce bunu çalıştır
-    app.render();       // Sonra bunu
+
+// DOSYANIN EN ALTINDAKİ BU KISMI GÜNCELLE:
+app.loadFromCloud(); // 1. Önce buluttaki güncel şifreleri ve kayıtları getir
+app.checkSession();  // 2. Sonra kullanıcının oturumu açık mı kontrol et
+app.render();        // 3. En son her şeyi ekrana çiz
+
   </script>
 </body>
 </html>
