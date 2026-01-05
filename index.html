@@ -549,6 +549,36 @@ save() {
             });
         },
 
+        loadFromCloud() {
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbwsLev6waaR7iNzrwDpA-DkUuKL0NHYraLPQAp_7OMtup2a2LVHCUQ0p0Us--w4942_/exec';
+            fetch(scriptURL)
+                .then(res => res.text())
+                .then(data => {
+                    if (data && data.trim() !== "" && data !== "null" && data !== "undefined") {
+                        try {
+                            const cloudData = JSON.parse(data);
+                            
+                            // Gelen verinin geçerli bir veritabanı yapısı olduğunu kontrol et
+                            if (cloudData && Array.isArray(cloudData.kayitlar)) {
+                                // 1. Veriyi ana değişkene yükle
+                                this.db = cloudData;
+                                
+                                // 2. Tarayıcı hafızasına (LocalStorage) KESİN KAYDET
+                                localStorage.setItem('gumruk_final_v60', data);
+                                
+                                // 3. EKRANI GÜNCELLE
+                                this.render(); 
+                                
+                                console.log("Bulut verileri başarıyla çekildi ve ekran güncellendi.");
+                            }
+                        } catch(e) {
+                            console.error("Veri işleme hatası:", e);
+                        }
+                    }
+                })
+                .catch(err => console.error("Bulut bağlantı hatası:", err));
+        },
+
 loadFromCloud() {
     const scriptURL = 'https://script.google.com/macros/s/AKfycbwsLev6waaR7iNzrwDpA-DkUuKL0NHYraLPQAp_7OMtup2a2LVHCUQ0p0Us--w4942_/exec';
     fetch(scriptURL)
