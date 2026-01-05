@@ -247,8 +247,11 @@
     </div>
 
     <div id="print-area"></div>
-    <footer>Serhan SAYGIN — Gümrük Memuru</footer>
-  </div>
+    <footer>
+    <a href="https://www.linkedin.com/in/serhansaygin/" target="_blank" style="color: var(--accent); text-decoration: none;">
+        Serhan SAYGIN — Gümrük Memuru
+    </a>
+</footer>
 
   <script>
     const app = {
@@ -268,41 +271,15 @@
         taskFilter: {arama: '', durum: '', baslangic: '', bitis: ''},
         unvanlar: ["Gümrük Memuru", "Gümrük Muayene Memuru", "Gümrük Muhafaza Memuru", "Gümrük Şefi", "Kısım Amiri", "Bölge Amiri", "Gümrük Müdür Yardımcısı", "Gümrük Müdürü", "KİM Müdürü"],
 
-        checkSession() {
-            const storedUser = localStorage.getItem('currentUser');
-            if(storedUser) {
-                this.user = JSON.parse(storedUser);
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('panel-content').classList.remove('hidden');
-                document.getElementById('user-display').innerText = `Yetkili: ${this.user.user} (${this.user.rol})`;
-
-                if(this.user.rol === 'Admin') {
-                    document.getElementById('admin-section').classList.remove('hidden');
-                    document.getElementById('admin-toggle-area').classList.remove('hidden');
-                    document.getElementById('bypass-sef').checked = this.db.bypassSef;
-                    document.getElementById('record-section').classList.remove('hidden');
-                }
-                if(this.user.rol === 'Gümrük Memuru' || this.user.rol === 'Admin') {
-                    document.getElementById('record-section').classList.remove('hidden');
-                }
-                if(this.user.rol === 'Gümrük Müdürü') {
-                    document.getElementById('record-section').classList.add('hidden');
-                    document.getElementById('admin-section').classList.add('hidden');
-                    document.getElementById('admin-toggle-area').classList.add('hidden');
-                    document.getElementById('task-list-section').classList.add('hidden');
-                }
-
-                this.render();
-            }
-        },
-
         login() {
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
             const acc = this.db.accounts.find(x => x.user === u && x.pass === p);
             if(acc) {
                 this.user = acc;
-                localStorage.setItem('currentUser', JSON.stringify(acc));
+                // BU SATIRI EKLEDİK: Kullanıcıyı tarayıcıya kaydet
+                localStorage.setItem('currentUser', JSON.stringify(this.user));
+
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('panel-content').classList.remove('hidden');
                 document.getElementById('user-display').innerText = `Yetkili: ${acc.user} (${acc.rol})`;
@@ -326,15 +303,40 @@
                 this.render();
             } else alert("Kullanıcı adı veya şifre hatalı!");
         },
+checkSession() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                this.user = JSON.parse(savedUser);
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('panel-content').classList.remove('hidden');
+                document.getElementById('user-display').innerText = `Yetkili: ${this.user.user} (${this.user.rol})`;
+                
+                if(this.user.rol === 'Admin') {
+                    document.getElementById('admin-section').classList.remove('hidden');
+                    document.getElementById('admin-toggle-area').classList.remove('hidden');
+                    document.getElementById('record-section').classList.remove('hidden');
+                }
+                if(this.user.rol === 'Gümrük Memuru' || this.user.rol === 'Admin') {
+                    document.getElementById('record-section').classList.remove('hidden');
+                }
+                this.render();
+            }
+        },
 
-        changePassword() {
+       changePassword() {
             if (!this.user) return alert("Giriş yapmadınız!");
             const yeni = prompt("Yeni şifrenizi girin:");
             if (yeni && yeni.trim() !== "") {
-                this.user.pass = yeni.trim();
-                localStorage.setItem('currentUser', JSON.stringify(this.user));
-                this.save();
-                alert("Şifreniz başarıyla değiştirildi!");
+                // Veritabanındaki asıl kullanıcıyı buluyoruz
+                const accIndex = this.db.accounts.findIndex(x => x.user === this.user.user);
+                
+                if (accIndex > -1) {
+                    // Hem ana veritabanını hem de mevcut oturumu güncelliyoruz
+                    this.db.accounts[accIndex].pass = yeni.trim();
+                    this.user.pass = yeni.trim();
+                    this.save(); // LocalStorage'a kalıcı olarak yazar
+                    alert("Şifreniz başarıyla değiştirildi!");
+                }
             } else {
                 alert("Şifre boş olamaz!");
             }
@@ -521,11 +523,57 @@
             return aylar.length > 0 ? aylar : [this.mevcutAy()];
         },
 
-        save() { 
+save() { 
+            // 1. ADIM: Yerel hafızaya kaydet. 
             localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db)); 
             this.render(); 
+
+            // 2. ADIM: Google Sheets'e (Bulut Yedek) gönder.
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbwsLev6waaR7iNzrwDpA-DkUuKL0NHYraLPQAp_7OMtup2a2LVHCUQ0p0Us--w4942_/exec';
+            
+            fetch(scriptURL, {
+                method: 'POST',
+                mode: 'no-cors', 
+                cache: 'no-cache',
+                body: JSON.stringify({
+                    user: this.user ? this.user.user : 'Sistem',
+                    action: 'Veri Yedekleme',
+                    payload: this.db
+                })
+            })
+            .then(() => {
+                console.log("Google Sheets yedeklemesi başarıyla gönderildi.");
+            })
+            .catch(err => {
+                console.error("Yedekleme hatası:", err);
+            });
         },
 
+loadFromCloud() {
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwsLev6waaR7iNzrwDpA-DkUuKL0NHYraLPQAp_7OMtup2a2LVHCUQ0p0Us--w4942_/exec';
+    fetch(scriptURL)
+        .then(res => res.text())
+        .then(data => {
+            // Veri gerçekten var mı ve boş değil mi?
+            if (data && data.trim() !== "" && data !== "null" && data !== "undefined") {
+                try {
+                    const cloudData = JSON.parse(data);
+                    
+                    // KRİTİK KONTROL: Verinin içinde 'kayitlar' ve 'personeller' listesi var mı?
+                    if (cloudData && Array.isArray(cloudData.kayitlar) && Array.isArray(cloudData.personeller)) {
+                        this.db = cloudData;
+                        // Yerel hafızayı da güncelle ki login ekranı yeni verileri görsün
+                        localStorage.setItem('gumruk_final_v60', data);
+                        this.render();
+                        console.log("Bulut verileri başarıyla senkronize edildi.");
+                    }
+                } catch(e) {
+                    console.error("Bulut verisi ayrıştırma hatası:", e);
+                }
+            }
+        })
+        .catch(err => console.error("Bulut bağlantı hatası:", err));
+},
         render() {
             const opt = (b) => this.db.personeller
                 .filter(x => x.birim === b)
@@ -709,55 +757,23 @@
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Döküm");
             XLSX.writeFile(wb, "Gumruk_Yolluk_Sistemi.xlsx");
-        },
-
-        // Bulut yedekleme (gönderme)
-        saveToCloud() {
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbwsLev6waaR7iNzrwDpA-DkUuKL0NHYraLPQAp_7OMtup2a2LVHCUQ0p0Us--w4942_/exec';
-            fetch(scriptURL, {
-                method: 'POST',
-                mode: 'no-cors',
-                cache: 'no-cache',
-                body: JSON.stringify(this.db)
-            }).then(() => {
-                console.log("Veriler buluta yedeklendi.");
-            }).catch(err => console.error("Yedekleme hatası:", err));
-        },
-
-        // Bulut veri çekme (DÜZELTİLDİ)
-        loadFromCloud() {
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbwsLev6waaR7iNzrwDpA-DkUuKL0NHYraLPQAp_7OMtup2a2LVHCUQ0p0Us--w4942_/exec';
-            fetch(scriptURL, {
-                method: 'GET',
-                mode: 'cors',
-            }).then(response => {
-                if (!response.ok) throw new Error('Ağ yanıtı başarısız: ' + response.status);
-                return response.json();
-            }).then(data => {
-                if (data && typeof data === 'object') {
-                    this.db = data;
-                    localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db));
-                    this.render();
-                    console.log("Bulut verileri başarıyla çekildi ve yüklendi.");
-                } else {
-                    console.log("Bulutta geçerli veri bulunamadı.");
-                }
-            }).catch(err => console.error("Veri çekme hatası:", err));
         }
     };
 
-    // Sayfa yüklendiğinde
-    try {
-        app.checkSession(); 
-        setTimeout(() => {
-            if(!app.db || !app.db.kayitlar) {
-                app.db = { accounts: [{rol: "Admin", user: "Admin", pass: "admin123"}], personeller: [], yolluklar: [], kayitlar: [], bypassSef: false };
-            }
-            app.loadFromCloud();
-        }, 1000);
-    } catch(e) {
-        console.error("Başlatma hatası:", e);
-    }
-  </script>
+// DOSYANIN EN ALTINDAKİ TAM GÖRÜNÜM ŞÖYLE OLMALI:
+try {
+    app.checkSession(); 
+    setTimeout(() => {
+        // Buluttan çekmeden önce yerel verinin bozulmadığından emin ol
+        if(!app.db || !app.db.kayitlar) {
+            app.db = { accounts: [{rol: "Admin", user: "Admin", pass: "admin123"}], personeller: [], yolluklar: [], kayitlar: [], bypassSef: false };
+        }
+        app.loadFromCloud();
+    }, 1000); // 1 saniye bekle ki her şey otursun
+} catch(e) {
+    console.error("Başlatma hatası:", e);
+}
+
+</script>
 </body>
 </html>
