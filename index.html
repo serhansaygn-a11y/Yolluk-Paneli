@@ -554,23 +554,25 @@ loadFromCloud() {
     fetch(scriptURL)
         .then(res => res.text())
         .then(data => {
-            if (data && data.trim() !== "" && data !== "null") {
+            if (data && data.trim() !== "" && data !== "null" && data !== "undefined") {
                 try {
-                    // Buluttan gelen veriyi al
                     const cloudData = JSON.parse(data);
-                    this.db = cloudData;
                     
-                    // KRİTİK NOKTA: Yerel hafızayı güncelle ki checkSession yeni şifreleri görsün
-                    localStorage.setItem('gumruk_final_v60', data);
-                    
-                    this.render();
-                    console.log("Veriler buluttan başarıyla çekildi ve yerel hafıza güncellendi.");
+                    // GÜVENLİK KONTROLÜ: Gelen veride personeller listesi var mı?
+                    if (cloudData && cloudData.personeller) {
+                        this.db = cloudData;
+                        localStorage.setItem('gumruk_final_v60', data);
+                        this.render();
+                        console.log("Veriler buluttan başarıyla çekildi.");
+                    } else {
+                        console.warn("Buluttaki veri formatı uyumsuz, yerel verilerle devam ediliyor.");
+                    }
                 } catch(e) {
                     console.error("Veri ayrıştırma hatası:", e);
                 }
             }
         })
-        .catch(err => console.error("Bulut verisi çekilemedi:", err));
+        .catch(err => console.error("Bulut bağlantı hatası:", err));
 },
         render() {
             const opt = (b) => this.db.personeller
