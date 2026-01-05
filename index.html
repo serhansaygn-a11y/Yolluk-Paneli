@@ -524,6 +524,7 @@
         save() { 
             localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db)); 
             this.render(); 
+            this.saveToCloud(); // Buluta da gönder
         },
 
         render() {
@@ -726,10 +727,8 @@
 
         // Bulut veri çekme (DÜZELTİLDİ)
         // GÜNCELLENMİŞ, ÖNBELLEK SORUNUNU ÇÖZEN VERSİYON
-        loadFromCloud() {
+       loadFromCloud() {
             const scriptURL = 'https://script.google.com/macros/s/AKfycbwsLev6waaR7iNzrwDpA-DkUuKL0NHYraLPQAp_7OMtup2a2LVHCUQ0p0Us--w4942_/exec';
-            
-            // SONUNA ?v= ZAMAN DAMGASI EKLİYORUZ (BU ÇOK ÖNEMLİ)
             const tazeURL = scriptURL + '?v=' + new Date().getTime();
 
             console.log("Veri çekiliyor (Taze):", tazeURL);
@@ -738,7 +737,7 @@
                 method: 'GET',
                 mode: 'cors',
             })
-            .then(response => response.text()) // JSON yerine TEXT olarak al (Hata önleyici)
+            .then(response => response.text())
             .then(textData => {
                 if (!textData || textData.trim() === "") {
                     console.log("Buluttan boş veri döndü.");
@@ -746,35 +745,35 @@
                 }
                 
                 try {
-                    // Metni JSON'a çevirmeyi deniyoruz
                     const data = JSON.parse(textData);
-                    
                     if (data && typeof data === 'object') {
+                        const currentAccounts = this.db.accounts;
                         this.db = data;
+                        if (!this.db.accounts || this.db.accounts.length === 0) {
+                            this.db.accounts = currentAccounts;
+                        }
                         localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db));
                         this.render();
-                        console.log("✅ VERİLER GELDİ VE YÜKLENDİ!");
+                        console.log("✅ VERİLER GELDİ VE KULLANICI KORUNDU!");
                     }
                 } catch (e) {
                     console.error("JSON Çevirme Hatası:", e);
-                    console.log("Gelen Ham Veri:", textData);
                 }
             })
             .catch(err => console.error("Veri çekme hatası:", err));
-        },
+        }
+    }; // app nesnesini kapatan parantez
 
-    // Sayfa yüklendiğinde
+    // SAYFA YÜKLENDİĞİNDE ÇALIŞACAK KISIM (BURASI HATALIYDI, DÜZELTİLDİ)
     try {
         app.checkSession(); 
         setTimeout(() => {
-            if(!app.db || !app.db.kayitlar) {
-                app.db = { accounts: [{rol: "Admin", user: "Admin", pass: "admin123"}], personeller: [], yolluklar: [], kayitlar: [], bypassSef: false };
-            }
             app.loadFromCloud();
         }, 1000);
     } catch(e) {
         console.error("Başlatma hatası:", e);
     }
+
   </script>
 </body>
 </html>
