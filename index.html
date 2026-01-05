@@ -554,23 +554,25 @@ loadFromCloud() {
     fetch(scriptURL)
         .then(res => res.text())
         .then(data => {
-            if (data && data.trim() !== "" && data !== "null") {
+            // Veri gerçekten var mı ve boş değil mi?
+            if (data && data.trim() !== "" && data !== "null" && data !== "undefined") {
                 try {
-                    // Buluttan gelen veriyi al
                     const cloudData = JSON.parse(data);
-                    this.db = cloudData;
                     
-                    // KRİTİK NOKTA: Yerel hafızayı güncelle ki checkSession yeni şifreleri görsün
-                    localStorage.setItem('gumruk_final_v60', data);
-                    
-                    this.render();
-                    console.log("Veriler buluttan başarıyla çekildi ve yerel hafıza güncellendi.");
+                    // KRİTİK KONTROL: Verinin içinde 'kayitlar' ve 'personeller' listesi var mı?
+                    if (cloudData && Array.isArray(cloudData.kayitlar) && Array.isArray(cloudData.personeller)) {
+                        this.db = cloudData;
+                        // Yerel hafızayı da güncelle ki login ekranı yeni verileri görsün
+                        localStorage.setItem('gumruk_final_v60', data);
+                        this.render();
+                        console.log("Bulut verileri başarıyla senkronize edildi.");
+                    }
                 } catch(e) {
-                    console.error("Veri ayrıştırma hatası:", e);
+                    console.error("Bulut verisi ayrıştırma hatası:", e);
                 }
             }
         })
-        .catch(err => console.error("Bulut verisi çekilemedi:", err));
+        .catch(err => console.error("Bulut bağlantı hatası:", err));
 },
         render() {
             const opt = (b) => this.db.personeller
@@ -758,10 +760,11 @@ loadFromCloud() {
         }
     };
 
-// DOSYANIN EN ALTINDAKİ BU KISMI GÜNCELLE:
-app.loadFromCloud(); // 1. Önce buluttaki güncel şifreleri ve kayıtları getir
-app.checkSession();  // 2. Sonra kullanıcının oturumu açık mı kontrol et
-app.render();        // 3. En son her şeyi ekrana çiz
+// DOSYANIN EN SONU - app.exportExcel fonksiyonundan sonra:
+app.checkSession(); // 1. Mevcut oturumu kontrol et
+setTimeout(() => {
+    app.loadFromCloud(); // 2. Yarım saniye sonra verileri buluttan çek
+}, 500);
 
   </script>
 </body>
