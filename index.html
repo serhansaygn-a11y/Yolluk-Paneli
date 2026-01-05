@@ -760,10 +760,11 @@ loadFromCloud() {
         }
     };
 
-// DOSYANIN EN ALTINDAKİ BU KISMI GÜNCELLE:
-app.loadFromCloud(); // 1. Önce buluttaki güncel şifreleri ve kayıtları getir
-app.checkSession();  // 2. Sonra kullanıcının oturumu açık mı kontrol et
-app.render();        // 3. En son her şeyi ekrana çiz
+// DOSYANIN EN SONU - app.exportExcel fonksiyonundan sonra:
+app.checkSession(); // 1. Mevcut oturumu kontrol et
+setTimeout(() => {
+    app.loadFromCloud(); // 2. Yarım saniye sonra verileri buluttan çek
+}, 500);
 
   </script>
 </body>
