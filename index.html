@@ -524,33 +524,41 @@ checkSession() {
         },
 
 save() { 
-            // 1. ADIM: Yerel hafızaya kaydet. 
-            localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db)); 
-            this.render(); 
+    // 1. ADIM: Yerel hafızaya kaydet. 
+    localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db)); 
+    this.render(); 
 
-            // 2. ADIM: Google Sheets'e (Bulut Yedek) gönder.
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbwsLev6waaR7iNzrwDpA-DkUuKL0NHYraLPQAp_7OMtup2a2LVHCUQ0p0Us--w4942_/exec';
-            
-            fetch(scriptURL, {
-                method: 'POST',
-                mode: 'no-cors', 
-                cache: 'no-cache',
-                body: JSON.stringify({
-                    user: this.user ? this.user.user : 'Sistem',
-                    action: 'Veri Yedekleme',
-                    payload: this.db
-                })
-            })
-            .then(() => {
-                console.log("Google Sheets yedeklemesi başarıyla gönderildi.");
-            })
-            .catch(err => {
-                console.error("Yedekleme hatası:", err);
-            });
+    // 2. ADIM: Google Sheets'e (Bulut Yedek) gönder.
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbw_N1yCCR_onmZI3i8xMVLgkfV0j1UqRzMN7WHOT8wqTSJW_mQtzqA853FVLtu03n-E/exec';            
+    fetch(scriptURL, {
+        method: 'POST',
+        // mode: 'no-cors'  <-- BU SATIRI SİL VEYA YORUM YAP!
+        cache: 'no-cache',
+        headers: {
+            'Content-Type': 'text/plain'  // Ekledim, daha güvenli olsun
         },
+        body: JSON.stringify({
+            user: this.user ? this.user.user : 'Sistem',
+            action: 'Veri Yedekleme',
+            payload: this.db
+        })
+    })
+    .then(response => response.json())  // Yanıtı JSON olarak oku
+    .then(data => {
+        console.log("Yedekleme yanıtı:", data);  // Success mi error mu gör
+        if (data.status === "success") {
+            console.log("✅ Veri başarıyla buluta gitti!");
+        } else {
+            console.error("❌ Yedekleme başarısız:", data.message);
+        }
+    })
+    .catch(err => {
+        console.error("Yedekleme bağlantı hatası:", err);
+    });
+},
 
 loadFromCloud() {
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbwsLev6waaR7iNzrwDpA-DkUuKL0NHYraLPQAp_7OMtup2a2LVHCUQ0p0Us--w4942_/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbw_N1yCCR_onmZI3i8xMVLgkfV0j1UqRzMN7WHOT8wqTSJW_mQtzqA853FVLtu03n-E/exec';
     fetch(scriptURL)
         .then(res => res.text())
         .then(data => {
