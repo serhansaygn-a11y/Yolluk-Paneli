@@ -725,17 +725,28 @@ loadFromCloud() {
                 const isMudurYrd = r.includes("Müdür Yardımcısı");
                 const isMemur = r.includes("Memuru");
 
-                if (isMemur || isAdmin || isMudurYrd) {
-                    if (l.durum === "Onaylandı") {
-                        if (isMemur) {
-                            btns += `<button class="btn btn-warning" style="margin-right:5px;" onclick="app.process('${l.ref}','Silme Talebinde')">SİLME TALEP ET</button>`;
-                        } else if (isMudurYrd || isAdmin) {
-                            btns += `<button class="btn btn-danger" style="margin-right:5px;" onclick="app.deleteTask('${l.ref}')">SİL</button>`;
-                        }
-                    } else {
-                        btns += `<button class="btn btn-danger" style="margin-right:5px;" onclick="app.deleteTask('${l.ref}')">SİL</button>`;
-                    }
-                }
+                // Silme işlemleri - Daha güvenli versiyon
+if (isMemur || isAdmin || isMudurYrd) {
+
+    // 1. Memur sadece "Onaylandı" durumunda silme talep edebilir
+    if (l.durum === "Onaylandı" && isMemur) {
+        btns += `<button class="btn btn-warning" style="margin-right:5px;" onclick="app.process('${l.ref}','Silme Talebinde')">SİLME TALEP ET</button>`;
+    }
+
+    // 2. Memur "Silme Talebinde" veya başka durumlarda HİÇ sil butonu görmesin
+    //    (Direkt silme yetkisi YOK)
+
+    // 3. Müdür Yardımcısı ve Admin sadece "Silme Talebinde" olanlarda silme butonları görsün
+    if (l.durum === "Silme Talebinde" && (isMudurYrd || isAdmin)) {
+        btns += `<button class="btn btn-danger" style="margin-right:5px;" onclick="app.deleteTask('${l.ref}')">TALEBİ ONAYLA (SİL)</button>`;
+        btns += `<button class="btn btn-primary" onclick="app.process('${l.ref}','Onaylandı')">TALEBİ REDDET</button>`;
+    }
+
+    // 4. Taslak, Reddedildi gibi diğer durumlar için Admin ve Müdür Yrd. direkt silsin (güvenli)
+    if ((l.durum === "Taslak" || l.durum === "Reddedildi") && (isMudurYrd || isAdmin)) {
+        btns += `<button class="btn btn-danger" style="margin-right:5px;" onclick="app.deleteTask('${l.ref}')">SİL</button>`;
+    }
+}
 
                 if (r !== "Gümrük Müdürü" && (isMemur || isAdmin || isMudurYrd || r.includes("Şefi"))) {
                     if(l.durum === "Taslak") {
