@@ -19,8 +19,14 @@
         --warning: #f1c40f;
       }
       * { box-sizing:border-box; font-family: 'Segoe UI', Inter, sans-serif; }
+      
+      /* EKRAN MODU */
       body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); display:flex; justify-content:center; padding:20px; }
       .app { width:100%; max-width:1450px; }
+      
+      /* --- ÖNEMLİ: Yazdırma alanı normal ekranda GÖRÜNMEZ --- */
+      #print-area { display: none; }
+
       header { display:flex; justify-content:space-between; align-items:center; padding:15px; border-radius:18px; background:var(--card); box-shadow: var(--accent-glow); margin-bottom:20px; border: 1px solid var(--border); }
       .header-left img, .right-images img { height:65px; border-radius:10px; box-shadow:0 0 8px rgba(0,0,0,0.5); }
       .header-center h1 { margin:0; font-size:22px; color:var(--accent); text-transform: uppercase; text-shadow: var(--accent-glow); }
@@ -44,17 +50,50 @@
       .filter-area select, .filter-area input { width: auto; display: inline-block; margin: 0; }
       .task-filter { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; align-items: center; }
       
+      /* --- YAZDIRMA MODU (SADECE YAZICIDA GÖRÜNÜR) --- */
       @media print {
-        body * { visibility: hidden; }
-        #print-area, #print-area * { visibility: visible; }
-        #print-area { position: absolute; left: 20px; top: 20px; width: 280px; height: 330px; background: #fff; padding: 18px; border: 2px solid #000; box-shadow: 0 0 10px rgba(0,0,0,0.5); color: #000; font-family: Arial, sans-serif; font-size: 9px; line-height: 1.3; overflow: hidden; }
-        #print-area h1 { font-size: 13px; margin: 8px 0; }
-        #print-area h2 { font-size: 11px; margin: 10px 0; }
-        #print-area p { font-size: 10px; margin: 15px 0; }
+        /* Uygulama ekranını tamamen yok et (Boş sayfa için) */
+        .app { display: none !important; }
+        
+        /* Sayfa ayarlarını sıfırla */
+        body { margin: 0 !important; padding: 0 !important; background-color: white !important; height: 100%; }
+
+        /* Yazdırma Alanını Göster ve SOL ALT KÖŞEYE Konumlandır */
+        #print-area {
+            display: block !important;
+            position: fixed;
+            left: 20px;
+            bottom: 20px;
+            width: 350px;
+            background-color: transparent !important;
+            color: black !important;
+            font-family: 'Arial', sans-serif;
+            font-size: 9pt;
+            line-height: 1.3;
+            z-index: 99999;
+            
+            /* Siyah Çerçeve */
+            border: 2px solid #000;
+            padding: 15px;
+            border-radius: 0;
+        }
+
+        #print-area * {
+            color: black !important;
+            visibility: visible !important;
+        }
+        
+        #print-area h1 { font-size: 11pt; margin: 0 0 10px 0; text-decoration: underline; font-weight: bold; text-align: left; }
+        #print-area h2 { font-size: 9pt; margin: 0 0 10px 0; font-weight: normal; text-align: left; }
+        #print-area .line { margin-bottom: 5px; }
+        #print-area .bold { font-weight: bold; }
       }
     </style>
 </head>
 <body>
+  
+  <div id="print-area"></div>
+
   <div class="app">
     <header>
       <div class="header-left">
@@ -95,7 +134,7 @@
             </div>
         </div>
 
-        <div class="card-section">
+        <div id="stats-section" class="card-section">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:15px;">
                 <h3 style="border:none; padding:0; margin:0;">📊 Personel Hakediş & Adalet Tablosu</h3>
                 <button class="btn btn-primary" onclick="app.exportSummaryExcel()">ÖZETİ EXCEL AKTAR</button>
@@ -121,6 +160,25 @@
             <table><thead><tr><th>Sicil</th><th>Ad Soyad</th><th>Ünvan</th><th>Mesai</th><th>Yolluk</th><th>Toplam</th></tr></thead><tbody id="stats-muhafaza"></tbody></table>
             <h4>KİM</h4>
             <table><thead><tr><th>Sicil</th><th>Ad Soyad</th><th>Ünvan</th><th>Mesai</th><th>Yolluk</th><th>Toplam</th></tr></thead><tbody id="stats-kim"></tbody></table>
+        </div>
+
+        <div id="ps-panel" class="card-section hidden" style="border: 1px solid var(--success);">
+            <h3 style="color:var(--success); border-bottom:1px solid var(--success); padding-bottom:8px;">🏥 Personel İzin & Rapor Takibi</h3>
+            <p style="font-size:11px; color:var(--muted)">Buradan girilen izinli/raporlu personellere, ilgili tarihlerde görev yazılamaz.</p>
+            
+            <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap:10px; margin-top:10px;">
+                <select id="ps-personel-select"></select>
+                <input type="date" id="ps-baslangic" placeholder="Başlangıç">
+                <input type="date" id="ps-bitis" placeholder="Bitiş">
+                <select id="ps-tur"><option>Yıllık İzin</option><option>Sıhhi Rapor</option><option>Mazeret İzni</option><option>Görevli</option></select>
+                <button class="btn btn-success" onclick="app.addLeave()">KAYDET</button>
+            </div>
+
+            <h4 style="margin-top:20px;">AKTİF İZİN/RAPOR LİSTESİ</h4>
+            <table>
+                <thead><tr><th>Personel</th><th>Başlangıç</th><th>Bitiş</th><th>Tür</th><th>İşlem</th></tr></thead>
+                <tbody id="leave-list-body"></tbody>
+            </table>
         </div>
 
         <div id="admin-section" class="hidden">
@@ -169,6 +227,7 @@
                         <option>Gümrük Müdür Yardımcısı</option>
                         <option>Gümrük Şefi</option>
                         <option>Gümrük Memuru</option>
+                        <option>Personel Servisi</option>
                     </select>
                     <button class="btn btn-primary" onclick="app.addAccount()">YETKİ VER / EKLE</button>
                 </div>
@@ -237,6 +296,7 @@
     </div>
 
     <div id="print-area"></div>
+
     <footer>
     <a href="https://www.linkedin.com/in/serhansaygin/" target="_blank" style="color: var(--accent); text-decoration: none;">
         Serhan SAYGIN — Gümrük Memuru
@@ -245,15 +305,18 @@
 
   <script>
     const app = {
+        // Veritabanı bağlantısı ve eski verilerin korunması
         db: JSON.parse(localStorage.getItem('gumruk_final_v60')) || {
             accounts: [
                 {rol: "Admin", user: "Admin", pass: "admin123"},
                 {rol: "Gümrük Şefi", user: "Şef1", pass: "123"},
                 {rol: "Gümrük Memuru", user: "Memur1", pass: "123"},
                 {rol: "Gümrük Müdür Yardımcısı", user: "MüdürYrd1", pass: "123"},
-                {rol: "Gümrük Müdürü", user: "Mudur", pass: "123"}
+                {rol: "Gümrük Müdürü", user: "Mudur", pass: "123"},
+                {rol: "Personel Servisi", user: "Pers", pass: "123"}
             ],
-            personeller: [], yolluklar: [], kayitlar: [], bypassSef: false
+            personeller: [], yolluklar: [], kayitlar: [], izinler: [], 
+            bypassSef: false
         },
         user: null,
         selectedPs: [],
@@ -273,16 +336,33 @@
                 document.getElementById('panel-content').classList.remove('hidden');
                 document.getElementById('user-display').innerText = `Yetkili: ${acc.user} (${acc.rol})`;
 
-                if (this.user.rol === 'Admin') {
+                // Rol kontrolleri
+                const r = acc.rol;
+                document.getElementById('admin-section').classList.add('hidden');
+                document.getElementById('admin-toggle-area').classList.add('hidden');
+                document.getElementById('record-section').classList.add('hidden');
+                document.getElementById('task-list-section').classList.add('hidden');
+                document.getElementById('stats-section').classList.add('hidden');
+                document.getElementById('ps-panel').classList.add('hidden');
+
+                if(r === 'Admin') {
                     document.getElementById('admin-section').classList.remove('hidden');
                     document.getElementById('admin-toggle-area').classList.remove('hidden');
-                } else {
-                    document.getElementById('admin-section').classList.add('hidden');
-                    document.getElementById('admin-toggle-area').classList.add('hidden');
+                    document.getElementById('record-section').classList.remove('hidden');
+                    document.getElementById('task-list-section').classList.remove('hidden');
+                    document.getElementById('stats-section').classList.remove('hidden');
+                    document.getElementById('ps-panel').classList.remove('hidden');
+                } 
+                else if (r === 'Personel Servisi') {
+                    document.getElementById('ps-panel').classList.remove('hidden');
+                }
+                else {
+                    document.getElementById('record-section').classList.remove('hidden');
+                    document.getElementById('task-list-section').classList.remove('hidden');
+                    document.getElementById('stats-section').classList.remove('hidden');
                 }
 
-                document.getElementById('record-section').classList.remove('hidden');
-                document.getElementById('task-list-section').classList.remove('hidden');
+                if(r === 'Gümrük Müdürü') document.getElementById('admin-section').classList.add('hidden');
 
                 this.render();
             } else alert("Kullanıcı adı veya şifre hatalı!");
@@ -296,17 +376,31 @@
                 document.getElementById('panel-content').classList.remove('hidden');
                 document.getElementById('user-display').innerText = `Yetkili: ${this.user.user} (${this.user.rol})`;
                 
-                if (this.user.rol === 'Admin') {
+                const r = this.user.rol;
+                // Aynı rol kontrolleri burada da (kısalık için tekrar yazmıyorum, login ile aynı mantık işler)
+                document.getElementById('admin-section').classList.add('hidden');
+                document.getElementById('admin-toggle-area').classList.add('hidden');
+                document.getElementById('record-section').classList.add('hidden');
+                document.getElementById('task-list-section').classList.add('hidden');
+                document.getElementById('stats-section').classList.add('hidden');
+                document.getElementById('ps-panel').classList.add('hidden');
+
+                if(r === 'Admin') {
                     document.getElementById('admin-section').classList.remove('hidden');
                     document.getElementById('admin-toggle-area').classList.remove('hidden');
-                } else {
-                    document.getElementById('admin-section').classList.add('hidden');
-                    document.getElementById('admin-toggle-area').classList.add('hidden');
+                    document.getElementById('record-section').classList.remove('hidden');
+                    document.getElementById('task-list-section').classList.remove('hidden');
+                    document.getElementById('stats-section').classList.remove('hidden');
+                    document.getElementById('ps-panel').classList.remove('hidden');
+                } 
+                else if (r === 'Personel Servisi') {
+                    document.getElementById('ps-panel').classList.remove('hidden');
                 }
-
-                document.getElementById('record-section').classList.remove('hidden');
-                document.getElementById('task-list-section').classList.remove('hidden');
-                
+                else {
+                    document.getElementById('record-section').classList.remove('hidden');
+                    document.getElementById('task-list-section').classList.remove('hidden');
+                    document.getElementById('stats-section').classList.remove('hidden');
+                }
                 this.render();
             }
         },
@@ -380,6 +474,34 @@
             }
         },
 
+        addLeave() {
+            const p = document.getElementById('ps-personel-select').value;
+            const bas = document.getElementById('ps-baslangic').value;
+            const bit = document.getElementById('ps-bitis').value;
+            const tur = document.getElementById('ps-tur').value;
+
+            if(!p || !bas || !bit) return alert("Lütfen tüm alanları doldurun!");
+            if(bas > bit) return alert("Başlangıç tarihi bitişten büyük olamaz!");
+
+            if(!this.db.izinler) this.db.izinler = [];
+            this.db.izinler.push({ personel: p, baslangic: bas, bitis: bit, tur: tur });
+            this.save();
+            alert("İzin/Rapor kaydı başarıyla oluşturuldu.");
+        },
+
+        deleteLeave(index) {
+            if(confirm("Silmek istiyor musunuz?")) {
+                this.db.izinler.splice(index, 1);
+                this.save();
+            }
+        },
+
+        checkConflict(personel) {
+            if (!this.db.izinler) return null;
+            const today = new Date().toISOString().slice(0, 10);
+            return this.db.izinler.find(i => i.personel === personel && today >= i.baslangic && today <= i.bitis);
+        },
+
         generateRef() {
             const d = new Date();
             const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -396,24 +518,27 @@
 
         saveTask() {
             const selTypes = Array.from(document.getElementById('task-types').selectedOptions).map(o => this.db.yolluklar[o.value]);
-            
-            // MANUEL TUTARI AL
             const manualTutar = parseFloat(document.getElementById('manual-tutar').value) || 0;
             const manualTip = document.getElementById('manual-tip').value;
 
-            // En az bir personel ve (bir seçim VEYA manuel tutar) olmalı
             if(this.selectedPs.length === 0 || (selTypes.length === 0 && manualTutar === 0)) return alert("Hata: Personel ve en az bir ücret girilmelidir!");
             
+            for (let p of this.selectedPs) {
+                const conflict = this.checkConflict(p);
+                if (conflict) {
+                    alert(`HOOP! 🛑\n\n${p} isimli personel şu an "${conflict.tur}" sebebiyle izinli/raporlu!\n(${conflict.baslangic} - ${conflict.bitis})\n\nGörev yazılamaz.`);
+                    return; 
+                }
+            }
+
             const personelSayisi = this.selectedPs.length;
             let toplamMesai = 0, toplamYolluk = 0;
             
-            // Seçili kalemleri topla
             selTypes.forEach(t => {
                 if (t.tip === "Mesai") toplamMesai += t.tutar;
                 else toplamYolluk += t.tutar;
             });
 
-            // Manuel tutarı ekle
             if (manualTutar > 0) {
                 if (manualTip === "Mesai") toplamMesai += manualTutar;
                 else toplamYolluk += manualTutar;
@@ -440,7 +565,6 @@
                 tarih: ayStr
             });
             
-            // Temizlik
             this.selectedPs = [];
             document.getElementById('manual-tutar').value = "";
             this.save();
@@ -448,7 +572,6 @@
 
         deleteTask(ref) {
             if(confirm("Bu işlem geri alınamaz. Kaydı silmek istediğinize emin misiniz?")) {
-                // undefined hatasını önleyen güçlendirilmiş silme
                 this.db.kayitlar = this.db.kayitlar.filter(x => String(x.ref) !== String(ref));
                 this.save();
             }
@@ -467,50 +590,45 @@
             }
         },
 
+        // --- DÜZELTİLMİŞ YAZDIRMA FONKSİYONU ---
         printDoc(ref) {
-            const l = this.db.kayitlar.find(x=>x.ref===ref);
+            const l = this.db.kayitlar.find(x => x.ref === ref);
             const area = document.getElementById('print-area');
             const m = l.mTotal || l.toplamMesai;
             const y = l.yTotal || l.toplamYolluk;
             const total = m + y;
 
+            const smallStyle = 'font-size: 9pt;'; 
+
             let breakdownHtml = "";
-            if(y > 0) breakdownHtml += `<div>GEÇİCİ GÖREV YOLLUĞU: <b>${y.toFixed(2)} TL</b></div>`;
-            if(m > 0) breakdownHtml += `<div>FAZLA ÇALIŞMA (MESAİ) ÜCRETİ: <b>${m.toFixed(2)} TL</b></div>`;
+            if(y > 0 && m === 0) breakdownHtml += `<div class="line">YOLLUK: <span class="bold">${y.toFixed(2)} TL</span></div>`;
+            if(m > 0 && y === 0) breakdownHtml += `<div class="line">FAZLA ÇALIŞMA (MESAİ): <span class="bold">${m.toFixed(2)} TL</span></div>`;
             
             if(y > 0 && m > 0) {
                  breakdownHtml = `
-                    <div>GEÇİCİ GÖREV YOLLUĞU: ${y.toFixed(2)} TL</div>
-                    <div>FAZLA ÇALIŞMA (MESAİ): ${m.toFixed(2)} TL</div>
-                    <div style="border-top:1px solid #000; margin-top:5px; padding-top:2px;">TOPLAM: <b>${total.toFixed(2)} TL</b></div>
+                    <div class="line">YOLLUK: ${y.toFixed(2)} TL</div>
+                    <div class="line">FAZLA ÇALIŞMA (MESAİ): ${m.toFixed(2)} TL</div>
+                    <div class="line" style="border-top:1px solid #000; padding-top:2px;">TOPLAM: <span class="bold">${total.toFixed(2)} TL</span></div>
                  `;
             }
 
+            // İçeriği Doldur (Ama ekranda GİZLİ kalacak, CSS @media print gösterecek)
             area.innerHTML = `
-                <div style="text-align:center;">
-                    <h1>GÖREV VE TAHAKKUK FORMU</h1>
-                    <h2>REF: ${l.ref}</h2>
-                    <div style="margin:15px 0; text-align:left;">
-                        <b>GÖREVLİ PERSONEL LİSTESİ:</b><br>
-                        ${l.personeller.map(p => {
-                            const d = this.db.personeller.find(x => x.ad === p);
-                            return d ? `${d.sicil} - ${p} (${d.unvan})` : `${p}`;
-                        }).join('<br>')}
-                    </div>
-                    <div style="text-align:center; margin:20px 0;">
-                        <p>${l.no} nolu evraka istinaden gerçekleştirilen hizmet karşılığında:</p>
-                        <div style="font-size:11px; margin-bottom:5px; line-height:1.6;">${breakdownHtml}</div>
-                        <p>ödeme yapılması uygundur.</p>
-                    </div>
-                    <div style="margin-top:30px; display:flex; justify-content:space-between;">
-                        <div>EBYS: ${l.ebys || '________________'}</div>
-                        <div>DEKONT: ${l.dekont || '________________'}</div>
-                    </div>
-                    <div style="margin-top:40px; text-align:right;">ONAYLAYAN MAKAM<br><br><br>..............................</div>
-                    <div style="position:absolute; bottom:10px; right:10px; font-size:8px; color:#666;">
-                        TARİH: ${new Date().toLocaleDateString('tr-TR')}
-                    </div>
-                </div>`;
+                <h1>GÖREV VE TAHAKKUK FORMU</h1>
+                <h2>REF: ${l.ref}</h2>
+                <div class="line"><strong>GÖREVLİLER:</strong></div>
+                ${l.personeller.map(p => {
+                    const d = this.db.personeller.find(x => x.ad === p);
+                    return `<div class="line">- ${d ? d.sicil : ''} ${p} (${d ? d.unvan : ''})</div>`;
+                }).join('')}
+                <div class="line" style="margin-top:10px;">Evrak No: ${l.no}</div>
+                ${breakdownHtml}
+                <div class="line" style="margin-top:10px;">EBYS: ${l.ebys || '_______'} | DEKONT: ${l.dekont || '_______'}</div>
+                <div class="line" style="margin-top:15px;">ONAYLAYAN<br>....................</div>
+                <div class="line" style="margin-top:5px; font-size:8pt;">${new Date().toLocaleDateString('tr-TR')}</div>
+            `;
+
+            // Yazdırma komutu
             window.print();
         },
 
@@ -528,7 +646,7 @@
         save() { 
             localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db)); 
             this.render(); 
-            // Bulut Yedekleme (Google Apps Script)
+            // Bulut Yedekleme 
             const scriptURL = 'https://script.google.com/macros/s/AKfycbw_N1yCCR_onmZI3i8xMVLgkfV0j1UqRzMN7WHOT8wqTSJW_mQtzqA853FVLtu03n-E/exec';            
             fetch(scriptURL, {
                 method: 'POST',
@@ -559,7 +677,6 @@
         },
 
         render() {
-            // Seçim Listeleri
             const opt = (b) => this.db.personeller.filter(x => x.birim === b).map(p => {
                 const selected = this.selectedPs.includes(p.ad) ? ' selected' : '';
                 return `<option value="${p.ad}"${selected}>${p.ad} (${p.unvan})</option>`;
@@ -570,6 +687,9 @@
                 document.getElementById('sel-m').innerHTML = opt('Muhafaza');
                 document.getElementById('sel-k').innerHTML = opt('KİM');
                 document.getElementById('task-types').innerHTML = this.db.yolluklar.map((y,i)=>`<option value="${i}">${y.ad} (${y.tip} - ${y.tutar} TL)</option>`).join('');
+                
+                const allP = this.db.personeller.map(p => `<option value="${p.ad}">${p.ad}</option>`).join('');
+                document.getElementById('ps-personel-select').innerHTML = allP;
             }
             if(document.getElementById('selected-list')) {
                 document.getElementById('selected-list').innerHTML = this.selectedPs.map(p => `<span class="tag">${p} <b onclick="app.selectedPs=app.selectedPs.filter(x=>x!=='${p}');app.render()" style="cursor:pointer;color:red">X</b></span>`).join('');
@@ -585,7 +705,19 @@
                 }).join('');
             }
 
-            // HAKEDİŞ HESAPLAMA & SIRALAMA
+            if(document.getElementById('leave-list-body')) {
+                const leaveData = this.db.izinler || [];
+                document.getElementById('leave-list-body').innerHTML = leaveData.length > 0 ? leaveData.map((l, i) => `
+                    <tr>
+                        <td><b>${l.personel}</b></td>
+                        <td>${l.baslangic}</td>
+                        <td>${l.bitis}</td>
+                        <td><span class="tag" style="background:#e74c3c33; color:#e74c3c; border-color:#e74c3c;">${l.tur}</span></td>
+                        <td><button class="btn btn-danger" style="font-size:9px;" onclick="app.deleteLeave(${i})">SİL</button></td>
+                    </tr>
+                `).join('') : '<tr><td colspan="5" style="text-align:center; color:#666;">Aktif izin/rapor kaydı yok.</td></tr>';
+            }
+
             const hedefAy = this.seciliAy || this.mevcutAy();
             let ayinToplamYollugu = 0;
             let ayinToplamMesaisi = 0;
