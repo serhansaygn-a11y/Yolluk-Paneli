@@ -669,7 +669,7 @@
             localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db)); 
             this.render(); 
             // Bulut Yedekleme 
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbw_N1yCCR_onmZI3i8xMVLgkfV0j1UqRzMN7WHOT8wqTSJW_mQtzqA853FVLtu03n-E/exec';            
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbxn2ZWZKfpqRwF1RItRIjXc9jpkhlKtfV_kPp8_foSp8zQq9tx7bVhydYx3f6alfD2o/exec';            
             fetch(scriptURL, {
                 method: 'POST',
                 cache: 'no-cache',
@@ -683,7 +683,7 @@
         },
 
         loadFromCloud() {
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbw_N1yCCR_onmZI3i8xMVLgkfV0j1UqRzMN7WHOT8wqTSJW_mQtzqA853FVLtu03n-E/exec';
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbxn2ZWZKfpqRwF1RItRIjXc9jpkhlKtfV_kPp8_foSp8zQq9tx7bVhydYx3f6alfD2o/exec';
             document.getElementById('sync-status').innerText = "Veri Çekiliyor..."; // Durum bildir
             
             fetch(scriptURL).then(res => res.text()).then(data => {
@@ -915,3 +915,4 @@
   </script>
 </body>
 </html>
+
