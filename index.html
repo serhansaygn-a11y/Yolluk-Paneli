@@ -66,14 +66,14 @@
             right: 20px; 
             
             /* GÜNCELLEME: 20px'den 70px'e çıkarıldı (Yukarı kalkması için) */
-            bottom: 70px;
+            bottom: 100px;
             
-            width: 280px; 
+            width: 350px; 
             
             background-color: transparent !important;
             color: black !important;
             font-family: 'Arial', sans-serif;
-            font-size: 7pt; 
+            font-size: 8pt; 
             line-height: 1.2;
             z-index: 99999;
             
@@ -81,6 +81,7 @@
             border: 1.5px solid #000;
             padding: 10px;
             border-radius: 0;
+            overflow: visible !important; /* Taşmayı önleme */
         }
 
         #print-area * {
@@ -301,8 +302,6 @@
       </div>
     </div>
 
-    <div id="print-area"></div>
-
     <footer>
     <a href="https://www.linkedin.com/in/serhansaygin/" target="_blank" style="color: var(--accent); text-decoration: none;">
         Serhan SAYGIN — Gümrük Memuru
@@ -329,6 +328,48 @@
         seciliAy: null,
         taskFilter: {arama: '', durum: '', baslangic: '', bitis: ''},
         unvanlar: ["Gümrük Memuru", "Gümrük Muayene Memuru", "Gümrük Muhafaza Memuru", "Gümrük Şefi", "Kısım Amiri", "Bölge Amiri", "Gümrük Müdür Yardımcısı", "Gümrük Müdürü", "KİM Müdürü"],
+
+        checkSession() {
+            const current = localStorage.getItem('currentUser');
+            if(current) {
+                this.user = JSON.parse(current);
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('panel-content').classList.remove('hidden');
+                document.getElementById('user-display').innerText = `Yetkili: ${this.user.user} (${this.user.rol})`;
+
+                // Rol kontrolleri
+                const r = this.user.rol;
+                document.getElementById('admin-section').classList.add('hidden');
+                document.getElementById('admin-toggle-area').classList.add('hidden');
+                document.getElementById('record-section').classList.add('hidden');
+                document.getElementById('task-list-section').classList.add('hidden');
+                document.getElementById('stats-section').classList.add('hidden');
+                document.getElementById('ps-panel').classList.add('hidden');
+
+                if(r === 'Admin') {
+                    document.getElementById('admin-section').classList.remove('hidden');
+                    document.getElementById('admin-toggle-area').classList.remove('hidden');
+                    document.getElementById('record-section').classList.remove('hidden');
+                    document.getElementById('task-list-section').classList.remove('hidden');
+                    document.getElementById('stats-section').classList.remove('hidden');
+                    document.getElementById('ps-panel').classList.remove('hidden');
+                } 
+                else if (r === 'Personel Servisi') {
+                    document.getElementById('ps-panel').classList.remove('hidden');
+                }
+                else {
+                    document.getElementById('record-section').classList.remove('hidden');
+                    document.getElementById('task-list-section').classList.remove('hidden');
+                    document.getElementById('stats-section').classList.remove('hidden');
+                }
+
+                if(r === 'Gümrük Müdürü') document.getElementById('admin-section').classList.add('hidden');
+
+                this.loadFromCloud(); // Veri çek
+                this.startAutoSync(); // Otomatik sync başla
+            }
+            this.render();
+        },
 
         login() {
             const u = document.getElementById('username').value;
@@ -370,119 +411,83 @@
 
                 if(r === 'Gümrük Müdürü') document.getElementById('admin-section').classList.add('hidden');
 
-                // DÜZELTME: Giriş yapılır yapılmaz veriyi çek ve otomatik senkronizasyonu başlat
-                this.loadFromCloud();
-                this.startAutoSync(); 
-                this.render();
-            } else alert("Kullanıcı adı veya şifre hatalı!");
-        },
-
-        checkSession() {
-            const savedUser = localStorage.getItem('currentUser');
-            if (savedUser) {
-                this.user = JSON.parse(savedUser);
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('panel-content').classList.remove('hidden');
-                document.getElementById('user-display').innerText = `Yetkili: ${this.user.user} (${this.user.rol})`;
-                
-                const r = this.user.rol;
-                document.getElementById('admin-section').classList.add('hidden');
-                document.getElementById('admin-toggle-area').classList.add('hidden');
-                document.getElementById('record-section').classList.add('hidden');
-                document.getElementById('task-list-section').classList.add('hidden');
-                document.getElementById('stats-section').classList.add('hidden');
-                document.getElementById('ps-panel').classList.add('hidden');
-
-                if(r === 'Admin') {
-                    document.getElementById('admin-section').classList.remove('hidden');
-                    document.getElementById('admin-toggle-area').classList.remove('hidden');
-                    document.getElementById('record-section').classList.remove('hidden');
-                    document.getElementById('task-list-section').classList.remove('hidden');
-                    document.getElementById('stats-section').classList.remove('hidden');
-                    document.getElementById('ps-panel').classList.remove('hidden');
-                } 
-                else if (r === 'Personel Servisi') {
-                    document.getElementById('ps-panel').classList.remove('hidden');
-                }
-                else {
-                    document.getElementById('record-section').classList.remove('hidden');
-                    document.getElementById('task-list-section').classList.remove('hidden');
-                    document.getElementById('stats-section').classList.remove('hidden');
-                }
-                
-                // DÜZELTME: Session varsa da hemen senkronize et
                 this.loadFromCloud();
                 this.startAutoSync();
-                this.render();
-            }
-        },
-
-       changePassword() {
-            if (!this.user) return alert("Giriş yapmadınız!");
-            const yeni = prompt("Yeni şifrenizi girin:");
-            if (yeni && yeni.trim() !== "") {
-                const accIndex = this.db.accounts.findIndex(x => x.user === this.user.user);
-                if (accIndex > -1) {
-                    this.db.accounts[accIndex].pass = yeni.trim();
-                    this.user.pass = yeni.trim();
-                    this.save();
-                    alert("Şifreniz başarıyla değiştirildi!");
-                }
             } else {
-                alert("Şifre boş olamaz!");
+                alert("Hatalı kullanıcı adı veya şifre!");
+            }
+            this.render();
+        },
+
+        changePassword() {
+            const newPass = prompt("Yeni Şifre Girin:");
+            if(newPass) {
+                this.user.pass = newPass;
+                const index = this.db.accounts.findIndex(a => a.user === this.user.user);
+                if(index !== -1) this.db.accounts[index].pass = newPass;
+                localStorage.setItem('currentUser', JSON.stringify(this.user));
+                this.save();
+                alert("Şifre değiştirildi.");
             }
         },
 
-        selectMultiple(el) {
-            const selectedOptions = Array.from(el.selectedOptions).map(opt => opt.value);
-            selectedOptions.forEach(value => {
-                if (value && !this.selectedPs.includes(value)) {
-                    this.selectedPs.push(value);
-                }
+        selectMultiple(select) {
+            Array.from(select.options).forEach(opt => {
+                if(opt.selected && !this.selectedPs.includes(opt.value)) this.selectedPs.push(opt.value);
+                else if(!opt.selected) this.selectedPs = this.selectedPs.filter(p => p !== opt.value);
             });
-            el.selectedIndex = -1;
             this.render();
         },
 
         addPersonel() {
-            const s = document.getElementById('p-sicil').value.trim();
-            const a = document.getElementById('p-ad').value.trim();
-            const b = document.getElementById('p-birim').value;
-            const u = document.getElementById('p-unvan').value;
-            if(s && a) { 
-                this.db.personeller.push({sicil:s, ad:a, birim:b, unvan:u}); 
-                this.save(); 
-            }
+            const sicil = document.getElementById('p-sicil').value;
+            const ad = document.getElementById('p-ad').value;
+            const birim = document.getElementById('p-birim').value;
+            const unvan = document.getElementById('p-unvan').value;
+            if(sicil && ad && birim && unvan) {
+                this.db.personeller.push({sicil, ad, birim, unvan});
+                this.save();
+                document.getElementById('p-sicil').value = '';
+                document.getElementById('p-ad').value = '';
+            } else alert("Tüm alanlar doldurulmalı!");
         },
 
         addYolluk() {
-            const ad = document.getElementById('y-ad').value.trim();
-            const tutar = document.getElementById('y-tutar').value;
+            const ad = document.getElementById('y-ad').value;
+            const tutar = parseFloat(document.getElementById('y-tutar').value);
             const tip = document.getElementById('y-tip').value;
-            if(ad && tutar && !isNaN(tutar)) { 
-                this.db.yolluklar.push({ad: ad, tutar: parseFloat(tutar), tip: tip}); 
-                document.getElementById('y-ad').value = "";
-                document.getElementById('y-tutar').value = "";
-                this.save(); 
-            } else {
-                alert("Lütfen geçerli bir kalem adı ve tutar girin!");
-            }
+            if(ad && tutar) {
+                this.db.yolluklar.push({ad, tutar, tip});
+                this.save();
+                document.getElementById('y-ad').value = '';
+                document.getElementById('y-tutar').value = '';
+            } else alert("Ad ve Tutar girilmelidir!");
         },
 
         addAccount() {
-            const u = document.getElementById('acc-user').value.trim();
-            const p = document.getElementById('acc-pass').value;
-            const r = document.getElementById('acc-rol').value;
-            if (!u || !p) { alert("Kullanıcı adı ve şifre boş bırakılamaz!"); return; }
-            if (this.db.accounts.some(acc => acc.user === u)) { alert("Bu kullanıcı adı zaten mevcut!"); return; }
-            this.db.accounts.push({ user: u, pass: p, rol: r });
-            this.render(); this.save(); alert("Kullanıcı eklendi!");
+            const user = document.getElementById('acc-user').value;
+            const pass = document.getElementById('acc-pass').value;
+            const rol = document.getElementById('acc-rol').value;
+            if(user && pass) {
+                const mevcut = this.db.accounts.find(a => a.user === user);
+                if(mevcut) {
+                    mevcut.pass = pass;
+                    mevcut.rol = rol;
+                    alert("Hesap güncellendi.");
+                } else {
+                    this.db.accounts.push({user, pass, rol});
+                    alert("Yeni hesap eklendi.");
+                }
+                this.save();
+                document.getElementById('acc-user').value = '';
+                document.getElementById('acc-pass').value = '';
+            } else alert("Kullanıcı adı ve şifre girilmelidir!");
         },
 
-        deleteAccount(index) {
-            if (confirm("Silmek istediğinize emin misiniz?")) {
-                this.db.accounts.splice(index, 1);
-                this.render(); this.save();
+        deleteAccount(i) {
+            if(confirm("Silmek istiyor musunuz?")) {
+                this.db.accounts.splice(i, 1);
+                this.save();
             }
         },
 
@@ -491,14 +496,12 @@
             const bas = document.getElementById('ps-baslangic').value;
             const bit = document.getElementById('ps-bitis').value;
             const tur = document.getElementById('ps-tur').value;
-
-            if(!p || !bas || !bit) return alert("Lütfen tüm alanları doldurun!");
-            if(bas > bit) return alert("Başlangıç tarihi bitişten büyük olamaz!");
-
-            if(!this.db.izinler) this.db.izinler = [];
-            this.db.izinler.push({ personel: p, baslangic: bas, bitis: bit, tur: tur });
-            this.save();
-            alert("İzin/Rapor kaydı başarıyla oluşturuldu.");
+            if(p && bas && bit) {
+                if(!this.db.izinler) this.db.izinler = [];
+                this.db.izinler.push({ personel: p, baslangic: bas, bitis: bit, tur: tur });
+                this.save();
+                alert("İzin/Rapor kaydı başarıyla oluşturuldu.");
+            } else alert("Tüm alanlar doldurulmalı!");
         },
 
         deleteLeave(index) {
@@ -620,8 +623,6 @@
             const y = l.yTotal || l.toplamYolluk;
             const total = m + y;
 
-            const smallStyle = 'font-size: 7pt;'; 
-
             let breakdownHtml = "";
             if(y > 0 && m === 0) breakdownHtml += `<div class="line">YOLLUK: <span class="bold">${y.toFixed(2)} TL</span></div>`;
             if(m > 0 && y === 0) breakdownHtml += `<div class="line">FAZLA ÇALIŞMA (MESAİ): <span class="bold">${m.toFixed(2)} TL</span></div>`;
@@ -639,9 +640,9 @@
                 <h1>GÖREV VE TAHAKKUK FORMU</h1>
                 <h2>REF: ${l.ref}</h2>
                 <div class="line"><strong>GÖREVLİLER:</strong></div>
-                ${l.personeller.map(p => {
+                ${l.personeller.map((p, index) => {
                     const d = this.db.personeller.find(x => x.ad === p);
-                    return `<div class="line">- ${d ? d.sicil : ''} ${p} (${d ? d.unvan : ''})</div>`;
+                    return `<div class="line">${index + 1} - ${d ? d.sicil : ''} ${p} (${d ? d.unvan : ''})</div>`;
                 }).join('')}
                 <div class="line" style="margin-top:5px;">Evrak No: ${l.no}</div>
                 ${breakdownHtml}
@@ -651,7 +652,7 @@
             `;
 
             // Yazdırma komutu
-            window.print();
+            setTimeout(() => window.print(), 100);
         },
 
         mevcutAy() {
@@ -915,4 +916,3 @@
   </script>
 </body>
 </html>
-
