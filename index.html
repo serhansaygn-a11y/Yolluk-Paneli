@@ -431,11 +431,16 @@
             }
         },
 
+        // --- GÜNCELLENEN KOD: CTRL'SİZ ÇOKLU SEÇİM ---
         selectMultiple(select) {
             Array.from(select.options).forEach(opt => {
-                if(opt.selected && !this.selectedPs.includes(opt.value)) this.selectedPs.push(opt.value);
-                else if(!opt.selected) this.selectedPs = this.selectedPs.filter(p => p !== opt.value);
+                // Eğer seçenek tıklandıysa (selected=true) ve zaten listede yoksa EKLE
+                if(opt.selected && !this.selectedPs.includes(opt.value)) {
+                    this.selectedPs.push(opt.value);
+                }
             });
+            // Listeyi temizleyip yeniden çizdiriyoruz, böylece seçim işareti kalkıyor
+            // ama kişi "Selected List" kutusuna eklenmiş oluyor.
             this.render();
         },
 
@@ -714,9 +719,10 @@
         },
 
         render() {
+            // --- GÜNCELLENEN KISIM: selected attirubute'ü KALDIRILDI ---
+            // Böylece liste her zaman "Tıklanabilir" buton gibi davranır.
             const opt = (b) => this.db.personeller.filter(x => x.birim === b).map(p => {
-                const selected = this.selectedPs.includes(p.ad) ? ' selected' : '';
-                return `<option value="${p.ad}"${selected}>${p.ad} (${p.unvan})</option>`;
+                return `<option value="${p.ad}">${p.ad} (${p.unvan})</option>`;
             }).join('');
             
             if(document.getElementById('sel-g')) {
