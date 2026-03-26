@@ -20,11 +20,9 @@
       }
       * { box-sizing:border-box; font-family: 'Segoe UI', Inter, sans-serif; }
       
-      /* EKRAN MODU */
       body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); display:flex; justify-content:center; padding:20px; }
       .app { width:100%; max-width:1450px; }
       
-      /* --- ÖNEMLİ: Yazdırma alanı normal ekranda GÖRÜNMEZ --- */
       #print-area { display: none; }
 
       header { display:flex; justify-content:space-between; align-items:center; padding:15px; border-radius:18px; background:var(--card); box-shadow: var(--accent-glow); margin-bottom:20px; border: 1px solid var(--border); }
@@ -47,48 +45,29 @@
       .hidden { display: none !important; }
       footer { margin-top:20px; padding: 15px; border-top: 1px solid var(--border); color: var(--accent); font-weight: bold; }
       .filter-area { margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: center; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; }
-      .filter-area select, .filter-area input { width: auto; display: inline-block; margin: 0; }
       .task-filter { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; align-items: center; }
       
-      /* --- YAZDIRMA MODU (SAĞ ALT VE YUKARI ÇEKİLMİŞ HALİ) --- */
       @media print {
-        /* Uygulama ekranını tamamen yok et (Boş sayfa için) */
         .app { display: none !important; }
-        
-        /* Sayfa ayarlarını sıfırla */
         body { margin: 0 !important; padding: 0 !important; background-color: white !important; height: 100%; }
-
-        /* Yazdırma Alanını Göster ve SAĞ ALT KÖŞEYE Konumlandır */
         #print-area {
             display: block !important;
             position: fixed;
-            
             right: 20px; 
-            
-            /* GÜNCELLEME: 20px'den 70px'e çıkarıldı (Yukarı kalkması için) */
             bottom: 100px;
-            
             width: 350px; 
-            
             background-color: transparent !important;
             color: black !important;
             font-family: 'Arial', sans-serif;
             font-size: 8pt; 
             line-height: 1.2;
             z-index: 99999;
-            
-            /* Siyah Çerçeve */
             border: 1.5px solid #000;
             padding: 10px;
             border-radius: 0;
-            overflow: visible !important; /* Taşmayı önleme */
+            overflow: visible !important;
         }
-
-        #print-area * {
-            color: black !important;
-            visibility: visible !important;
-        }
-        
+        #print-area * { color: black !important; visibility: visible !important; }
         #print-area h1 { font-size: 9pt; margin: 0 0 5px 0; text-decoration: underline; font-weight: bold; text-align: left; }
         #print-area h2 { font-size: 7.5pt; margin: 0 0 5px 0; font-weight: normal; text-align: left; }
         #print-area .line { margin-bottom: 3px; }
@@ -141,6 +120,7 @@
             <div id="sync-status" style="font-size:10px; color:var(--accent); display:flex; align-items:center;">Veriler Güncel</div>
         </div>
 
+        <!-- Stats Section -->
         <div id="stats-section" class="card-section">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:15px;">
                 <h3 style="border:none; padding:0; margin:0;">📊 Personel Hakediş & Adalet Tablosu</h3>
@@ -169,6 +149,7 @@
             <table><thead><tr><th>Sicil</th><th>Ad Soyad</th><th>Ünvan</th><th>Mesai</th><th>Yolluk</th><th>Toplam</th></tr></thead><tbody id="stats-kim"></tbody></table>
         </div>
 
+        <!-- Personel Servisi Paneli -->
         <div id="ps-panel" class="card-section hidden" style="border: 1px solid var(--success);">
             <h3 style="color:var(--success); border-bottom:1px solid var(--success); padding-bottom:8px;">🏥 Personel İzin & Rapor Takibi</h3>
             <p style="font-size:11px; color:var(--muted)">Buradan girilen izinli/raporlu personellere, ilgili tarihlerde görev yazılamaz.</p>
@@ -188,6 +169,7 @@
             </table>
         </div>
 
+        <!-- Admin Section -->
         <div id="admin-section" class="hidden">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                 <div class="card-section">
@@ -203,7 +185,7 @@
                         <select id="p-unvan">
                             <option>Gümrük Memuru</option><option>Gümrük Muayene Memuru</option><option>Gümrük Muhafaza Memuru</option>
                             <option>Gümrük Şefi</option><option>Kısım Amiri</option><option>Bölge Amiri</option>
-                            <option>Gümrük Müdür Yardımcısı</option><option>Gümrük Müdürü</option><option>KİM Müdürü</option>
+                            <option>Gümrük Müdür Yardımcısı</option><option>Gümrük Müdürü</option><option>KİM Müdürü</option><option value="Diğer">Diğer</option>
                         </select>
                     </div>
                     <button class="btn btn-primary" style="width:100%" onclick="app.addPersonel()">YENİ PERSONEL EKLE</button>
@@ -245,6 +227,7 @@
             </div>
         </div>
 
+        <!-- Görevlendirme Formu -->
         <div id="record-section" class="card-section hidden">
             <h3 style="border-bottom:1px solid var(--border); padding-bottom:8px;">Görevlendirme Formu</h3>
             <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px;">
@@ -273,16 +256,31 @@
                 <div>
                     <label style="font-size:11px; color:var(--accent)">Beyanname / Karar / Referans No:</label>
                     <input type="text" id="task-no" placeholder="Evrak No Girin">
+                    
+                    <!-- Yeni Checkbox -->
+                    <div style="margin-top:12px;">
+                        <label style="font-size:11px; color:var(--accent); cursor:pointer;">
+                            <input type="checkbox" id="keep-selected" checked> 
+                            Görevi kaydettikten sonra seçili personelleri listede tut
+                        </label>
+                    </div>
+
                     <button class="btn btn-primary" style="width:100%; height:42px; margin-top:10px;" onclick="app.saveTask()">GÖREVİ KAYDET VE HAVALE ET</button>
                 </div>
             </div>
         </div>
 
+        <!-- İşlem Takip Listesi -->
         <div class="card-section" id="task-list-section">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:15px;">
-                <h3 style="border:none; padding:0; margin:0;">İşlem Takip Listesi</h3>
-                <button class="btn btn-primary" onclick="app.exportTaskListExcel()">LİSTEYİ EXCEL AKTAR</button>
-            </div>
+    <h3 style="border:none; padding:0; margin:0;">İşlem Takip Listesi</h3>
+    <div>
+        <button class="btn btn-primary" onclick="app.exportTaskListExcel()">LİSTEYİ EXCEL AKTAR</button>
+        <button class="btn btn-success" onclick="app.importEbysDekontExcel()" style="margin-left:8px;">
+            📥 EXCEL’DEN EBYS/DEKONT İÇE AKTAR
+        </button>
+    </div>
+</div>
             
             <div class="task-filter">
                 <input type="text" id="search-text" placeholder="Arama (Ad, Ref, Evrak No)" onkeyup="app.taskFilter.arama = this.value; app.render()">
@@ -290,9 +288,15 @@
                     <option value="">Tüm Durumlar</option>
                     <option>Taslak</option><option>Şef Onayında</option><option>Müdür Yrd. Onayında</option><option>Onaylandı</option><option>Reddedildi</option><option>Silme Talebinde</option>
                 </select>
+                
+                <!-- Hızlı Tarih Filtre Butonları -->
+                <button class="btn btn-warning" style="font-size:9px;" onclick="app.quickDateFilter('today')">BUGÜN</button>
+                <button class="btn btn-warning" style="font-size:9px;" onclick="app.quickDateFilter('week')">BU HAFTA</button>
+                <button class="btn btn-warning" style="font-size:9px;" onclick="app.quickDateFilter('month')">BU AY</button>
+                
                 <input type="month" id="tarih-baslangic" onchange="app.taskFilter.baslangic = this.value; app.render()">
                 <input type="month" id="tarih-bitis" onchange="app.taskFilter.bitis = this.value; app.render()">
-                <button class="btn btn-warning" style="font-size:9px;" onclick="app.taskFilter = {arama:'', durum:'', baslangic:'', bitis:''}; document.getElementById('search-text').value=''; document.getElementById('durum-filter').value=''; document.getElementById('tarih-baslangic').value=''; document.getElementById('tarih-bitis').value=''; app.render()">FİLTREYİ TEMİZLE</button>
+                <button class="btn btn-warning" style="font-size:9px;" onclick="app.clearAllFilters()">FİLTREYİ TEMİZLE</button>
             </div>
             <table>
                 <thead><tr><th>Referans</th><th>Evrak No</th><th>Görevliler</th><th>Tutar Detayı ("Yardır")</th><th>Durum</th><th>EBYS</th><th>Dekont</th><th>İşlem</th></tr></thead>
@@ -303,14 +307,13 @@
     </div>
 
     <footer>
-    <a href="https://www.linkedin.com/in/serhansaygin/" target="_blank" style="color: var(--accent); text-decoration: none;">
-        Serhan SAYGIN — Gümrük Memuru
-    </a>
-</footer>
+        <a href="https://www.linkedin.com/in/serhansaygin/" target="_blank" style="color: var(--accent); text-decoration: none;">
+            Serhan SAYGIN — Gümrük Memuru
+        </a>
+    </footer>
 
   <script>
     const app = {
-        // Veritabanı bağlantısı ve eski verilerin korunması
         db: JSON.parse(localStorage.getItem('gumruk_final_v60')) || {
             accounts: [
                 {rol: "Admin", user: "Admin", pass: "admin123"},
@@ -327,7 +330,15 @@
         selectedPs: [],
         seciliAy: null,
         taskFilter: {arama: '', durum: '', baslangic: '', bitis: ''},
-        unvanlar: ["Gümrük Memuru", "Gümrük Muayene Memuru", "Gümrük Muhafaza Memuru", "Gümrük Şefi", "Kısım Amiri", "Bölge Amiri", "Gümrük Müdür Yardımcısı", "Gümrük Müdürü", "KİM Müdürü"],
+        keepSelectedAfterSave: true,   // Yeni eklenen değişken
+        unvanlar: ["Gümrük Memuru", "Gümrük Muayene Memuru", "Gümrük Muhafaza Memuru", "Gümrük Şefi", "Kısım Amiri", "Bölge Amiri", "Gümrük Müdür Yardımcısı", "Gümrük Müdürü", "KİM Müdürü", "Diğer"],
+
+        // ====================== YENİ: Personelleri Alfabetik Sıralama ======================
+        sortPersoneller() {
+            if (this.db.personeller) {
+                this.db.personeller.sort((a, b) => a.ad.localeCompare(b.ad, 'tr'));
+            }
+        },
 
         checkSession() {
             const current = localStorage.getItem('currentUser');
@@ -337,54 +348,7 @@
                 document.getElementById('panel-content').classList.remove('hidden');
                 document.getElementById('user-display').innerText = `Yetkili: ${this.user.user} (${this.user.rol})`;
 
-                // Rol kontrolleri
                 const r = this.user.rol;
-                document.getElementById('admin-section').classList.add('hidden');
-                document.getElementById('admin-toggle-area').classList.add('hidden');
-                document.getElementById('record-section').classList.add('hidden');
-                document.getElementById('task-list-section').classList.add('hidden');
-                document.getElementById('stats-section').classList.add('hidden');
-                document.getElementById('ps-panel').classList.add('hidden');
-
-                if(r === 'Admin') {
-                    document.getElementById('admin-section').classList.remove('hidden');
-                    document.getElementById('admin-toggle-area').classList.remove('hidden');
-                    document.getElementById('record-section').classList.remove('hidden');
-                    document.getElementById('task-list-section').classList.remove('hidden');
-                    document.getElementById('stats-section').classList.remove('hidden');
-                    document.getElementById('ps-panel').classList.remove('hidden');
-                } 
-                else if (r === 'Personel Servisi') {
-                    document.getElementById('ps-panel').classList.remove('hidden');
-                }
-                else {
-                    document.getElementById('record-section').classList.remove('hidden');
-                    document.getElementById('task-list-section').classList.remove('hidden');
-                    document.getElementById('stats-section').classList.remove('hidden');
-                }
-
-                if(r === 'Gümrük Müdürü') document.getElementById('admin-section').classList.add('hidden');
-
-                this.loadFromCloud(); // Veri çek
-                this.startAutoSync(); // Otomatik sync başla
-            }
-            this.render();
-        },
-
-        login() {
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            const acc = this.db.accounts.find(x => x.user === u && x.pass === p);
-            if(acc) {
-                this.user = acc;
-                localStorage.setItem('currentUser', JSON.stringify(this.user));
-
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('panel-content').classList.remove('hidden');
-                document.getElementById('user-display').innerText = `Yetkili: ${acc.user} (${acc.rol})`;
-
-                // Rol kontrolleri
-                const r = acc.rol;
                 document.getElementById('admin-section').classList.add('hidden');
                 document.getElementById('admin-toggle-area').classList.add('hidden');
                 document.getElementById('record-section').classList.add('hidden');
@@ -413,9 +377,108 @@
 
                 this.loadFromCloud();
                 this.startAutoSync();
+
+                // Girişte varsayılan olarak BUGÜN filtresi uygula
+                this.applyDefaultTodayFilter();
+            }
+            this.render();
+        },
+
+        login() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const acc = this.db.accounts.find(x => x.user === u && x.pass === p);
+            if(acc) {
+                this.user = acc;
+                localStorage.setItem('currentUser', JSON.stringify(this.user));
+
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('panel-content').classList.remove('hidden');
+                document.getElementById('user-display').innerText = `Yetkili: ${acc.user} (${acc.rol})`;
+
+                const r = acc.rol;
+                // Rol kontrolleri (aynı kod)
+                document.getElementById('admin-section').classList.add('hidden');
+                document.getElementById('admin-toggle-area').classList.add('hidden');
+                document.getElementById('record-section').classList.add('hidden');
+                document.getElementById('task-list-section').classList.add('hidden');
+                document.getElementById('stats-section').classList.add('hidden');
+                document.getElementById('ps-panel').classList.add('hidden');
+
+                if(r === 'Admin') {
+                    document.getElementById('admin-section').classList.remove('hidden');
+                    document.getElementById('admin-toggle-area').classList.remove('hidden');
+                    document.getElementById('record-section').classList.remove('hidden');
+                    document.getElementById('task-list-section').classList.remove('hidden');
+                    document.getElementById('stats-section').classList.remove('hidden');
+                    document.getElementById('ps-panel').classList.remove('hidden');
+                } 
+                else if (r === 'Personel Servisi') {
+                    document.getElementById('ps-panel').classList.remove('hidden');
+                }
+                else {
+                    document.getElementById('record-section').classList.remove('hidden');
+                    document.getElementById('task-list-section').classList.remove('hidden');
+                    document.getElementById('stats-section').classList.remove('hidden');
+                }
+
+                if(r === 'Gümrük Müdürü') document.getElementById('admin-section').classList.add('hidden');
+
+                this.loadFromCloud();
+                this.startAutoSync();
+
+                // Girişte varsayılan BUGÜN filtresi
+                this.applyDefaultTodayFilter();
             } else {
                 alert("Hatalı kullanıcı adı veya şifre!");
             }
+            this.render();
+        },
+
+        // ====================== YENİ: Hızlı Tarih Filtreleri ======================
+        quickDateFilter(type) {
+            const now = new Date();
+            let startStr = '', endStr = '';
+
+            if (type === 'today') {
+                const today = now.toISOString().slice(0,7); // YYYY-MM
+                startStr = today;
+                endStr = today;
+            } 
+            else if (type === 'week') {
+                const startOfWeek = new Date(now);
+                startOfWeek.setDate(now.getDate() - now.getDay() + 1); // Pazartesi başlangıç
+                startStr = startOfWeek.toISOString().slice(0,7);
+                endStr = now.toISOString().slice(0,7);
+            } 
+            else if (type === 'month') {
+                startStr = now.toISOString().slice(0,7);
+                endStr = startStr;
+            }
+
+            this.taskFilter.baslangic = startStr;
+            this.taskFilter.bitis = endStr;
+            
+            // Inputlara da yansıt
+            document.getElementById('tarih-baslangic').value = startStr;
+            document.getElementById('tarih-bitis').value = endStr;
+            
+            this.render();
+        },
+
+        applyDefaultTodayFilter() {
+            const now = new Date().toISOString().slice(0,7);
+            this.taskFilter = {arama: '', durum: '', baslangic: now, bitis: now};
+            document.getElementById('tarih-baslangic').value = now;
+            document.getElementById('tarih-bitis').value = now;
+        },
+
+        clearAllFilters() {
+            this.taskFilter = {arama: '', durum: '', baslangic: '', bitis: ''};
+            document.getElementById('search-text').value = '';
+            document.getElementById('durum-filter').value = '';
+            document.getElementById('tarih-baslangic').value = '';
+            document.getElementById('tarih-bitis').value = '';
             this.render();
         },
 
@@ -431,16 +494,12 @@
             }
         },
 
-        // --- GÜNCELLENEN KOD: CTRL'SİZ ÇOKLU SEÇİM ---
         selectMultiple(select) {
             Array.from(select.options).forEach(opt => {
-                // Eğer seçenek tıklandıysa (selected=true) ve zaten listede yoksa EKLE
                 if(opt.selected && !this.selectedPs.includes(opt.value)) {
                     this.selectedPs.push(opt.value);
                 }
             });
-            // Listeyi temizleyip yeniden çizdiriyoruz, böylece seçim işareti kalkıyor
-            // ama kişi "Selected List" kutusuna eklenmiş oluyor.
             this.render();
         },
 
@@ -451,13 +510,14 @@
             const unvan = document.getElementById('p-unvan').value;
             if(sicil && ad && birim && unvan) {
                 this.db.personeller.push({sicil, ad, birim, unvan});
+                this.sortPersoneller();   // Alfabetik sırala
                 this.save();
                 document.getElementById('p-sicil').value = '';
                 document.getElementById('p-ad').value = '';
             } else alert("Tüm alanlar doldurulmalı!");
         },
 
-        addYolluk() {
+        addYolluk() { /* aynı */ 
             const ad = document.getElementById('y-ad').value;
             const tutar = parseFloat(document.getElementById('y-tutar').value);
             const tip = document.getElementById('y-tip').value;
@@ -469,7 +529,7 @@
             } else alert("Ad ve Tutar girilmelidir!");
         },
 
-        addAccount() {
+        addAccount() { /* aynı */ 
             const user = document.getElementById('acc-user').value;
             const pass = document.getElementById('acc-pass').value;
             const rol = document.getElementById('acc-rol').value;
@@ -496,7 +556,7 @@
             }
         },
 
-        addLeave() {
+        addLeave() { /* aynı */ 
             const p = document.getElementById('ps-personel-select').value;
             const bas = document.getElementById('ps-baslangic').value;
             const bit = document.getElementById('ps-bitis').value;
@@ -522,7 +582,7 @@
             return this.db.izinler.find(i => i.personel === personel && today >= i.baslangic && today <= i.bitis);
         },
 
-        generateRef() {
+        generateRef() { /* aynı */ 
             const d = new Date();
             const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             const prefix = `GM-${dateStr}/`; 
@@ -536,12 +596,14 @@
             return prefix + (maxSeq + 1); 
         },
 
+        // ====================== YENİ: saveTask() - Checkbox Kontrolü ======================
         saveTask() {
             const selTypes = Array.from(document.getElementById('task-types').selectedOptions).map(o => this.db.yolluklar[o.value]);
             const manualTutar = parseFloat(document.getElementById('manual-tutar').value) || 0;
             const manualTip = document.getElementById('manual-tip').value;
 
-            if(this.selectedPs.length === 0 || (selTypes.length === 0 && manualTutar === 0)) return alert("Hata: Personel ve en az bir ücret girilmelidir!");
+            if(this.selectedPs.length === 0 || (selTypes.length === 0 && manualTutar === 0)) 
+                return alert("Hata: Personel ve en az bir ücret girilmelidir!");
             
             for (let p of this.selectedPs) {
                 const conflict = this.checkConflict(p);
@@ -585,12 +647,18 @@
                 tarih: ayStr
             });
             
-            this.selectedPs = [];
+            // Checkbox kontrolü
+            this.keepSelectedAfterSave = document.getElementById('keep-selected').checked;
+            
+            if (!this.keepSelectedAfterSave) {
+                this.selectedPs = [];
+            }
+            
             document.getElementById('manual-tutar').value = "";
             this.save();
         },
 
-        deleteTask(ref) {
+        deleteTask(ref) { /* aynı */ 
             if(confirm("Bu işlem geri alınamaz. Kaydı silmek istediğinize emin misiniz?")) {
                 this.db.kayitlar = this.db.kayitlar.filter(x => String(x.ref) !== String(ref));
                 this.save();
@@ -602,11 +670,9 @@
             this.save(); 
         },
 
-        // DÜZELTME: Mükerrer Dekont Kontrolü
-        updateExtra(ref, key) {
+        updateExtra(ref, key) { /* aynı */ 
             const v = prompt(`${key} No Giriniz:`);
             if(v) { 
-                // Dekont ise mükerrer kontrolü yap
                 if(key === 'Dekont') {
                     const mevcut = this.db.kayitlar.find(k => k.dekont === v && k.ref !== ref);
                     if(mevcut) {
@@ -614,14 +680,12 @@
                         return;
                     }
                 }
-                
                 this.db.kayitlar.find(x=>x.ref===ref)[key.toLowerCase()] = v; 
                 this.save(); 
             }
         },
 
-        // --- DÜZELTME: YAZDIRMA FONKSİYONU GÜNCELLENDİ (Sağ Alt & Küçük Punto) ---
-        printDoc(ref) {
+        printDoc(ref) { /* aynı */ 
             const l = this.db.kayitlar.find(x => x.ref === ref);
             const area = document.getElementById('print-area');
             const m = l.mTotal || l.toplamMesai;
@@ -640,7 +704,6 @@
                  `;
             }
 
-            // İçeriği Doldur (CSS ile Sağ alta itilecek)
             area.innerHTML = `
                 <h1>GÖREV VE TAHAKKUK FORMU</h1>
                 <h2>REF: ${l.ref}</h2>
@@ -656,7 +719,6 @@
                 <div class="line" style="margin-top:3px; font-size:6pt;">${new Date().toLocaleDateString('tr-TR')}</div>
             `;
 
-            // Yazdırma komutu
             setTimeout(() => window.print(), 100);
         },
 
@@ -674,7 +736,6 @@
         save() { 
             localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db)); 
             this.render(); 
-            // Bulut Yedekleme 
             const scriptURL = 'https://script.google.com/macros/s/AKfycbxn2ZWZKfpqRwF1RItRIjXc9jpkhlKtfV_kPp8_foSp8zQq9tx7bVhydYx3f6alfD2o/exec';            
             fetch(scriptURL, {
                 method: 'POST',
@@ -688,9 +749,9 @@
             }).then(r=>r.json()).then(d=>console.log("Bulut OK", d)).catch(e=>console.log("Bulut Err", e));
         },
 
-        loadFromCloud() {
+        loadFromCloud() { /* aynı */ 
             const scriptURL = 'https://script.google.com/macros/s/AKfycbxn2ZWZKfpqRwF1RItRIjXc9jpkhlKtfV_kPp8_foSp8zQq9tx7bVhydYx3f6alfD2o/exec';
-            document.getElementById('sync-status').innerText = "Veri Çekiliyor..."; // Durum bildir
+            document.getElementById('sync-status').innerText = "Veri Çekiliyor...";
             
             fetch(scriptURL).then(res => res.text()).then(data => {
                 if (data && data.trim() !== "" && data !== "null") {
@@ -699,6 +760,7 @@
                         if (cloudData && Array.isArray(cloudData.kayitlar)) {
                             this.db = cloudData;
                             localStorage.setItem('gumruk_final_v60', data);
+                            this.sortPersoneller(); // Bulut verisi geldiğinde de sırala
                             this.render();
                             document.getElementById('sync-status').innerText = "Bulut Senkronize ✔ (" + new Date().toLocaleTimeString() + ")";
                         }
@@ -707,20 +769,17 @@
             });
         },
         
-        // Otomatik Senkronizasyon (Real-time etkisi için)
         startAutoSync() {
-            // Her 10 saniyede bir arkadan veriyi kontrol et
             if(this.syncInterval) clearInterval(this.syncInterval);
             this.syncInterval = setInterval(() => {
-                if(this.user) {
-                    this.loadFromCloud();
-                }
-            }, 10000); // 10 Saniye
+                if(this.user) this.loadFromCloud();
+            }, 10000);
         },
 
         render() {
-            // --- GÜNCELLENEN KISIM: selected attirubute'ü KALDIRILDI ---
-            // Böylece liste her zaman "Tıklanabilir" buton gibi davranır.
+            // ------------------- PERSONEL SIRALAMA -------------------
+            this.sortPersoneller();
+
             const opt = (b) => this.db.personeller.filter(x => x.birim === b).map(p => {
                 return `<option value="${p.ad}">${p.ad} (${p.unvan})</option>`;
             }).join('');
@@ -761,6 +820,7 @@
                 `).join('') : '<tr><td colspan="5" style="text-align:center; color:#666;">Aktif izin/rapor kaydı yok.</td></tr>';
             }
 
+            // Hakediş hesaplamaları (değişmedi)
             const hedefAy = this.seciliAy || this.mevcutAy();
             let ayinToplamYollugu = 0;
             let ayinToplamMesaisi = 0;
@@ -840,7 +900,6 @@
             document.getElementById('main-list').innerHTML = filtered.map(l => {
                 let btns = "";
                 const r = this.user.rol;
-                const isAdmin = (r === 'Admin');
                 const isTamYetkili = ['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(r);
                 const isMemur = (r === 'Gümrük Memuru' || r === 'Gümrük Şefi');
                 
@@ -877,7 +936,7 @@
             }).join('');
         },
 
-        exportSummaryExcel() {
+        exportSummaryExcel() { /* aynı */ 
             const hedefAy = this.seciliAy || this.mevcutAy();
             const hakedisVerisi = this.db.personeller.map(p => {
                 let m = 0, y = 0;
@@ -902,24 +961,105 @@
                 "Birim": p.birim, "Sicil": p.sicil, "Ad Soyad": p.ad, "Unvan": p.unvan,
                 "Toplam Yolluk": p.yolluk.toFixed(2), "Toplam Mesai": p.mesai.toFixed(2), "Genel Toplam": p.toplam.toFixed(2)
             }));
-            const ws = XLSX.utils.json_to_sheet(excelData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Ozet_Hakedis"); XLSX.writeFile(wb, `Ozet_Hakedis_${hedefAy}.xlsx`);
+            const ws = XLSX.utils.json_to_sheet(excelData); 
+            const wb = XLSX.utils.book_new(); 
+            XLSX.utils.book_append_sheet(wb, ws, "Ozet_Hakedis"); 
+            XLSX.writeFile(wb, `Ozet_Hakedis_${hedefAy}.xlsx`);
         },
 
-        exportTaskListExcel() {
+  exportTaskListExcel() { /* aynı */ 
             const data = this.db.kayitlar.map(k => ({
                 "Referans": k.ref, "Evrak No": k.no, "Personeller": k.personeller.join(", "),
                 "Yolluk Tutarı": (k.yTotal || k.toplamYolluk), "Mesai Tutarı": (k.mTotal || k.toplamMesai),
                 "Genel Toplam": ((k.yTotal || k.toplamYolluk) + (k.mTotal || k.toplamMesai)), "Durum": k.durum,
                 "EBYS": k.ebys, "Dekont": k.dekont, "Tarih": k.tarih
             }));
-            const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Gorev_Listesi"); XLSX.writeFile(wb, "Detayli_Gorev_Listesi.xlsx");
+            const ws = XLSX.utils.json_to_sheet(data); 
+            const wb = XLSX.utils.book_new(); 
+            XLSX.utils.book_append_sheet(wb, ws, "Gorev_Listesi"); 
+            XLSX.writeFile(wb, "Detayli_Gorev_Listesi.xlsx");
+        },
+
+        // ====================== YENİ: TOPLU EBYS / DEKONT İÇE AKTAR ======================
+        importEbysDekontExcel() {
+            if (!confirm('Excel dosyasından EBYS ve Dekont numaralarını toplu güncellemek istiyor musunuz?\n\nDosya formatı:\n- 1. sütun: Referans (veya Ref)\n- 2. sütun: EBYS\n- 3. sütun: Dekont')) {
+                return;
+            }
+
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx,.xls';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    try {
+                        const data = new Uint8Array(ev.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                        if (rows.length < 2) return alert("Excel dosyası boş veya geçersiz!");
+
+                        // Başlık satırını bul
+                        const header = rows[0].map(h => (h || "").toString().toLowerCase().trim());
+                        const refIndex = header.findIndex(h => h.includes("ref") || h.includes("referans"));
+                        const ebysIndex = header.findIndex(h => h.includes("ebys"));
+                        const dekontIndex = header.findIndex(h => h.includes("dekont"));
+
+                        if (refIndex === -1 || ebysIndex === -1 || dekontIndex === -1) {
+                            return alert("Excel’de sütun başlıkları bulunamadı!\n\nLütfen sütun başlıklarında 'Referans', 'EBYS' ve 'Dekont' kelimeleri olsun.");
+                        }
+
+                        let updated = 0;
+                        let notFound = 0;
+
+                        // 1. satır başlıktır, 2. satırdan itibaren oku
+                        for (let i = 1; i < rows.length; i++) {
+                            const row = rows[i];
+                            const ref = (row[refIndex] || "").toString().trim();
+                            if (!ref) continue;
+
+                            const ebys = (row[ebysIndex] || "").toString().trim();
+                            const dekont = (row[dekontIndex] || "").toString().trim();
+
+                            const record = this.db.kayitlar.find(k => k.ref === ref || String(k.ref) === ref);
+
+                            if (record) {
+                                // Sadece "Onaylandı" durumundakileri güncelle
+                                if (record.durum === "Onaylandı") {
+                                    record.ebys = ebys;
+                                    record.dekont = dekont;
+                                    updated++;
+                                }
+                            } else {
+                                notFound++;
+                            }
+                        }
+
+                        this.save(); // tek seferde buluta ve localStorage’a yaz
+
+                        let msg = `${updated} kayıt başarıyla güncellendi.`;
+                        if (notFound > 0) msg += `\n${notFound} referans numaralı kayıt bulunamadı.`;
+                        alert(msg);
+
+                        this.render();
+                    } catch (err) {
+                        console.error(err);
+                        alert("Excel okuma hatası: " + err.message);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            };
+            input.click();
         }
+
     };
 
     app.checkSession();
-    // Otomatik sync başlatıcı
     app.startAutoSync();
   </script>
 </body>
 </html>
-
