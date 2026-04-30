@@ -39,15 +39,15 @@
       .btn-warning { background: var(--warning); color: #000; }
       .btn-success { background: var(--success); color: #000; }
       table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-      th { text-align: left; color: var(--accent); border-bottom: 1px solid var(--border); padding: 10px; font-size: 12px; cursor: pointer; }
-      td { padding: 10px; border-bottom: 1px solid var(--border); font-size: 11px; vertical-align: middle; }
+      th { text-align: left; color: var(--accent); border-bottom: 1px solid var(--border); padding: 9px 6px; font-size: 12px; }
+      td { padding: 9px 6px; border-bottom: 1px solid var(--border); font-size: 11px; vertical-align: middle; }
       .tag { background: rgba(0,246,210,0.1); color: var(--accent); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--accent); margin: 3px; font-size: 10px; display: inline-flex; align-items:center; gap:5px; }
       .hidden { display: none !important; }
       .pasif { opacity:0.45; text-decoration:line-through; }
       footer { margin-top:20px; padding: 15px; border-top: 1px solid var(--border); color: var(--accent); font-weight: bold; }
       .filter-area { margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: center; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; }
       .task-filter { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; align-items: center; }
-      
+
       @media print {
         .app { display: none !important; }
         body { margin: 0 !important; padding: 0 !important; background-color: white !important; height: 100%; }
@@ -74,6 +74,46 @@
         #print-area .line { margin-bottom: 3px; }
         #print-area .bold { font-weight: bold; }
       }
+      /* DÜZELTİLMİŞ TABLO STİLİ */
+      .hakedis-table { 
+        width: 100%; 
+        table-layout: fixed; 
+        border-collapse: collapse;
+      }
+      .birim-header { 
+        font-size: 14px; 
+        font-weight: bold; 
+        color: var(--accent); 
+        text-align: center; 
+        padding: 10px 8px; 
+        background: rgba(0,246,210,0.08); 
+        border-bottom: 2px solid var(--accent); 
+      }
+      .hakedis-table th, .hakedis-table td {
+        padding: 9px 6px;
+        border-right: 1px solid var(--border);
+      }
+      .hakedis-table th:last-child, .hakedis-table td:last-child { 
+        border-right: none; 
+      }
+      /* Birimler arası kalın ayırıcı */
+      .hakedis-table th:nth-child(4n), .hakedis-table td:nth-child(4n) {
+        border-right: 3px solid var(--accent);
+      }
+
+      /* Sütun genişlikleri - Sicil dar ve sola yaslı */
+      .hakedis-table colgroup col:nth-child(4n-3) { width: 7%; }   /* Sicil */
+      .hakedis-table colgroup col:nth-child(4n-2) { width: 23%; }  /* Ad Soyad */
+      .hakedis-table colgroup col:nth-child(4n-1) { width: 26%; }  /* Ünvan */
+      .hakedis-table colgroup col:nth-child(4n)   { width: 14%; }  /* Tutar */
+
+      .hakedis-table td { 
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+      }
+      .sicil-cell { text-align: left; }
+      .tutar-cell { text-align: right; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -139,15 +179,28 @@
                     <option value="isim-az">🔤 İsim: A-Z</option>
                 </select>
 
+                <label style="color:var(--accent); margin-left:15px;">Gösterim:</label>
+                <select id="gosterim-filtre" onchange="app.gosterimMod = this.value; app.render()" style="width:130px;">
+                    <option value="yolluk" selected>💰 Yolluk</option>
+                    <option value="mesai">⏰ Mesai</option>
+                    <option value="toplam">📊 Toplam</option>
+                </select>
+
                 <div id="month-totals" style="margin-left:15px; font-size:11px; background:rgba(255,255,255,0.05); padding:5px 10px; border-radius:6px; border:1px solid var(--border);"></div>
             </div>
             
-            <h4>GÜMRÜK</h4>
-            <table><thead><tr><th>Sicil</th><th>Ad Soyad</th><th>Ünvan</th><th>Mesai</th><th>Yolluk</th><th>Toplam</th></tr></thead><tbody id="stats-gumruk"></tbody></table>
-            <h4>MUHAFAZA</h4>
-            <table><thead><tr><th>Sicil</th><th>Ad Soyad</th><th>Ünvan</th><th>Mesai</th><th>Yolluk</th><th>Toplam</th></tr></thead><tbody id="stats-muhafaza"></tbody></table>
-            <h4>KİM</h4>
-            <table><thead><tr><th>Sicil</th><th>Ad Soyad</th><th>Ünvan</th><th>Mesai</th><th>Yolluk</th><th>Toplam</th></tr></thead><tbody id="stats-kim"></tbody></table>
+            <table class="hakedis-table" id="hakedis-table">
+                <colgroup>
+                    <!-- Gümrük -->
+                    <col><col><col><col>
+                    <!-- Muhafaza -->
+                    <col><col><col><col>
+                    <!-- KİM -->
+                    <col><col><col><col>
+                </colgroup>
+                <thead id="hakedis-thead"></thead>
+                <tbody id="hakedis-tbody"></tbody>
+            </table>
         </div>
 
         <!-- Personel Servisi Paneli -->
@@ -163,7 +216,10 @@
                 <button class="btn btn-success" onclick="app.addLeave()">KAYDET</button>
             </div>
 
-            <h4 style="margin-top:20px;">AKTİF İZİN/RAPOR LİSTESİ</h4>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin:15px 0 10px 0;">
+                <h4>AKTİF İZİN/RAPOR LİSTESİ</h4>
+                <button class="btn btn-primary" onclick="app.exportLeavesExcel()">İzinleri Excel’e Aktar</button>
+            </div>
             <table>
                 <thead><tr><th>Personel</th><th>Başlangıç</th><th>Bitiş</th><th>Tür</th><th>İşlem</th></tr></thead>
                 <tbody id="leave-list-body"></tbody>
@@ -172,6 +228,14 @@
 
         <!-- Admin Section -->
         <div id="admin-section" class="hidden">
+            <div class="card-section" style="grid-column: span 2; border: 1px solid var(--warning);">
+    <h3 style="border-bottom:1px solid var(--warning); padding-bottom:8px; color:var(--warning)">⚙️ Dinamik Yolluk Sınırı Ayarı</h3>
+    <div style="display:flex; gap:10px; margin-top:10px; align-items:center;">
+        <label style="font-size:12px;">Aylık Yasal Yolluk Üst Limiti (TL):</label>
+        <input type="number" id="sys-yolluk-limit" style="width:150px; text-align:center;">
+        <button class="btn btn-warning" onclick="app.updateYollukLimit()">SİSTEME KAYDET</button>
+    </div>
+</div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                 <div class="card-section">
                     <h3 style="border-bottom:1px solid var(--border); padding-bottom:8px;">Personel Kayıt & Düzenleme</h3>
@@ -302,8 +366,8 @@
                 <button class="btn btn-warning" style="font-size:9px;" onclick="app.quickDateFilter('week')">BU HAFTA</button>
                 <button class="btn btn-warning" style="font-size:9px;" onclick="app.quickDateFilter('month')">BU AY</button>
                 
-                <input type="month" id="tarih-baslangic" onchange="app.taskFilter.baslangic = this.value; app.render()">
-                <input type="month" id="tarih-bitis" onchange="app.taskFilter.bitis = this.value; app.render()">
+                <input type="date" id="tarih-baslangic" onchange="app.taskFilter.baslangic = this.value; app.render()">
+                <input type="date" id="tarih-bitis" onchange="app.taskFilter.bitis = this.value; app.render()">
                 <button class="btn btn-warning" style="font-size:9px;" onclick="app.clearAllFilters()">FİLTREYİ TEMİZLE</button>
             </div>
             <table>
@@ -323,6 +387,14 @@
 
   <script>
     const app = {
+    updateYollukLimit() {
+            const val = parseFloat(document.getElementById('sys-yolluk-limit').value);
+            if(val && val > 0) {
+                this.db.yollukSiniri = val;
+                this.save();
+                alert("Aylık Yolluk Sınırı başarıyla " + val + " TL olarak güncellendi! Tüm geçmiş ve gelecek hesaplamalar bu yeni limite göre uyarlandı.");
+            }
+        },
         db: JSON.parse(localStorage.getItem('gumruk_final_v60')) || {
             accounts: [
                 {rol: "Admin", user: "Admin", pass: "admin123"},
@@ -338,6 +410,7 @@
         user: null,
         selectedPs: [],
         seciliAy: null,
+        gosterimMod: 'yolluk',
         taskFilter: {arama: '', durum: '', baslangic: '', bitis: ''},
         keepSelectedAfterSave: true,
         unvanlar: ["Gümrük Memuru", "Gümrük Muayene Memuru", "Gümrük Muhafaza Memuru", "Gümrük Şefi", "Kısım Amiri", "Bölge Amiri", "Gümrük Müdür Yardımcısı", "Gümrük Müdürü", "KİM Müdürü", "Diğer"],
@@ -442,20 +515,30 @@
             const now = new Date();
             let startStr = '', endStr = '';
 
+            // Tarihi YYYY-MM-DD formatına çeviren küçük yardımcı
+            const formatDate = (d) => {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
+            };
+
             if (type === 'today') {
-                const today = now.toISOString().slice(0,7);
-                startStr = today;
-                endStr = today;
+                startStr = formatDate(now);
+                endStr = formatDate(now);
             } 
             else if (type === 'week') {
                 const startOfWeek = new Date(now);
-                startOfWeek.setDate(now.getDate() - now.getDay() + 1);
-                startStr = startOfWeek.toISOString().slice(0,7);
-                endStr = now.toISOString().slice(0,7);
+                // Haftanın başını Pazartesi olarak ayarla
+                startOfWeek.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1)); 
+                startStr = formatDate(startOfWeek);
+                endStr = formatDate(now);
             } 
             else if (type === 'month') {
-                startStr = now.toISOString().slice(0,7);
-                endStr = startStr;
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                startStr = formatDate(startOfMonth);
+                endStr = formatDate(endOfMonth);
             }
 
             this.taskFilter.baslangic = startStr;
@@ -466,10 +549,8 @@
         },
 
         applyDefaultTodayFilter() {
-            const now = new Date().toISOString().slice(0,7);
-            this.taskFilter = {arama: '', durum: '', baslangic: now, bitis: now};
-            document.getElementById('tarih-baslangic').value = now;
-            document.getElementById('tarih-bitis').value = now;
+            // Sistem açıldığında varsayılan olarak "Bu Ay" filtresini uygular
+            this.quickDateFilter('month');
         },
 
         clearAllFilters() {
@@ -502,7 +583,6 @@
             this.render();
         },
 
-        // ====================== GÜNCELLENEN addPersonel ======================
         addPersonel() {
             const sicil = document.getElementById('p-sicil').value.trim();
             const ad = document.getElementById('p-ad').value.trim();
@@ -735,9 +815,28 @@
         },
 
         mevcutAylar() {
-            const aylar = [...new Set(this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih).map(k => k.tarih))];
-            aylar.sort((a,b) => b.localeCompare(a));
-            return aylar.length > 0 ? aylar : [this.mevcutAy()];
+            let aylar = [...new Set(this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih).map(k => k.tarih))];
+            
+            // İçinde bulunduğumuz ayı listeye mutlaka ekle
+            const guncelAy = this.mevcutAy();
+            if (!aylar.includes(guncelAy)) aylar.push(guncelAy);
+            
+            // Devreden bakiyeleri görebilmek için, listedeki en son ayın "BİR SONRAKİ" ayını (Örn: Nisan ise Mayıs'ı) ekle
+            aylar.sort((a, b) => b.localeCompare(a)); // Yeniden eskiye sırala
+            const enSonAy = aylar[0]; 
+            
+            if (enSonAy) {
+                let [y, m] = enSonAy.split('-').map(Number);
+                m++; // Ayı 1 artır
+                if (m > 12) { m = 1; y++; } // Aralık'tan Ocak'a (yeni yıla) geçiş kontrolü
+                const sonrakiAy = `${y}-${String(m).padStart(2, '0')}`;
+                
+                if (!aylar.includes(sonrakiAy)) aylar.push(sonrakiAy);
+            }
+
+            // Sonuçları Yeniden Eskiye (Aşağı doğru geçmişe) sırala
+            aylar.sort((a, b) => b.localeCompare(a));
+            return aylar;
         },
 
         save() { 
@@ -786,7 +885,11 @@
         render() {
             this.sortPersoneller();
 
-            // Sadece AKTİF personeller kullanılsın
+            this.gosterimMod = this.gosterimMod || 'yolluk';
+            if(document.getElementById('gosterim-filtre')) {
+                document.getElementById('gosterim-filtre').value = this.gosterimMod;
+            }
+
             const aktifPersoneller = this.db.personeller.filter(p => p.aktif === true);
 
             const opt = (b) => aktifPersoneller.filter(x => x.birim === b).map(p => {
@@ -829,24 +932,123 @@
                 `).join('') : '<tr><td colspan="5" style="text-align:center; color:#666;">Aktif izin/rapor kaydı yok.</td></tr>';
             }
 
-            const hedefAy = this.seciliAy || this.mevcutAy();
+         const hedefAy = this.seciliAy || this.mevcutAy();
             let ayinToplamYollugu = 0;
             let ayinToplamMesaisi = 0;
 
+            if(document.getElementById('sys-yolluk-limit')) {
+                document.getElementById('sys-yolluk-limit').value = this.db.yollukSiniri || 50600;
+            }
+
+            // 1. Tüm onaylı kayıtları ESKİDEN YENİYE sırala (Kronolojik devir hesaplaması için şart)
+            const onayliKayitlar = this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih).sort((a,b) => {
+                if(a.tarih !== b.tarih) return a.tarih.localeCompare(b.tarih);
+                return a.ref.localeCompare(b.ref); // Aynı aysa referans sırasına göre
+            });
+            
+            // Sistem yolluk sınırı (Admin belirlemediyse varsayılan 50600)
+            const yollukLimit = this.db.yollukSiniri ? parseFloat(this.db.yollukSiniri) : 50600;
+
             const hakedisVerisi = aktifPersoneller.map(p => {
-                let m = 0, y = 0;
-                this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih === hedefAy).forEach(k => {
-                    if (k.personeller.includes(p.ad)) {
-                        m += (k.mTotal || k.toplamMesai) / k.personelSayisi;
-                        y += (k.yTotal || k.toplamYolluk) / k.personelSayisi;
+                let m = 0; // Hedef ay mesai
+                let devredenYollukHavuzu = []; // Geçmiş aylardan kalan cüzdan: {ref, tutar, ay}
+                
+                // Sistemin ilk gününden hedef aya kadar sırayla zamanı ileri sarıp simüle ediyoruz
+                let tumAylar = [...new Set(onayliKayitlar.map(k => k.tarih))];
+                if (!tumAylar.includes(hedefAy)) tumAylar.push(hedefAy);
+                tumAylar.sort();
+                
+                let hedefAyYollukHakedis = 0;
+                let hedefAyDevirDetaylari = []; // Ekrana basmak için detaylar
+
+              tumAylar.forEach(islenenAy => {
+                    if (islenenAy > hedefAy) return; // Gelecek ayları hesaplamaya gerek yok
+                    
+                    let buAyKullanilanYollukLimiti = 0;
+                    let buAyKazanilanYolluk = 0;
+                    let buAyDevirDetayiGecici = [];
+
+                    // --- 1. AŞAMA: ÖNCEKİ AYLARDAN DEVREDENLERİ ÖDE (Kotadan düşerek) ---
+                    let yeniDevirHavuzu = [];
+                    let buAyDevirdenOdenenToplam = 0; 
+                    
+                    devredenYollukHavuzu.forEach(eskiDevir => {
+                        if (buAyKullanilanYollukLimiti < yollukLimit) {
+                            let odenebilecek = Math.min(eskiDevir.tutar, yollukLimit - buAyKullanilanYollukLimiti);
+                            buAyKullanilanYollukLimiti += odenebilecek;
+                            buAyKazanilanYolluk += odenebilecek;
+                            
+                            // Referansları tek tek eklemek yerine genel toplama ekliyoruz
+                            if(islenenAy === hedefAy) {
+                                buAyDevirdenOdenenToplam += odenebilecek;
+                            }
+
+                            let artan = eskiDevir.tutar - odenebilecek;
+                            if (artan > 0) yeniDevirHavuzu.push({ ref: eskiDevir.ref, tutar: artan, ay: eskiDevir.ay });
+                        } else {
+                            yeniDevirHavuzu.push(eskiDevir);
+                        }
+                    });
+                    
+                    // SADECE VE SADECE geçmişten bir para geldiyse (Örn: Mayıs ayındaysak) tek satır olarak yaz
+                    if(islenenAy === hedefAy && buAyDevirdenOdenenToplam > 0) {
+                        buAyDevirDetayiGecici.push(`<br><span style="font-size:10px; color:#00f6d2; font-weight:bold;">Önceki Aydan Devreden: +${buAyDevirdenOdenenToplam.toFixed(2)} ₺</span>`);
+                    }
+                    
+                    devredenYollukHavuzu = yeniDevirHavuzu; // Havuzu güncelle
+
+    // --- 2. AŞAMA: BU AYIN KENDİ GÖREVLERİNİ HESAPLA ---
+                    let buAyPersonelinGoreviVarMi = false;
+
+                    onayliKayitlar.filter(k => k.tarih === islenenAy && k.personeller.includes(p.ad)).forEach(k => {
+                        buAyPersonelinGoreviVarMi = true; // Bu ay en az 1 görevi var
+                        
+                        // Mesai kotadan bağımsız her ay eklenir (Eğer bakılan aydaysak)
+                        let kisiBasiMesai = (k.mTotal || k.toplamMesai) / k.personelSayisi;
+                        if (islenenAy === hedefAy) m += kisiBasiMesai;
+
+                        // Yolluk hesaplaması ve Kotaya Takılması Durumu
+                        let kisiBasiYolluk = (k.yTotal || k.toplamYolluk) / k.personelSayisi;
+                        if (kisiBasiYolluk > 0) {
+                            if (buAyKullanilanYollukLimiti < yollukLimit) {
+                                let odenebilecek = Math.min(kisiBasiYolluk, yollukLimit - buAyKullanilanYollukLimiti);
+                                buAyKullanilanYollukLimiti += odenebilecek;
+                                buAyKazanilanYolluk += odenebilecek;
+
+                                let artan = kisiBasiYolluk - odenebilecek;
+                                // MİLAT: Yalnızca Nisan ve sonrasında devir havuza eklenebilir
+                                if (artan > 0 && islenenAy >= "2026-04") devredenYollukHavuzu.push({ ref: k.ref, tutar: artan, ay: islenenAy });
+                            } else {
+                                // Limit tamamen dolu, paranın hepsi direkt diğer aya devredecek (Sadece Nisan ve sonrası)
+                                if (islenenAy >= "2026-04") devredenYollukHavuzu.push({ ref: k.ref, tutar: kisiBasiYolluk, ay: islenenAy });
+                            }
+                        }
+                    });
+
+                    // GÜVENLİK SÜBABI: Hesaplanan ay Nisan 2026'dan önceyse (örn: Mart, Şubat), 
+                    // devir havuzunu tamamen boşalt. Böylece Nisan ayına hiçbir devir yansımaz, tertemiz başlanır.
+                    if (islenenAy < "2026-04") {
+                        devredenYollukHavuzu = [];
+                        buAyDevirDetayiGecici = [];
+                    }
+
+                    // Eğer hesapladığımız ay kullanıcının ekranda baktığı aysa veriyi kaydet.
+                    if (islenenAy === hedefAy) {
+                        hedefAyYollukHakedis = buAyKazanilanYolluk;
+                        hedefAyDevirDetaylari = buAyDevirDetayiGecici;
                     }
                 });
-                return { ...p, mesai: m, yolluk: y, toplam: m + y };
-            });
 
-            this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih === hedefAy).forEach(k => {
-                ayinToplamMesaisi += (k.mTotal || k.toplamMesai);
-                ayinToplamYollugu += (k.yTotal || k.toplamYolluk);
+                ayinToplamMesaisi += m;
+                ayinToplamYollugu += hedefAyYollukHakedis;
+
+                return { 
+                    ...p, 
+                    mesai: m, 
+                    yolluk: hedefAyYollukHakedis, 
+                    toplam: m + hedefAyYollukHakedis,
+                    detayHTML: hedefAyDevirDetaylari.join('') 
+                };
             });
 
             if(document.getElementById('month-totals')) {
@@ -864,24 +1066,63 @@
                 return a.toplam - b.toplam;
             });
 
-            const stats = { "Gümrük": [], "Muhafaza": [], "KİM": [] };
-            hakedisVerisi.forEach(d => {
-                if(stats[d.birim]) {
-                    stats[d.birim].push(`<tr>
-                        <td>${d.sicil||'-'}</td>
-                        <td>${d.ad}</td>
-                        <td>${d.unvan}</td>
-                        <td style="color:var(--accent)">${d.mesai.toFixed(2)} TL</td>
-                        <td style="color:var(--warning)">${d.yolluk.toFixed(2)} TL</td>
-                        <td style="color:var(--success); font-weight:bold">${d.toplam.toFixed(2)} TL</td>
-                    </tr>`);
-                }
-            });
-            document.getElementById('stats-gumruk').innerHTML = stats["Gümrük"].join('') || '<tr><td colspan="6" style="text-align:center">Veri Yok</td></tr>';
-            document.getElementById('stats-muhafaza').innerHTML = stats["Muhafaza"].join('') || '<tr><td colspan="6" style="text-align:center">Veri Yok</td></tr>';
-            document.getElementById('stats-kim').innerHTML = stats["KİM"].join('') || '<tr><td colspan="6" style="text-align:center">Veri Yok</td></tr>';
+            // ====================== DÜZELTİLMİŞ TABLO ======================
+            const mode = this.gosterimMod;
+            const label = mode === 'yolluk' ? 'Yolluk' : mode === 'mesai' ? 'Mesai' : 'Toplam';
+            const color = mode === 'yolluk' ? 'var(--warning)' : mode === 'mesai' ? 'var(--accent)' : 'var(--success)';
 
-            // ====================== GÜNCELLENEN PERSONEL YÖNETİM TABLOSU ======================
+            let theadHTML = `
+                <tr>
+                    <th colspan="4" class="birim-header">GÜMRÜK</th>
+                    <th colspan="4" class="birim-header">MUHAFAZA</th>
+                    <th colspan="4" class="birim-header">KİM</th>
+                </tr>
+                <tr>
+                    <th>Sicil</th>
+                    <th>Ad Soyad</th>
+                    <th>Ünvan</th>
+                    <th style="color:${color}">${label}</th>
+                    <th>Sicil</th>
+                    <th>Ad Soyad</th>
+                    <th>Ünvan</th>
+                    <th style="color:${color}">${label}</th>
+                    <th>Sicil</th>
+                    <th>Ad Soyad</th>
+                    <th>Ünvan</th>
+                    <th style="color:${color}">${label}</th>
+                </tr>`;
+
+            let tbodyHTML = '';
+            const maxRow = Math.max(
+                hakedisVerisi.filter(p => p.birim === 'Gümrük').length,
+                hakedisVerisi.filter(p => p.birim === 'Muhafaza').length,
+                hakedisVerisi.filter(p => p.birim === 'KİM').length
+            );
+
+            for (let r = 0; r < maxRow; r++) {
+                tbodyHTML += `<tr>`;
+                ['Gümrük', 'Muhafaza', 'KİM'].forEach(birim => {
+                    const list = hakedisVerisi.filter(p => p.birim === birim);
+                    const p = list[r];
+                    if (p) {
+                        const value = mode === 'yolluk' ? p.yolluk : mode === 'mesai' ? p.mesai : p.toplam;
+                        let ekDetay = (mode === 'yolluk' || mode === 'toplam') ? (p.detayHTML || '') : '';
+                        
+                        tbodyHTML += `
+                            <td class="sicil-cell">${p.sicil || '-'}</td>
+                            <td>${p.ad}</td>
+                            <td>${p.unvan}</td>
+                            <td class="tutar-cell" style="color:${color}; line-height: 1.4;">${value.toFixed(2)} TL ${ekDetay}</td>`;
+                    } else {
+                        tbodyHTML += `<td colspan="4" style="background:rgba(255,255,255,0.03);"></td>`;
+                    }
+                });
+                tbodyHTML += `</tr>`;
+            }
+            document.getElementById('hakedis-thead').innerHTML = theadHTML;
+            document.getElementById('hakedis-tbody').innerHTML = tbodyHTML || `<tr><td colspan="12" style="text-align:center; padding:40px; color:#666;">Bu ay için onaylanmış hakediş kaydı bulunmuyor.</td></tr>`;
+
+            // ====================== DİĞER RENDER KISIMLARI ======================
             if (document.getElementById('p-manage-body')) {
                 document.getElementById('p-manage-body').innerHTML = this.db.personeller.map((p,i) => `
                     <tr ${!p.aktif ? 'class="pasif"' : ''}>
@@ -925,8 +1166,22 @@
             if (this.taskFilter.durum) filtered = filtered.filter(k => k.durum === this.taskFilter.durum);
             if (this.taskFilter.baslangic || this.taskFilter.bitis) {
                 filtered = filtered.filter(k => {
-                    if (!k.tarih) return false;
-                    return (!this.taskFilter.baslangic || k.tarih >= this.taskFilter.baslangic) && (!this.taskFilter.bitis || k.tarih <= this.taskFilter.bitis);
+                    let recordDate = k.tarih; 
+                    const refMatch = k.ref ? k.ref.match(/GM-(\d{4}-\d{2}-\d{2})\//) : null;
+                    
+                    if (refMatch) {
+                        recordDate = refMatch[1]; 
+                    } else if (recordDate && recordDate.length === 7) {
+                        // KODUN HAYAT KURTARAN KISMI: 
+                        // Eski kayıtlar sadece "2026-04" ise, sistemin çökmemesi için sonuna ayın 1'ini ekliyoruz.
+                        recordDate += "-01"; 
+                    }
+
+                    // Eğer görevde hiçbir tarih verisi yoksa listeden silinmesin diye koruma
+                    if (!recordDate) return true;
+
+                    return (!this.taskFilter.baslangic || recordDate >= this.taskFilter.baslangic) && 
+                           (!this.taskFilter.bitis || recordDate <= this.taskFilter.bitis);
                 });
             }
             filtered.reverse();
@@ -1015,6 +1270,22 @@
             XLSX.writeFile(wb, "Detayli_Gorev_Listesi.xlsx");
         },
 
+        exportLeavesExcel() {
+            if (!this.db.izinler || this.db.izinler.length === 0) {
+                return alert("Aktif izin/rapor kaydı bulunmuyor!");
+            }
+            const data = this.db.izinler.map(l => ({
+                "Personel": l.personel,
+                "Başlangıç": l.baslangic,
+                "Bitiş": l.bitis,
+                "Tür": l.tur
+            }));
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Izin_Rapor");
+            XLSX.writeFile(wb, `Izin_Rapor_Listesi_${new Date().toISOString().slice(0,10)}.xlsx`);
+        },
+
         importEbysDekontExcel() {
             if (!confirm('Excel dosyasından EBYS ve Dekont numaralarını toplu güncellemek istiyor musunuz?\n\nDosya formatı:\n- 1. sütun: Referans (veya Ref)\n- 2. sütun: EBYS\n- 3. sütun: Dekont')) {
                 return;
@@ -1071,11 +1342,9 @@
                         }
 
                         this.save();
-
                         let msg = `${updated} kayıt başarıyla güncellendi.`;
                         if (notFound > 0) msg += `\n${notFound} referans numaralı kayıt bulunamadı.`;
                         alert(msg);
-
                         this.render();
                     } catch (err) {
                         console.error(err);
