@@ -737,11 +737,23 @@
                 if (!confirm(`⚠️ Bu işlem aynı görevi TAM ${repeatCount} kez kaydedecek!\n\nHer biri ayrı referans numarası alacak.\nDevam etmek istiyor musunuz?`)) return;
             }
 
+            // KOD AMELİYATI B: Görev anındaki birim, unvan ve sicilin fotoğrafını çekiyoruz
+            const snapshotDetay = this.selectedPs.map(isim => {
+                const gercekPersonel = this.db.personeller.find(x => x.ad === isim) || {};
+                return {
+                    ad: isim,
+                    birim: gercekPersonel.birim || "Bilinmiyor",
+                    unvan: gercekPersonel.unvan || "",
+                    sicil: gercekPersonel.sicil || ""
+                };
+            });
+
             for (let i = 0; i < repeatCount; i++) {
                 this.db.kayitlar.push({
                     ref: this.generateRef(),
                     no: document.getElementById('task-no').value || "Belirtilmedi",
                     personeller: [...this.selectedPs],
+                    pDetay: snapshotDetay, // Çekilen fotoğrafı arşive koyuyoruz
                     personelSayisi: personelSayisi,
                     toplamMesai: toplamMesai,
                     toplamYolluk: toplamYolluk,
@@ -983,6 +995,22 @@
                 let m = 0; 
                 let devredenYollukHavuzu = []; 
                 
+                // KOD AMELİYATI B: Hedef aya kadar olan en son görevi bulup, o anki eski birimini tespit etme
+                let gecmisBirim = p.birim;
+                let gecmisUnvan = p.unvan;
+                let gecmisSicil = p.sicil;
+                
+                const gecmisGorevler = onayliKayitlar.filter(k => k.tarih <= hedefAy && k.pDetay && k.pDetay.some(x => x.ad === p.ad));
+                if (gecmisGorevler.length > 0) {
+                    const sonGorev = gecmisGorevler[gecmisGorevler.length - 1]; // Hedef aydaki veya öncesindeki en son görev
+                    const snapshot = sonGorev.pDetay.find(x => x.ad === p.ad);
+                    if (snapshot) {
+                        gecmisBirim = snapshot.birim || p.birim;
+                        gecmisUnvan = snapshot.unvan || p.unvan;
+                        gecmisSicil = snapshot.sicil || p.sicil;
+                    }
+                }
+                
                 let tumAylar = [...new Set(onayliKayitlar.map(k => k.tarih))];
                 if (!tumAylar.includes(hedefAy)) tumAylar.push(hedefAy);
                 tumAylar.sort();
@@ -1086,6 +1114,9 @@
 
                 return { 
                     ...p, 
+                    birim: gecmisBirim, // Güncel birimi EZZZ, geçmiş birimi yaz
+                    unvan: gecmisUnvan, // Güncel unvanı EZZZ, geçmiş unvanı yaz
+                    sicil: gecmisSicil, // Güncel sicili EZZZ, geçmiş sicili yaz
                     mesai: m, 
                     yolluk: hedefAyYollukHakedis, 
                     toplam: m + hedefAyYollukHakedis,
@@ -1271,13 +1302,22 @@
             const hedefAy = this.seciliAy || this.mevcutAy();
             const hakedisVerisi = this.db.personeller.map(p => {
                 let m = 0, y = 0;
+                
+                // EXCEL İÇİN FOTOĞRAF KONTROLÜ
+                let gecmisBirim = p.birim, gecmisUnvan = p.unvan, gecmisSicil = p.sicil;
+                const gecmisGorevler = this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih <= hedefAy && k.pDetay && k.pDetay.some(x => x.ad === p.ad)).sort((a,b)=> a.tarih.localeCompare(b.tarih));
+                if (gecmisGorevler.length > 0) {
+                    const snap = gecmisGorevler[gecmisGorevler.length - 1].pDetay.find(x => x.ad === p.ad);
+                    if (snap) { gecmisBirim = snap.birim || p.birim; gecmisUnvan = snap.unvan || p.unvan; gecmisSicil = snap.sicil || p.sicil; }
+                }
+
                 this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih === hedefAy).forEach(k => {
                     if (k.personeller.includes(p.ad)) {
                         m += (k.mTotal || k.toplamMesai) / k.personelSayisi;
                         y += (k.yTotal || k.toplamYolluk) / k.personelSayisi;
                     }
                 });
-                return { ...p, mesai: m, yolluk: y, toplam: m + y };
+                return { ...p, birim: gecmisBirim, unvan: gecmisUnvan, sicil: gecmisSicil, mesai: m, yolluk: y, toplam: m + y };
             }).filter(p => p.aktif === true || p.toplam > 0);
 
             const sortType = document.getElementById('sort-filtre') ? document.getElementById('sort-filtre').value : 'yolluk-az';
