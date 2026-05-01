@@ -988,8 +988,27 @@
             // 1. Tüm onaylı kayıtları ESKİDEN YENİYE sırala (Kronolojik devir hesaplaması için şart)
             const onayliKayitlar = this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih).sort((a,b) => {
                 if(a.tarih !== b.tarih) return a.tarih.localeCompare(b.tarih);
-                return a.ref.localeCompare(b.ref); // Aynı aysa referans sırasına göre
+                return a.ref.localeCompare(b.ref); 
             });
+
+            // ZAMAN TÜNELİ DÜZELTMESİ: Ayları dışarıda, görev olsun olmasın sırayla takvime diziyoruz ki devreden limitler atlanmasın.
+            let tumAylar = [];
+            let ilkKayitAyi = onayliKayitlar.length > 0 ? onayliKayitlar[0].tarih : hedefAy;
+            if (ilkKayitAyi && hedefAy) {
+                let [y, m] = ilkKayitAyi.split('-').map(Number);
+                let [hy, hm] = hedefAy.split('-').map(Number);
+                if (!isNaN(y) && !isNaN(m) && !isNaN(hy) && !isNaN(hm)) {
+                    if (hy < y || (hy === y && hm < m)) {
+                        tumAylar.push(hedefAy);
+                    } else {
+                        while (y < hy || (y === hy && m <= hm)) {
+                            tumAylar.push(`${y}-${String(m).padStart(2, '0')}`);
+                            m++;
+                            if (m > 12) { m = 1; y++; }
+                        }
+                    }
+                } else { tumAylar.push(hedefAy); }
+            } else { tumAylar.push(hedefAy); }
             
            const hakedisVerisi = this.db.personeller.map(p => {
                 let m = 0; 
@@ -1002,7 +1021,7 @@
                 
                 const gecmisGorevler = onayliKayitlar.filter(k => k.tarih <= hedefAy && k.pDetay && k.pDetay.some(x => x.ad === p.ad));
                 if (gecmisGorevler.length > 0) {
-                    const sonGorev = gecmisGorevler[gecmisGorevler.length - 1]; // Hedef aydaki veya öncesindeki en son görev
+                    const sonGorev = gecmisGorevler[gecmisGorevler.length - 1]; 
                     const snapshot = sonGorev.pDetay.find(x => x.ad === p.ad);
                     if (snapshot) {
                         gecmisBirim = snapshot.birim || p.birim;
@@ -1010,10 +1029,6 @@
                         gecmisSicil = snapshot.sicil || p.sicil;
                     }
                 }
-                
-                let tumAylar = [...new Set(onayliKayitlar.map(k => k.tarih))];
-                if (!tumAylar.includes(hedefAy)) tumAylar.push(hedefAy);
-                tumAylar.sort();
                 
                 let hedefAyYollukHakedis = 0;
                 let hedefAyDevirDetaylari = []; 
