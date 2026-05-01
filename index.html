@@ -868,6 +868,7 @@
         save() { 
             localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db)); 
             this.render(); 
+            const GIZLI_ANAHTAR = "KayseriGumruk2026_GizliAnahtar!123";
             const scriptURL = 'https://script.google.com/macros/s/AKfycbxn2ZWZKfpqRwF1RItRIjXc9jpkhlKtfV_kPp8_foSp8zQq9tx7bVhydYx3f6alfD2o/exec';            
             fetch(scriptURL, {
                 method: 'POST',
@@ -876,16 +877,18 @@
                 body: JSON.stringify({
                     user: this.user ? this.user.user : 'Sistem',
                     action: 'Veri Yedekleme',
-                    payload: this.db
+                    payload: this.db,
+                    token: GIZLI_ANAHTAR 
                 })
             }).then(r=>r.json()).then(d=>console.log("Bulut OK", d)).catch(e=>console.log("Bulut Err", e));
         },
 
         loadFromCloud() {
+            const GIZLI_ANAHTAR = "KayseriGumruk2026_GizliAnahtar!123";
             const scriptURL = 'https://script.google.com/macros/s/AKfycbxn2ZWZKfpqRwF1RItRIjXc9jpkhlKtfV_kPp8_foSp8zQq9tx7bVhydYx3f6alfD2o/exec';
             document.getElementById('sync-status').innerText = "Veri Çekiliyor...";
             
-            fetch(scriptURL).then(res => res.text()).then(data => {
+            fetch(scriptURL + '?token=' + GIZLI_ANAHTAR).then(res => res.text()).then(data => {
                 if (data && data.trim() !== "" && data !== "null") {
                     try {
                         const cloudData = JSON.parse(data);
