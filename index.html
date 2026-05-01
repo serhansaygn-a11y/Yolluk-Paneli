@@ -417,14 +417,7 @@
             }
         },
         db: JSON.parse(localStorage.getItem('gumruk_final_v60')) || {
-            accounts: [
-                {rol: "Admin", user: "Admin", pass: "admin123"},
-                {rol: "Gümrük Şefi", user: "Şef1", pass: "123"},
-                {rol: "Gümrük Memuru", user: "Memur1", pass: "123"},
-                {rol: "Gümrük Müdür Yardımcısı", user: "MüdürYrd1", pass: "123"},
-                {rol: "Gümrük Müdürü", user: "Mudur", pass: "123"},
-                {rol: "Personel Servisi", user: "Pers", pass: "123"}
-            ],
+            accounts: [], // ŞİFRELER GİZLENDİ! Sistem açılışta güncel şifreleri Google Bulut'tan indirecek.
             personeller: [], yolluklar: [], kayitlar: [], izinler: [], 
             bypassSef: false
         },
@@ -1453,6 +1446,7 @@
         }
     };
 
+    app.loadFromCloud(); // Sayfa açılır açılmaz, arka planda güncel şifreleri indirir
     app.checkSession();
     app.startAutoSync();
   </script>
