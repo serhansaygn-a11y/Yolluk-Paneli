@@ -113,7 +113,12 @@
         text-overflow: ellipsis; 
       }
       .sicil-cell { text-align: left; }
-      .tutar-cell { text-align: right; font-weight: bold; }
+      .tutar-cell { 
+        text-align: right; 
+        font-weight: bold; 
+        white-space: normal !important; 
+        overflow: visible !important; 
+      }
     </style>
 </head>
 <body>
@@ -229,11 +234,18 @@
         <!-- Admin Section -->
         <div id="admin-section" class="hidden">
             <div class="card-section" style="grid-column: span 2; border: 1px solid var(--warning);">
-    <h3 style="border-bottom:1px solid var(--warning); padding-bottom:8px; color:var(--warning)">⚙️ Dinamik Yolluk Sınırı Ayarı</h3>
-    <div style="display:flex; gap:10px; margin-top:10px; align-items:center;">
-        <label style="font-size:12px;">Aylık Yasal Yolluk Üst Limiti (TL):</label>
-        <input type="number" id="sys-yolluk-limit" style="width:150px; text-align:center;">
+    <h3 style="border-bottom:1px solid var(--warning); padding-bottom:8px; color:var(--warning)">⚙️ Dinamik Yolluk Sınırı Ayarı (Tarihe Duyarlı)</h3>
+    <div style="display:flex; gap:10px; margin-top:10px; align-items:center; flex-wrap:wrap;">
+        <label style="font-size:12px;">Hangi Aydan İtibaren Geçerli?:</label>
+        <input type="month" id="sys-limit-ay" style="width:140px; text-align:center;">
+        
+        <label style="font-size:12px;">Yasal Limit (TL):</label>
+        <input type="number" id="sys-yolluk-limit" style="width:120px; text-align:center;">
+        
         <button class="btn btn-warning" onclick="app.updateYollukLimit()">SİSTEME KAYDET</button>
+    </div>
+    <div id="gecmis-limitler" style="margin-top:12px; font-size:11px; padding-top:10px; border-top:1px dashed var(--border);">
+        <!-- Kayıtlı limitler buraya otomatik gelecek -->
     </div>
 </div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
@@ -387,12 +399,21 @@
 
   <script>
     const app = {
-    updateYollukLimit() {
+   updateYollukLimit() {
             const val = parseFloat(document.getElementById('sys-yolluk-limit').value);
-            if(val && val > 0) {
-                this.db.yollukSiniri = val;
+            const ay = document.getElementById('sys-limit-ay').value;
+            
+            if (!ay) return alert("Lütfen limitin geçerli olacağı başlangıç ayını seçin!");
+            if (val && val > 0) {
+                // Eski sistemdeki düz rakamı, tarihe duyarlı akıllı objeye çeviriyoruz
+                if (typeof this.db.yollukSiniri !== 'object' || this.db.yollukSiniri === null) {
+                    let eskiLimit = parseFloat(this.db.yollukSiniri) || 50600;
+                    this.db.yollukSiniri = { "2026-04": eskiLimit };
+                }
+                
+                this.db.yollukSiniri[ay] = val;
                 this.save();
-                alert("Aylık Yolluk Sınırı başarıyla " + val + " TL olarak güncellendi! Tüm geçmiş ve gelecek hesaplamalar bu yeni limite göre uyarlandı.");
+                alert(`${ay} ayından itibaren geçerli olacak yolluk sınırı ${val} TL olarak kaydedildi!\n\nMerak etmeyin, geçmiş aylar bu değişiklikten KESİNLİKLE etkilenmeyecek.`);
             }
         },
         db: JSON.parse(localStorage.getItem('gumruk_final_v60')) || {
@@ -937,7 +958,19 @@
             let ayinToplamMesaisi = 0;
 
             if(document.getElementById('sys-yolluk-limit')) {
-                document.getElementById('sys-yolluk-limit').value = this.db.yollukSiniri || 50600;
+                let guncel = 50600;
+                if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
+                    let aylar = Object.keys(this.db.yollukSiniri).sort();
+                    if(aylar.length > 0) guncel = this.db.yollukSiniri[aylar[aylar.length - 1]];
+                    
+                    document.getElementById('gecmis-limitler').innerHTML = "<span style='color:var(--accent)'>Tarihe Göre Kayıtlı Limitler:</span><br>" + 
+                        aylar.map(a => `<span class="tag" style="margin-top:5px;">${a} Ayı ve Sonrası: <b>${this.db.yollukSiniri[a]} TL</b> <b style="cursor:pointer; color:red; margin-left:8px;" onclick="delete app.db.yollukSiniri['${a}']; app.save()" title="Bu limiti sil">✖</b></span>`).join('');
+                } else if (this.db.yollukSiniri) {
+                    guncel = parseFloat(this.db.yollukSiniri);
+                }
+                
+                if (!document.getElementById('sys-yolluk-limit').value) document.getElementById('sys-yolluk-limit').value = guncel;
+                if (!document.getElementById('sys-limit-ay').value) document.getElementById('sys-limit-ay').value = this.mevcutAy();
             }
 
             // 1. Tüm onaylı kayıtları ESKİDEN YENİYE sırala (Kronolojik devir hesaplaması için şart)
@@ -946,23 +979,32 @@
                 return a.ref.localeCompare(b.ref); // Aynı aysa referans sırasına göre
             });
             
-            // Sistem yolluk sınırı (Admin belirlemediyse varsayılan 50600)
-            const yollukLimit = this.db.yollukSiniri ? parseFloat(this.db.yollukSiniri) : 50600;
-
-            const hakedisVerisi = aktifPersoneller.map(p => {
-                let m = 0; // Hedef ay mesai
-                let devredenYollukHavuzu = []; // Geçmiş aylardan kalan cüzdan: {ref, tutar, ay}
+           const hakedisVerisi = aktifPersoneller.map(p => {
+                let m = 0; 
+                let devredenYollukHavuzu = []; 
                 
-                // Sistemin ilk gününden hedef aya kadar sırayla zamanı ileri sarıp simüle ediyoruz
                 let tumAylar = [...new Set(onayliKayitlar.map(k => k.tarih))];
                 if (!tumAylar.includes(hedefAy)) tumAylar.push(hedefAy);
                 tumAylar.sort();
                 
                 let hedefAyYollukHakedis = 0;
-                let hedefAyDevirDetaylari = []; // Ekrana basmak için detaylar
+                let hedefAyDevirDetaylari = []; 
 
               tumAylar.forEach(islenenAy => {
-                    if (islenenAy > hedefAy) return; // Gelecek ayları hesaplamaya gerek yok
+                    if (islenenAy > hedefAy) return; 
+
+                    // --- TARİHE DUYARLI LİMİT KONTROLÜ (HAYAT KURTARAN KISIM) ---
+                    let yollukLimit = 50600; 
+                    if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
+                        // İşlediğimiz aya kadar olan en güncel limiti bulur
+                        let gecerliAylar = Object.keys(this.db.yollukSiniri).filter(a => a <= islenenAy).sort();
+                        if (gecerliAylar.length > 0) {
+                            yollukLimit = this.db.yollukSiniri[gecerliAylar[gecerliAylar.length - 1]];
+                        }
+                    } else if (this.db.yollukSiniri) {
+                        yollukLimit = parseFloat(this.db.yollukSiniri); 
+                    }
+                    // -------------------------------------------------------------
                     
                     let buAyKullanilanYollukLimiti = 0;
                     let buAyKazanilanYolluk = 0;
@@ -992,7 +1034,7 @@
                     
                     // SADECE VE SADECE geçmişten bir para geldiyse (Örn: Mayıs ayındaysak) tek satır olarak yaz
                     if(islenenAy === hedefAy && buAyDevirdenOdenenToplam > 0) {
-                        buAyDevirDetayiGecici.push(`<br><span style="font-size:10px; color:#00f6d2; font-weight:bold;">Önceki Aydan Devreden: +${buAyDevirdenOdenenToplam.toFixed(2)} ₺</span>`);
+                        buAyDevirDetayiGecici.push(`<br><span style="font-size:10px; color:#00f6d2; font-weight:bold;">   +${buAyDevirdenOdenenToplam.toFixed(2)} ₺</span>`);
                     }
                     
                     devredenYollukHavuzu = yeniDevirHavuzu; // Havuzu güncelle
