@@ -979,7 +979,7 @@
                 return a.ref.localeCompare(b.ref); // Aynı aysa referans sırasına göre
             });
             
-           const hakedisVerisi = aktifPersoneller.map(p => {
+           const hakedisVerisi = this.db.personeller.map(p => {
                 let m = 0; 
                 let devredenYollukHavuzu = []; 
                 
@@ -1091,7 +1091,7 @@
                     toplam: m + hedefAyYollukHakedis,
                     detayHTML: hedefAyDevirDetaylari.join('') 
                 };
-            });
+            }).filter(p => p.aktif === true || p.toplam > 0 || p.detayHTML !== '');
 
             if(document.getElementById('month-totals')) {
                 document.getElementById('month-totals').innerHTML = 
@@ -1269,8 +1269,7 @@
 
         exportSummaryExcel() {
             const hedefAy = this.seciliAy || this.mevcutAy();
-            const aktifPersoneller = this.db.personeller.filter(p => p.aktif === true);
-            const hakedisVerisi = aktifPersoneller.map(p => {
+            const hakedisVerisi = this.db.personeller.map(p => {
                 let m = 0, y = 0;
                 this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih === hedefAy).forEach(k => {
                     if (k.personeller.includes(p.ad)) {
@@ -1279,7 +1278,7 @@
                     }
                 });
                 return { ...p, mesai: m, yolluk: y, toplam: m + y };
-            });
+            }).filter(p => p.aktif === true || p.toplam > 0);
 
             const sortType = document.getElementById('sort-filtre') ? document.getElementById('sort-filtre').value : 'yolluk-az';
             hakedisVerisi.sort((a, b) => {
