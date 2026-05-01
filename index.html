@@ -170,7 +170,10 @@
         <div id="stats-section" class="card-section">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:15px;">
                 <h3 style="border:none; padding:0; margin:0;">📊 Personel Hakediş & Adalet Tablosu</h3>
-                <button class="btn btn-primary" onclick="app.exportSummaryExcel()">ÖZETİ EXCEL AKTAR</button>
+                <div>
+                    <button class="btn btn-primary" onclick="app.exportLimitliExcel()">EXCEL AKTAR (LİMİTLİ / ÖDENECEK)</button>
+                    <button class="btn btn-warning" onclick="app.exportLimitsizExcel()" style="margin-left:5px;">EXCEL AKTAR (LİMİTSİZ / HAM KAZANÇ)</button>
+                </div>
             </div>
 
             <div class="filter-area">
@@ -1150,6 +1153,9 @@
                 return a.toplam - b.toplam;
             });
 
+            // İŞTE EKSİK OLAN HAYAT KURTARICI SATIR BURASI:
+            this.sonHesaplananHakedis = hakedisVerisi;
+
             // ====================== DÜZELTİLMİŞ TABLO ======================
             const mode = this.gosterimMod;
             const label = mode === 'yolluk' ? 'Yolluk' : mode === 'mesai' ? 'Mesai' : 'Toplam';
@@ -1309,12 +1315,29 @@
             }).join('');
         },
 
-        exportSummaryExcel() {
+        exportLimitliExcel() {
+            const hedefAy = this.seciliAy || this.mevcutAy();
+            if (!this.sonHesaplananHakedis || this.sonHesaplananHakedis.length === 0) return alert("Dışa aktarılacak veri yok! Lütfen önce tabloyu görüntüleyin.");
+            
+            const excelData = this.sonHesaplananHakedis.map(p => ({
+                "Birim": p.birim, 
+                "Sicil": p.sicil, 
+                "Ad Soyad": p.ad, 
+                "Unvan": p.unvan,
+                "Ödenecek Yolluk (Limitli)": p.yolluk.toFixed(2), 
+                "Ödenecek Mesai": p.mesai.toFixed(2), 
+                "Genel Toplam (Ödenecek)": p.toplam.toFixed(2)
+            }));
+            const ws = XLSX.utils.json_to_sheet(excelData); 
+            const wb = XLSX.utils.book_new(); 
+            XLSX.utils.book_append_sheet(wb, ws, "Limitli_Odenecek"); 
+            XLSX.writeFile(wb, `Hakedis_Limitli_Odenecek_${hedefAy}.xlsx`);
+        },
+
+        exportLimitsizExcel() {
             const hedefAy = this.seciliAy || this.mevcutAy();
             const hakedisVerisi = this.db.personeller.map(p => {
                 let m = 0, y = 0;
-                
-                // EXCEL İÇİN FOTOĞRAF KONTROLÜ
                 let gecmisBirim = p.birim, gecmisUnvan = p.unvan, gecmisSicil = p.sicil;
                 const gecmisGorevler = this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih <= hedefAy && k.pDetay && k.pDetay.some(x => x.ad === p.ad)).sort((a,b)=> a.tarih.localeCompare(b.tarih));
                 if (gecmisGorevler.length > 0) {
@@ -1340,26 +1363,67 @@
             });
 
             const excelData = hakedisVerisi.map(p => ({
-                "Birim": p.birim, "Sicil": p.sicil, "Ad Soyad": p.ad, "Unvan": p.unvan,
-                "Toplam Yolluk": p.yolluk.toFixed(2), "Toplam Mesai": p.mesai.toFixed(2), "Genel Toplam": p.toplam.toFixed(2)
+                "Birim": p.birim, 
+                "Sicil": p.sicil, 
+                "Ad Soyad": p.ad, 
+                "Unvan": p.unvan,
+                "Ham Yolluk Kazancı (Limitsiz)": p.yolluk.toFixed(2), 
+                "Ham Mesai Kazancı": p.mesai.toFixed(2), 
+                "Genel Ham Toplam": p.toplam.toFixed(2)
             }));
             const ws = XLSX.utils.json_to_sheet(excelData); 
             const wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, "Ozet_Hakedis"); 
-            XLSX.writeFile(wb, `Ozet_Hakedis_${hedefAy}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, "Ham_Limitsiz"); 
+            XLSX.writeFile(wb, `Hakedis_Ham_Limitsiz_${hedefAy}.xlsx`);
         },
 
         exportTaskListExcel() {
-            const data = this.db.kayitlar.map(k => ({
-                "Referans": k.ref, "Evrak No": k.no, "Personeller": k.personeller.join(", "),
-                "Yolluk Tutarı": (k.yTotal || k.toplamYolluk), "Mesai Tutarı": (k.mTotal || k.toplamMesai),
-                "Genel Toplam": ((k.yTotal || k.toplamYolluk) + (k.mTotal || k.toplamMesai)), "Durum": k.durum,
-                "EBYS": k.ebys, "Dekont": k.dekont, "Tarih": k.tarih
+            // Ekranda o an uyguladığın tüm filtreleri yakalıyoruz
+            let filtered = this.db.kayitlar.slice();
+            
+            // Arama filtresi
+            if (this.taskFilter.arama) {
+                const term = this.taskFilter.arama.toLowerCase();
+                filtered = filtered.filter(k => k.ref.toLowerCase().includes(term) || k.no.toLowerCase().includes(term) || k.personeller.some(p => p.toLowerCase().includes(term)));
+            }
+            
+            // Durum filtresi (Taslak, Onaylandı vb.)
+            if (this.taskFilter.durum) filtered = filtered.filter(k => k.durum === this.taskFilter.durum);
+            
+            // Tarih aralığı (Bugün, Hafta, Ay ve Manuel Seçim buraya dahil)
+            if (this.taskFilter.baslangic || this.taskFilter.bitis) {
+                filtered = filtered.filter(k => {
+                    let recordDate = k.tarih; 
+                    const refMatch = k.ref ? k.ref.match(/GM-(\d{4}-\d{2}-\d{2})\//) : null;
+                    if (refMatch) recordDate = refMatch[1]; 
+                    else if (recordDate && recordDate.length === 7) recordDate += "-01";
+                    
+                    if (!recordDate) return true;
+                    return (!this.taskFilter.baslangic || recordDate >= this.taskFilter.baslangic) && 
+                           (!this.taskFilter.bitis || recordDate <= this.taskFilter.bitis);
+                });
+            }
+
+            // Filtrelenmiş veriyi Excel formatına sokuyoruz
+            const data = filtered.map(k => ({
+                "Referans": k.ref, 
+                "Evrak No": k.no, 
+                "Personeller": k.personeller.join(", "),
+                "Yolluk Tutarı": (k.yTotal || k.toplamYolluk).toFixed(2), 
+                "Mesai Tutarı": (k.mTotal || k.toplamMesai).toFixed(2),
+                "Genel Toplam": ((k.yTotal || k.toplamYolluk) + (k.mTotal || k.toplamMesai)).toFixed(2), 
+                "Durum": k.durum,
+                "EBYS": k.ebys || "", 
+                "Dekont": k.dekont || "", 
+                "Kayıt Ayı": k.tarih
             }));
+
+            if (data.length === 0) return alert("Filtrelemeye uygun veri bulunamadı!");
+
             const ws = XLSX.utils.json_to_sheet(data); 
             const wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, "Gorev_Listesi"); 
-            XLSX.writeFile(wb, "Detayli_Gorev_Listesi.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "Filtreli_Gorev_Listesi"); 
+            XLSX.writeFile(wb, `Gorev_Listesi_Rapor_${new Date().toISOString().slice(0,10)}.xlsx`);
         },
 
         exportLeavesExcel() {
