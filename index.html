@@ -1924,13 +1924,15 @@ hardBackup() {
     app.checkSession();
     app.startAutoSync();
     
-    // Açılış animasyonu ve Google senkronizasyonu için perde bekleme süresi
-    window.addEventListener('load', () => {
-        setTimeout(() => {
-            const splash = document.getElementById('splash-screen');
-            if(splash) splash.classList.add('fade-out');
-        }, 1800); // 1.8 saniye boyunca animasyonu gösterir, sonra yok eder
-    });
+    // KESİN ÇÖZÜM: Sayfa ne durumda olursa olsun, geri sayımı başlat ve perdeyi yok et!
+    setTimeout(() => {
+        const splash = document.getElementById('splash-screen');
+        if(splash) {
+            splash.classList.add('fade-out'); // Yumuşakça şeffaf yap
+            // Animasyon bitince (0.8 sn sonra) tıklamaları engellemesin diye tamamen ortadan kaldır
+            setTimeout(() => { splash.style.display = 'none'; }, 800); 
+        }
+    }, 5000); // <-- 5 Saniye kuralı (5000 milisaniye). İstersen burayı 3000 (3 saniye) olarak da değiştirebilirsin.
   </script>
   <!-- PERSONEL ANALİZ MODAL -->
 <div id="analiz-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(10px);">
