@@ -135,6 +135,27 @@
       @keyframes blinkText { 0% { opacity: 0.4; } 100% { opacity: 1; } }
       .splash-alt-text { color: var(--muted); font-size: 12px; margin-top: 10px; }
       .fade-out { opacity: 0 !important; visibility: hidden !important; }
+      .nav-card {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(0, 246, 210, 0.1);
+        border: 1px solid var(--accent);
+        padding: 8px 15px;
+        border-radius: 12px;
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 11px;
+        font-weight: bold;
+        transition: 0.3s;
+        box-shadow: 0 0 10px rgba(0, 246, 210, 0.2);
+      }
+      .nav-card:hover {
+        background: var(--accent);
+        color: #000;
+        box-shadow: var(--accent-glow);
+        transform: translateY(-2px);
+      }
     </style>
 </head>
 <body>
@@ -156,6 +177,11 @@
       <div class="header-center">
         <h1>Yolluk Yönetim Sistemi</h1>
         <p id="user-display">Giriş Bekleniyor...</p>
+        <div style="margin-top: 10px;">
+          <a href="https://serhansaygn-a11y.github.io/gumruk-memuru/" target="_blank" class="nav-card">
+             🌐 Gümrük – Hızlı Erişim Paneli'ne Git
+          </a>
+        </div>
       </div>
       <div class="header-right">
         <div class="right-images">
