@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Yolluk Yönetim Sistemi</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
     <style>
+        
       :root {
         --bg: radial-gradient(circle at 20% 20%, #0d1117 0%, #000 100%);
         --card: rgba(255,255,255,0.08);
@@ -119,6 +121,12 @@
         white-space: normal !important; 
         overflow: visible !important; 
       }
+      @keyframes flashAlert { 
+        0% { background-color: var(--danger); box-shadow: 0 0 10px var(--danger); } 
+        50% { background-color: #ff9f43; box-shadow: 0 0 20px #ff9f43; } 
+        100% { background-color: var(--danger); box-shadow: 0 0 10px var(--danger); } 
+      }
+      .blink-alert { animation: flashAlert 1.2s infinite; color: #fff !important; font-weight: bold; border: 2px solid #fff; }
     </style>
 </head>
 <body>
@@ -160,10 +168,13 @@
             <button class="btn btn-warning" onclick="app.changePassword()">ŞİFRE DEĞİŞTİR</button>
             <button id="btn-analiz" class="btn btn-primary" style="background:#8e44ad; color:#fff;" onclick="app.openAnalizMerkezi()">🔍 PERSONEL ANALİZ MERKEZİ</button>
             <button id="btn-log" class="btn hidden" style="background:#e67e22; color:#fff;" onclick="app.openLogMerkezi()">📜 SİSTEM LOG MERKEZİ</button>
+            <button id="btn-uyari" class="btn hidden" style="background:var(--danger); color:#fff;" onclick="app.showUyariModal()">🔔 EKSİK DEKONTLAR (<span id="uyari-sayi">0</span>)</button>
             
             <div id="admin-toggle-area" class="hidden">
                 <label style="font-size:12px; color:var(--warning)">ŞEF ONAYINI DEVRE DIŞI BIRAK:</label>
                 <input type="checkbox" id="bypass-sef" style="width:auto;" onchange="app.db.bypassSef = this.checked; app.save()">
+                <button class="btn btn-success" style="margin-left:20px; font-size:10px; padding:4px 10px;" onclick="app.hardBackup()">💾 SİSTEMİ BİLGİSAYARA YEDEKLE (.JSON)</button>
+                <button id="btn-uyari-sifirla" class="btn hidden" style="margin-left:10px; background:#8e44ad; color:#fff; font-size:10px; padding:4px 10px;" onclick="app.acTümUyarilari()">🔔 KAPATILAN UYARI SİSTEMİNİ AÇ</button>
             </div>
             <div id="sync-status" style="font-size:10px; color:var(--accent); display:flex; align-items:center;">Veriler Güncel</div>
         </div>
@@ -496,6 +507,138 @@ addLog(tip, detay, ref = "-") {
             
             XLSX.utils.book_append_sheet(wb, ws, "Sistem_Loglari");
             XLSX.writeFile(wb, `Sistem_Log_Raporu_${new Date().toISOString().slice(0,10)}.xlsx`);
+        },
+hardBackup() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.db));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", `Kayseri_Gumruk_Hard_Yedek_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchorNode); 
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            this.addLog("Sistem Yedeği Alındı", "Tüm sistem veritabanı bilgisayara manuel olarak .json formatında indirildi.");
+            alert("Sistemin tam anlık kopyası bilgisayarınıza indirildi!");
+        },
+
+        checkDekontUyarilari() {
+            if (!this.user) return;
+            
+            // 1. Ayarları Kontrol Et (Yoksa oluştur)
+            if (!this.db.uyariAyarlari) {
+                this.db.uyariAyarlari = { kapaliAylar: [], tamamenKapali: false };
+            }
+
+            const btn = document.getElementById('btn-uyari');
+            const sayac = document.getElementById('uyari-sayi');
+            const adminAcmaButonu = document.getElementById('btn-uyari-sifirla');
+            
+            // 2. Sistem tamamen kapalıysa butonu gizle ve çık
+            if (this.db.uyariAyarlari.tamamenKapali) {
+                if (btn) btn.classList.add('hidden');
+                // Sadece admine "Tekrar Aç" butonunu göster
+                if (adminAcmaButonu && this.user.rol === 'Admin') adminAcmaButonu.classList.remove('hidden');
+                return;
+            } else {
+                if (adminAcmaButonu) adminAcmaButonu.classList.add('hidden');
+            }
+
+            // 3. Onaylanmış ama dekontu girilmemiş görevleri bul (GİZLENEN AYLARI HARİÇ TUT)
+            const eksikler = this.db.kayitlar.filter(k => 
+                k.durum === "Onaylandı" && 
+                (!k.dekont || k.dekont.trim() === "") &&
+                !this.db.uyariAyarlari.kapaliAylar.includes(k.tarih) // Adminin gizlediği ayları es geçer
+            );
+            
+            if (eksikler.length > 0 && btn) {
+                btn.classList.remove('hidden');
+                sayac.innerText = eksikler.length;
+                
+                const today = new Date().toISOString().slice(0,10);
+                const okunduMu = localStorage.getItem(`dekont_uyari_okundu_${this.user.user}_${today}`);
+                
+                if (!okunduMu && this.user.rol !== 'Admin') {
+                    btn.classList.add('blink-alert'); 
+                } else {
+                    btn.classList.remove('blink-alert'); 
+                }
+                
+                let ayGruplari = {};
+                eksikler.forEach(k => {
+                    ayGruplari[k.tarih] = (ayGruplari[k.tarih] || 0) + 1;
+                });
+                
+                let listeHtml = "<ul style='margin:0; padding-left:20px;'>";
+                for (let ay in ayGruplari) {
+                    listeHtml += `<li style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">
+                        <span><b>${ay}</b> ayına ait dekontu girilmemiş <b style="color:var(--warning); font-size:15px;">${ayGruplari[ay]} adet</b> görev var.</span>
+                        ${this.user.rol === 'Admin' ? `<button class="btn btn-danger" style="font-size:9px; padding:3px 6px;" onclick="app.gizleAyUyari('${ay}')" title="Bu ayı listeden gizle">GÖZ ARDI ET</button>` : ''}
+                    </li>`;
+                }
+                listeHtml += "</ul>";
+                
+                // 4. ADMIN KONTROL PANELİ (Sadece Admine Görünür)
+                if (this.user.rol === 'Admin') {
+                    listeHtml += `<div style="margin-top:15px; padding-top:10px; border-top:1px dashed var(--danger); font-size:11px;">`;
+                    
+                    // Eğer daha önce gizlenmiş aylar varsa onları listele ve geri alma şansı ver
+                    if (this.db.uyariAyarlari.kapaliAylar.length > 0) {
+                        listeHtml += `<div style="margin-bottom:10px; color:var(--warning)"><b>Gizlenen Aylar:</b> ` + 
+                            this.db.uyariAyarlari.kapaliAylar.map(a => `<span class="tag" style="background:rgba(255,255,255,0.1); border:1px solid #fff; color:#fff;">${a} <b style="cursor:pointer; color:#ff4757; margin-left:5px;" onclick="app.gosterAyUyari('${a}')" title="Geri Getir">✖</b></span>`).join('') + 
+                            `</div>`;
+                    }
+                    
+                    listeHtml += `<button class="btn btn-warning" style="width:100%; margin-top:5px;" onclick="app.kapatTümUyarilari()">🛑 EKSİK DEKONT UYARI SİSTEMİNİ TAMAMEN KAPAT</button>`;
+                    listeHtml += `</div>`;
+                }
+
+                const listeDiv = document.getElementById('uyari-liste');
+                if(listeDiv) listeDiv.innerHTML = listeHtml;
+                
+            } else if (btn) {
+                btn.classList.add('hidden'); // Kriterlere uyan eksik kalmadıysa gizle
+            }
+        },
+
+        gizleAyUyari(ay) {
+            if(!this.db.uyariAyarlari.kapaliAylar.includes(ay)) {
+                this.db.uyariAyarlari.kapaliAylar.push(ay);
+                this.save();
+                this.checkDekontUyarilari(); // Listeyi anında yenile
+            }
+        },
+
+        gosterAyUyari(ay) {
+            this.db.uyariAyarlari.kapaliAylar = this.db.uyariAyarlari.kapaliAylar.filter(a => a !== ay);
+            this.save();
+            this.checkDekontUyarilari(); // Listeyi anında yenile
+        },
+
+        kapatTümUyarilari() {
+            if(confirm("Tüm eksik dekont uyarı sistemini HERKES İÇİN kapatmak istediğinize emin misiniz?\\n\\n(Daha sonra Admin panelindeki mor buton ile tekrar açabilirsiniz.)")) {
+                this.db.uyariAyarlari.tamamenKapali = true;
+                this.save();
+                this.checkDekontUyarilari();
+                this.closeUyariModal();
+            }
+        },
+
+        acTümUyarilari() {
+            if (!this.db.uyariAyarlari) this.db.uyariAyarlari = { kapaliAylar: [], tamamenKapali: false };
+            this.db.uyariAyarlari.tamamenKapali = false;
+            this.save();
+            this.checkDekontUyarilari();
+            alert("Uyarı sistemi tüm personel için tekrar aktif edildi!");
+        },
+
+        showUyariModal() {
+            document.getElementById('uyari-modal').classList.remove('hidden');
+        },
+
+        closeUyariModal() {
+            document.getElementById('uyari-modal').classList.add('hidden');
+            const today = new Date().toISOString().slice(0,10);
+            localStorage.setItem(`dekont_uyari_okundu_${this.user.user}_${today}`, "true");
+            this.checkDekontUyarilari(); // Yanıp sönmeyi durdur
         },
 
         sortPersoneller() {
@@ -1402,6 +1545,8 @@ addLog(tip, detay, ref = "-") {
                     <td>${btns}</td>
                 </tr>`;
             }).join('');
+            
+            this.checkDekontUyarilari();
         },
 
         exportLimitliExcel() {
@@ -1829,6 +1974,19 @@ addLog(tip, detay, ref = "-") {
             </div>
         </div>
         <div id="kisi-detay-icerik"></div>
+    </div>
+</div>
+<!-- EKSİK DEKONT UYARI MODAL -->
+<div id="uyari-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10002; display:flex; justify-content:center; align-items:center;">
+    <div style="background:#0d1117; width:500px; max-width:90%; border:2px solid var(--danger); border-radius:15px; padding:20px; text-align:center;">
+        <h2 style="color:var(--danger); margin-top:0;">⚠️ DİKKAT: Eksik Dekontlar!</h2>
+        <p style="font-size:13px; color:var(--text);">Sistemde <b>Onaylanmış</b> ancak <b>Dekont Numarası</b> girilmemiş görevler tespit edildi. Sistem güvenliği için herkesin bu eksikleri takip etmesi zorunludur.</p>
+        
+        <div id="uyari-liste" style="background:rgba(255,0,0,0.1); padding:15px; border-radius:8px; border:1px solid var(--danger); margin:15px 0; max-height:300px; overflow-y:auto; font-size:13px; text-align:left;">
+            <!-- Uyarılar buraya JS ile gelecek -->
+        </div>
+        
+        <button class="btn btn-primary" style="width:100%; padding:12px; font-size:12px;" onclick="app.closeUyariModal()">OKUDUM, ANLADIM (KAPAT)</button>
     </div>
 </div>
 
