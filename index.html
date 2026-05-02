@@ -159,6 +159,7 @@
             <button class="btn btn-danger" onclick="localStorage.removeItem('currentUser'); location.reload();">ÇIKIŞ YAP</button>
             <button class="btn btn-warning" onclick="app.changePassword()">ŞİFRE DEĞİŞTİR</button>
             <button id="btn-analiz" class="btn btn-primary" style="background:#8e44ad; color:#fff;" onclick="app.openAnalizMerkezi()">🔍 PERSONEL ANALİZ MERKEZİ</button>
+            <button id="btn-log" class="btn hidden" style="background:#e67e22; color:#fff;" onclick="app.openLogMerkezi()">📜 SİSTEM LOG MERKEZİ</button>
             
             <div id="admin-toggle-area" class="hidden">
                 <label style="font-size:12px; color:var(--warning)">ŞEF ONAYINI DEVRE DIŞI BIRAK:</label>
@@ -432,6 +433,70 @@
         taskFilter: {arama: '', durum: '', baslangic: '', bitis: ''},
         keepSelectedAfterSave: true,
         unvanlar: ["Gümrük Memuru", "Gümrük Muayene Memuru", "Gümrük Muhafaza Memuru", "Gümrük Şefi", "Kısım Amiri", "Bölge Amiri", "Gümrük Müdür Yardımcısı", "Gümrük Müdürü", "KİM Müdürü", "Diğer"],
+addLog(tip, detay, ref = "-") {
+            if (!this.db.logs) this.db.logs = [];
+            const d = new Date();
+            const tarihStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+            const userName = this.user ? this.user.user : 'Sistem';
+            const userRol = this.user ? this.user.rol : '-';
+            this.db.logs.unshift({tarih: tarihStr, user: userName, rol: userRol, tip: tip, detay: detay, ref: ref});
+            if(this.db.logs.length > 5000) this.db.logs.pop(); 
+        },
+        openLogMerkezi() {
+            const r = this.user.rol;
+            if(!['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(r)) return alert("Bu alana giriş yetkiniz bulunmamaktadır!");
+            document.getElementById('log-modal').classList.remove('hidden');
+            this.renderLogList();
+        },
+        renderLogList() {
+            if (!this.db.logs) this.db.logs = [];
+            const t = document.getElementById('log-tarih').value;
+            const u = document.getElementById('log-user').value.toLowerCase();
+            const r = document.getElementById('log-ref').value.toLowerCase();
+            const tip = document.getElementById('log-tip').value;
+            
+            // "undefined" hatasını önlemek için bozuk veya eksik kayıtları filtreliyoruz
+            let f = this.db.logs.filter(l => l && l.tarih && l.user);
+            
+            if(t) f = f.filter(l => l.tarih.startsWith(t));
+            if(u) f = f.filter(l => l.user.toLowerCase().includes(u));
+            if(r) f = f.filter(l => l.ref.toLowerCase().includes(r));
+            if(tip) f = f.filter(l => l.tip === tip);
+            
+            // Filtrelenmiş veriyi Excel'e aktarabilmek için hafızada tutuyoruz
+            this.sonFiltreliLoglar = f;
+
+            document.getElementById('log-list-body').innerHTML = f.length > 0 ? f.map(l => `
+                <tr>
+                    <td>${l.tarih}</td>
+                    <td><b>${l.user}</b> <span style="color:var(--muted); font-size:9px;">(${l.rol})</span></td>
+                    <td><span class="tag" style="border-color:#e67e22; color:#e67e22">${l.tip}</span></td>
+                    <td><b>${l.ref}</b></td>
+                    <td>${l.detay}</td>
+                </tr>
+            `).join('') : `<tr><td colspan="5" style="text-align:center; padding:30px; color:#666;">Seçili kriterlerde işlem kaydı (log) bulunamadı.</td></tr>`;
+        },
+
+        exportLogExcel() {
+            if (!this.sonFiltreliLoglar || this.sonFiltreliLoglar.length === 0) {
+                return alert("Dışa aktarılacak log kaydı bulunamadı!");
+            }
+            
+            const excelData = this.sonFiltreliLoglar.map(l => ({
+                "Tarih / Saat": l.tarih,
+                "İşlemi Yapan Kullanıcı": l.user,
+                "Yetki Rolü": l.rol,
+                "İşlem Tipi": l.tip,
+                "Referans No": l.ref,
+                "Detay / Açıklama": l.detay
+            }));
+            
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            const wb = XLSX.utils.book_new();
+            
+            XLSX.utils.book_append_sheet(wb, ws, "Sistem_Loglari");
+            XLSX.writeFile(wb, `Sistem_Log_Raporu_${new Date().toISOString().slice(0,10)}.xlsx`);
+        },
 
         sortPersoneller() {
             if (this.db.personeller) {
@@ -473,6 +538,9 @@
                 }
 
                 if(r === 'Gümrük Müdürü') document.getElementById('admin-section').classList.add('hidden');
+                if(['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(r) && document.getElementById('btn-log')) {
+    document.getElementById('btn-log').classList.remove('hidden');
+}
 
                 this.loadFromCloud();
                 this.startAutoSync();
@@ -519,6 +587,9 @@
                 }
 
                 if(r === 'Gümrük Müdürü') document.getElementById('admin-section').classList.add('hidden');
+                if(['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(r) && document.getElementById('btn-log')) {
+    document.getElementById('btn-log').classList.remove('hidden');
+}
 
                 this.loadFromCloud();
                 this.startAutoSync();
@@ -662,6 +733,7 @@
             if(p && bas && bit) {
                 if(!this.db.izinler) this.db.izinler = [];
                 this.db.izinler.push({ personel: p, baslangic: bas, bitis: bit, tur: tur });
+                this.addLog("İzin İşlemi", `${p} için ${bas} / ${bit} arasına "${tur}" eklendi.`);
                 this.save();
                 alert("İzin/Rapor kaydı başarıyla oluşturuldu.");
             } else alert("Tüm alanlar doldurulmalı!");
@@ -669,6 +741,8 @@
 
         deleteLeave(index) {
             if(confirm("Silmek istiyor musunuz?")) {
+            const silinen = this.db.izinler[index];
+                this.addLog("İzin İptali", `${silinen.personel} isimli personelin "${silinen.tur}" kaydı iptal edildi.`);
                 this.db.izinler.splice(index, 1);
                 this.save();
             }
@@ -746,11 +820,12 @@
             });
 
             for (let i = 0; i < repeatCount; i++) {
+                const yeniRef = this.generateRef();
                 this.db.kayitlar.push({
-                    ref: this.generateRef(),
+                    ref: yeniRef,
                     no: document.getElementById('task-no').value || "Belirtilmedi",
                     personeller: [...this.selectedPs],
-                    pDetay: snapshotDetay, // Çekilen fotoğrafı arşive koyuyoruz
+                    pDetay: snapshotDetay,
                     personelSayisi: personelSayisi,
                     toplamMesai: toplamMesai,
                     toplamYolluk: toplamYolluk,
@@ -761,6 +836,7 @@
                     dekont: "",
                     tarih: ayStr
                 });
+                this.addLog("Yeni Görev Kaydı", `${personelSayisi} personel için görev oluşturuldu. Tutar: ${(toplamMesai+toplamYolluk).toFixed(2)} TL`, yeniRef);
             }
             
             this.keepSelectedAfterSave = document.getElementById('keep-selected').checked;
@@ -778,12 +854,14 @@
         deleteTask(ref) {
             if(confirm("Bu işlem geri alınamaz. Kaydı silmek istediğinize emin misiniz?")) {
                 this.db.kayitlar = this.db.kayitlar.filter(x => String(x.ref) !== String(ref));
+                this.addLog("Görev İptali", "Görev ve hakedişler sistemden tamamen silindi.", ref);
                 this.save();
             }
         },
 
         process(ref, s) { 
             this.db.kayitlar.find(x=>x.ref===ref).durum = s; 
+            this.addLog("Durum Güncellemesi", `Görev durumu "${s}" olarak güncellendi.`, ref);
             this.save(); 
         },
 
@@ -1010,7 +1088,17 @@
                 } else { tumAylar.push(hedefAy); }
             } else { tumAylar.push(hedefAy); }
             
-           const hakedisVerisi = this.db.personeller.map(p => {
+           // --- 1. HAYALET PERSONEL TESPİTİ (Ekranda Göstermek İçin) ---
+            const ayinGorevliIsimleri = [...new Set(onayliKayitlar.filter(k => k.tarih === hedefAy).flatMap(k => k.personeller))];
+            let hesaplamaListesi = [...this.db.personeller];
+            
+            ayinGorevliIsimleri.forEach(isim => {
+                if (!hesaplamaListesi.some(p => p.ad === isim)) {
+                    hesaplamaListesi.push({ ad: isim, birim: "Bilinmiyor", unvan: "Silinmiş Kayıt", sicil: "---", aktif: false });
+                }
+            });
+
+            const hakedisVerisi = hesaplamaListesi.map(p => {
                 let m = 0; 
                 let devredenYollukHavuzu = []; 
                 
@@ -1337,7 +1425,17 @@
 
         exportLimitsizExcel() {
             const hedefAy = this.seciliAy || this.mevcutAy();
-            const hakedisVerisi = this.db.personeller.map(p => {
+            
+            // --- 2. HAYALET PERSONEL TESPİTİ (Excel İçin) ---
+            const ayinGorevliIsimleri = [...new Set(this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih === hedefAy).flatMap(k => k.personeller))];
+            let hesaplamaListesi = [...this.db.personeller];
+            ayinGorevliIsimleri.forEach(isim => {
+                if (!hesaplamaListesi.some(p => p.ad === isim)) {
+                    hesaplamaListesi.push({ ad: isim, birim: "Bilinmiyor", unvan: "Silinmiş Kayıt", sicil: "---", aktif: false });
+                }
+            });
+
+            const hakedisVerisi = hesaplamaListesi.map(p => {
                 let m = 0, y = 0;
                 let gecmisBirim = p.birim, gecmisUnvan = p.unvan, gecmisSicil = p.sicil;
                 const gecmisGorevler = this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih <= hedefAy && k.pDetay && k.pDetay.some(x => x.ad === p.ad)).sort((a,b)=> a.tarih.localeCompare(b.tarih));
@@ -1525,9 +1623,20 @@
         renderAnalizList() {
             const searchTerm = document.getElementById('analiz-search').value.toLowerCase();
             const seciliYil = document.getElementById('analiz-yil').value;
+            const seciliBirim = document.getElementById('analiz-birim') ? document.getElementById('analiz-birim').value : "";
+            const siralama = document.getElementById('analiz-siralama') ? document.getElementById('analiz-siralama').value : "yolluk-cok";
             const body = document.getElementById('analiz-list-body');
             
-            const analizVerisi = this.db.personeller.map(p => {
+            // --- 3. HAYALET PERSONEL TESPİTİ (Analiz Merkezi İçin) ---
+            const yilGorevlileri = [...new Set(this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih.startsWith(seciliYil)).flatMap(k => k.personeller))];
+            let analizAdaylari = [...this.db.personeller];
+            yilGorevlileri.forEach(isim => {
+                if (!analizAdaylari.some(p => p.ad === isim)) {
+                    analizAdaylari.push({ ad: isim, birim: "Arşiv", unvan: "Silinmiş Kayıt", sicil: "---", aktif: false });
+                }
+            });
+
+            let analizVerisi = analizAdaylari.map(p => {
                 let toplamYolluk = 0;
                 let gorevSayisi = 0;
                 
@@ -1539,7 +1648,22 @@
                 return { ...p, toplamYolluk, gorevSayisi };
             }).filter(p => p.ad.toLowerCase().includes(searchTerm) || p.sicil.includes(searchTerm));
 
-            analizVerisi.sort((a, b) => b.toplamYolluk - a.toplamYolluk);
+            // BİRİM FİLTRESİ
+            if (seciliBirim) {
+                analizVerisi = analizVerisi.filter(p => p.birim === seciliBirim);
+            }
+
+            // AKILLI SIRALAMA
+            analizVerisi.sort((a, b) => {
+                if (siralama === 'yolluk-cok') return b.toplamYolluk - a.toplamYolluk;
+                if (siralama === 'yolluk-az') return a.toplamYolluk - b.toplamYolluk;
+                if (siralama === 'gorev-cok') return b.gorevSayisi - a.gorevSayisi;
+                if (siralama === 'gorev-az') return a.gorevSayisi - b.gorevSayisi;
+                return b.toplamYolluk - a.toplamYolluk; // Varsayılan
+            });
+
+            // Görünen veriyi Excel fonksiyonu için havuzda tutuyoruz
+            this.sonFiltreliAnalizListesi = analizVerisi;
 
             body.innerHTML = analizVerisi.map(p => `
                 <tr>
@@ -1553,6 +1677,31 @@
             `).join('');
         },
 
+        exportAnalizListExcel() {
+            if (!this.sonFiltreliAnalizListesi || this.sonFiltreliAnalizListesi.length === 0) {
+                return alert("Dışa aktarılacak analiz verisi bulunamadı!");
+            }
+            const seciliYil = document.getElementById('analiz-yil').value;
+            const seciliBirim = document.getElementById('analiz-birim') ? document.getElementById('analiz-birim').value : "Tüm Birimler";
+            
+            const excelData = this.sonFiltreliAnalizListesi.map(p => ({
+                "Sicil": p.sicil,
+                "Ad Soyad": p.ad,
+                "Birim": p.birim,
+                "Ünvan": p.unvan,
+                "Toplam Çıkılan Görev Adedi": p.gorevSayisi,
+                "Toplam Kazanılan Yolluk (TL)": p.toplamYolluk.toFixed(2)
+            }));
+            
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            const wb = XLSX.utils.book_new();
+            
+            // Excel sayfa adını belirleme
+            let sayfaAdi = seciliBirim === "" ? "Tum_Personel" : seciliBirim;
+            
+            XLSX.utils.book_append_sheet(wb, ws, "Analiz_Raporu");
+            XLSX.writeFile(wb, `Personel_Analiz_Raporu_${sayfaAdi}_${seciliYil}.xlsx`);
+        },
         showKisiDetay(ad, yil) {
             const gorevler = this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih.startsWith(yil) && k.personeller.includes(ad));
             const p = this.db.personeller.find(x => x.ad === ad) || {ad, sicil: '-', unvan: '-'};
@@ -1620,14 +1769,33 @@
     <div style="background:#0d1117; width:90%; max-width:1100px; height:85vh; border:1px solid var(--accent); border-radius:15px; padding:20px; display:flex; flex-direction:column;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:15px;">
             <h2 style="color:var(--accent); margin:0;">🔍 Personel Analiz & Arşiv Merkezi</h2>
-            <button class="btn btn-danger" onclick="document.getElementById('analiz-modal').classList.add('hidden')">KAPAT [X]</button>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-primary" onclick="app.exportAnalizListExcel()">📊 EKRANDAKİ LİSTEYİ EXCEL AKTAR</button>
+                <button class="btn btn-danger" onclick="document.getElementById('analiz-modal').classList.add('hidden')">KAPAT [X]</button>
+            </div>
         </div>
         
-        <div style="display:flex; gap:15px; margin:20px 0;">
-            <input type="text" id="analiz-search" placeholder="Personel Adı veya Sicil Yazın..." style="flex:2;" onkeyup="app.renderAnalizList()">
-            <select id="analiz-yil" style="flex:0.5;" onchange="app.renderAnalizList()">
+        <div style="display:flex; flex-wrap:wrap; gap:10px; margin:15px 0; background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid var(--border);">
+            <input type="text" id="analiz-search" placeholder="Personel Adı veya Sicil Yazın..." style="flex:1; min-width:150px;" onkeyup="app.renderAnalizList()">
+            
+            <select id="analiz-yil" style="width:110px;" onchange="app.renderAnalizList()">
                 <option value="2026">2026 Yılı</option>
                 <option value="2025">2025 Yılı</option>
+            </select>
+            
+            <select id="analiz-birim" style="width:140px;" onchange="app.renderAnalizList()">
+                <option value="">Tüm Birimler</option>
+                <option value="Gümrük">Gümrük</option>
+                <option value="Muhafaza">Muhafaza</option>
+                <option value="KİM">KİM</option>
+                <option value="Arşiv">Silinmiş/Arşiv</option>
+            </select>
+            
+            <select id="analiz-siralama" style="width:200px;" onchange="app.renderAnalizList()">
+                <option value="yolluk-cok">💰 Yolluk (Çoktan Aza)</option>
+                <option value="yolluk-az">💰 Yolluk (Azdan Çoğa)</option>
+                <option value="gorev-cok">📋 Görev Sayısı (Çoktan Aza)</option>
+                <option value="gorev-az">📋 Görev Sayısı (Azdan Çoğa)</option>
             </select>
         </div>
 
@@ -1663,6 +1831,50 @@
         <div id="kisi-detay-icerik"></div>
     </div>
 </div>
-    
+
+ <!-- SİSTEM LOG MERKEZİ MODAL -->
+<div id="log-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:10001; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(10px);">
+    <div style="background:#0d1117; width:90%; max-width:1200px; height:85vh; border:1px solid #e67e22; border-radius:15px; padding:20px; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:15px;">
+            <h2 style="color:#e67e22; margin:0;">📜 Sistem İşlem Kayıtları (Log Merkezi)</h2>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-success" onclick="app.exportLogExcel()">📥 EKRANDAKİ LOGLARI EXCEL'E AKTAR</button>
+                <button class="btn btn-danger" onclick="document.getElementById('log-modal').classList.add('hidden')">KAPAT [X]</button>
+            </div>
+        </div>
+        
+        <div style="display:flex; flex-wrap:wrap; gap:10px; margin:15px 0; background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid var(--border);">
+            <input type="date" id="log-tarih" style="width:140px;" onchange="app.renderLogList()" title="Tarihe Göre Filtrele">
+            <input type="text" id="log-user" placeholder="İşlemi Yapan Kullanıcı" style="width:160px;" onkeyup="app.renderLogList()">
+            <input type="text" id="log-ref" placeholder="Referans No" style="width:140px;" onkeyup="app.renderLogList()">
+            <select id="log-tip" style="width:180px;" onchange="app.renderLogList()">
+                <option value="">Tüm İşlem Tipleri</option>
+                <option value="Yeni Görev Kaydı">Yeni Görev Kaydı</option>
+                <option value="Durum Güncellemesi">Durum Güncellemesi (Havale/Onay)</option>
+                <option value="Evrak Güncellemesi">Evrak Güncellemesi (EBYS/Dekont)</option>
+                <option value="Görev İptali">Görev İptali (Silme)</option>
+                <option value="İzin İşlemi">İzin İşlemi</option>
+                <option value="İzin İptali">İzin İptali</option>
+            </select>
+            <button class="btn btn-warning" onclick="document.getElementById('log-tarih').value=''; document.getElementById('log-user').value=''; document.getElementById('log-ref').value=''; document.getElementById('log-tip').value=''; app.renderLogList();">FİLTREYİ TEMİZLE</button>
+        </div>
+
+        <div style="overflow-y:auto; flex:1; border:1px solid var(--border); border-radius:8px;">
+            <table style="width:100%; font-size:11px;">
+                <thead style="position:sticky; top:0; background:#161b22; z-index:1;">
+                    <tr>
+                        <th style="width:15%">Tarih / Saat</th>
+                        <th style="width:15%">İşlemi Yapan</th>
+                        <th style="width:15%">İşlem Tipi</th>
+                        <th style="width:15%">Referans No</th>
+                        <th style="width:40%">Detay / Açıklama</th>
+                    </tr>
+                </thead>
+                <tbody id="log-list-body"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+   
 </body>
 </html>
