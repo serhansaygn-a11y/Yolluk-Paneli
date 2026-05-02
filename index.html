@@ -127,10 +127,24 @@
         100% { background-color: var(--danger); box-shadow: 0 0 10px var(--danger); } 
       }
       .blink-alert { animation: flashAlert 1.2s infinite; color: #fff !important; font-weight: bold; border: 2px solid #fff; }
+    /* SİSTEM AÇILIŞ (SPLASH) EKRANI CSS */
+      #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out; }
+      .splash-logo { height: 130px; border-radius: 15px; box-shadow: 0 0 25px rgba(0, 246, 210, 0.4); margin-bottom: 25px; animation: pulseLogo 1.5s infinite alternate; }
+      @keyframes pulseLogo { 0% { transform: scale(0.95); opacity: 0.8; } 100% { transform: scale(1.05); opacity: 1; } }
+      .splash-text { color: var(--accent); font-size: 16px; font-weight: bold; letter-spacing: 2px; animation: blinkText 1.2s infinite alternate; }
+      @keyframes blinkText { 0% { opacity: 0.4; } 100% { opacity: 1; } }
+      .splash-alt-text { color: var(--muted); font-size: 12px; margin-top: 10px; }
+      .fade-out { opacity: 0 !important; visibility: hidden !important; }
     </style>
 </head>
 <body>
   
+  <!-- SİSTEM AÇILIŞ (SPLASH) EKRANI -->
+  <div id="splash-screen">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/b/b1/T.C._G%C3%9CMR%C3%9CKLER%C4%B0_TURKISH_CUSTOMS..png"class="splash-logo">
+      <div class="splash-text">VERİTABANI SENKRONİZE EDİLİYOR...</div>
+      <div class="splash-alt-text">Kayseri Gümrük Müdürlüğü Güvenli Bağlantısı Kuruluyor</div>
+  </div>
   <div id="print-area"></div>
 
   <div class="app">
@@ -1905,9 +1919,18 @@ hardBackup() {
         }
     };
 
-    app.loadFromCloud(); // Sayfa açılır açılmaz, arka planda güncel şifreleri indirir
+    // SİSTEM BAŞLATICI VE SPLASH KONTROLÜ
+    app.loadFromCloud(); 
     app.checkSession();
     app.startAutoSync();
+    
+    // Açılış animasyonu ve Google senkronizasyonu için perde bekleme süresi
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            const splash = document.getElementById('splash-screen');
+            if(splash) splash.classList.add('fade-out');
+        }, 1800); // 1.8 saniye boyunca animasyonu gösterir, sonra yok eder
+    });
   </script>
   <!-- PERSONEL ANALİZ MODAL -->
 <div id="analiz-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(10px);">
