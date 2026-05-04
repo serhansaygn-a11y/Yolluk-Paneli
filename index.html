@@ -404,6 +404,12 @@
                             <input type="number" id="task-repeat" value="1" min="1" style="width:70px; text-align:center; background:#0d1117; color:#fff; border:1px solid var(--border); border-radius:6px; padding:4px 8px;">
                             kez kaydet
                         </label>
+
+                        <!-- EKLENEN KOTA BUTONU -->
+                        <label style="font-size:11px; color:var(--danger); white-space:nowrap; display:flex; align-items:center; gap:5px; border:1px solid var(--danger); padding:4px 8px; border-radius:6px; cursor:pointer;">
+                            <input type="checkbox" id="strict-limit-check" checked> 
+                            <b>KOTA SINIRINI ZORLA (Aşımı Engelle)</b>
+                        </label>
                     </div>
 
                     <button class="btn btn-primary" style="width:100%; height:42px; margin-top:10px;" onclick="app.saveTask()">GÖREVİ KAYDET VE HAVALE ET</button>
@@ -455,9 +461,12 @@
 
   <script>
     const app = {
-   updateYollukLimit() {
+        lastLocalChange: 0,
+        updateYollukLimit() {
             const val = parseFloat(document.getElementById('sys-yolluk-limit').value);
             const ay = document.getElementById('sys-limit-ay').value;
+            
+            if (!ay) return alert("Lütfen limitin geçerli olacağı başlangıç ayını seçin!");
             
             if (!ay) return alert("Lütfen limitin geçerli olacağı başlangıç ayını seçin!");
             if (val && val > 0) {
@@ -987,11 +996,43 @@ hardBackup() {
             const now = new Date();
             const ayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
+            // --- 🛑 YENİ: İSTEĞE BAĞLI KOTA KORUMA KONTROLÜ 🛑 ---
+            const siniriZorla = document.getElementById('strict-limit-check').checked;
+            
+            let gecerliLimit = 50600; 
+            if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
+                let aylar = Object.keys(this.db.yollukSiniri).filter(a => a <= ayStr).sort();
+                if (aylar.length > 0) gecerliLimit = this.db.yollukSiniri[aylar[aylar.length - 1]];
+            } else if (this.db.yollukSiniri) {
+                gecerliLimit = parseFloat(this.db.yollukSiniri);
+            }
+
+            const kisiBasiYeniYolluk = (toplamYolluk / personelSayisi) * repeatCount; 
+
+            if (siniriZorla && kisiBasiYeniYolluk > 0) {
+                let asanPersoneller = [];
+                for (let p of this.selectedPs) {
+                    let kisininBuAykiYollugu = 0;
+                    this.db.kayitlar.filter(k => k.tarih === ayStr && k.personeller.includes(p) && k.durum !== "Reddedildi" && k.durum !== "Silme Talebinde").forEach(k => {
+                        kisininBuAykiYollugu += (k.yTotal || k.toplamYolluk) / k.personelSayisi;
+                    });
+                    
+                    if (kisininBuAykiYollugu + kisiBasiYeniYolluk > gecerliLimit) {
+                        asanPersoneller.push(`- ${p} (Bu görevle ${(kisininBuAykiYollugu + kisiBasiYeniYolluk).toFixed(2)} TL'ye çıkıyor)`);
+                    }
+                }
+                
+                if (asanPersoneller.length > 0) {
+                    alert(`🛑 KOTA AŞIMI ENGELLENDİ! 🛑\n\n"Sınırı Zorla" butonu aktif olduğu için bu işlem durduruldu. Aşağıdaki personeller yasal sınırı (${gecerliLimit} TL) aşıyor:\n\n${asanPersoneller.join('\n')}\n\nEğer bu tutarın DEVRETMESİNİ istiyorsanız, kırmızı "Kota Sınırını Zorla" kutucuğunun işaretini kaldırıp tekrar kaydedin.`);
+                    return; 
+                }
+            }
+            // --- 🛑 KOTA KORUMA BİTİŞİ 🛑 ---
+
             if (repeatCount > 1) {
                 if (!confirm(`⚠️ Bu işlem aynı görevi TAM ${repeatCount} kez kaydedecek!\n\nHer biri ayrı referans numarası alacak.\nDevam etmek istiyor musunuz?`)) return;
             }
 
-            // KOD AMELİYATI B: Görev anındaki birim, unvan ve sicilin fotoğrafını çekiyoruz
             const snapshotDetay = this.selectedPs.map(isim => {
                 const gercekPersonel = this.db.personeller.find(x => x.ad === isim) || {};
                 return {
@@ -1131,10 +1172,13 @@ hardBackup() {
         },
 
         save() { 
+            this.lastLocalChange = Date.now(); // Değişiklik anını kaydet
             localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db)); 
             this.render(); 
+            
             const GIZLI_ANAHTAR = "KayseriGumruk2026_GizliAnahtar!123";
             const scriptURL = 'https://script.google.com/macros/s/AKfycbxn2ZWZKfpqRwF1RItRIjXc9jpkhlKtfV_kPp8_foSp8zQq9tx7bVhydYx3f6alfD2o/exec';            
+            
             fetch(scriptURL, {
                 method: 'POST',
                 cache: 'no-cache',
@@ -1145,15 +1189,33 @@ hardBackup() {
                     payload: this.db,
                     token: GIZLI_ANAHTAR 
                 })
-            }).then(r=>r.json()).then(d=>console.log("Bulut OK", d)).catch(e=>console.log("Bulut Err", e));
+            })
+            .then(r => r.json())
+            .then(d => {
+                console.log("Bulut Güncellendi ✔", d);
+                document.getElementById('sync-status').innerText = "Buluta Yazıldı ✔";
+            })
+            .catch(e => {
+                console.error("Bulut Hatası:", e);
+                document.getElementById('sync-status').innerText = "Yazma Hatası! ❌";
+            });
         },
 
         loadFromCloud() {
+            const now = Date.now();
+            // Eğer son 20 saniye içinde yerel bir değişiklik yapıldıysa senkronizasyonu atla
+            if (now - this.lastLocalChange < 20000) { 
+                document.getElementById('sync-status').innerText = "Bulut bekleniyor... ⏳";
+                return; 
+            }
+
             const GIZLI_ANAHTAR = "KayseriGumruk2026_GizliAnahtar!123";
             const scriptURL = 'https://script.google.com/macros/s/AKfycbxn2ZWZKfpqRwF1RItRIjXc9jpkhlKtfV_kPp8_foSp8zQq9tx7bVhydYx3f6alfD2o/exec';
-            document.getElementById('sync-status').innerText = "Veri Çekiliyor...";
+            document.getElementById('sync-status').innerText = "Veri Kontrolü...";
             
-            fetch(scriptURL + '?token=' + GIZLI_ANAHTAR).then(res => res.text()).then(data => {
+            fetch(scriptURL + '?token=' + GIZLI_ANAHTAR)
+            .then(res => res.text())
+            .then(data => {
                 if (data && data.trim() !== "" && data !== "null") {
                     try {
                         const cloudData = JSON.parse(data);
@@ -1164,8 +1226,11 @@ hardBackup() {
                             this.render();
                             document.getElementById('sync-status').innerText = "Bulut Senkronize ✔ (" + new Date().toLocaleTimeString() + ")";
                         }
-                    } catch(e) { console.error("Bulut hatası:", e); }
+                    } catch(e) { console.error("Bulut okuma hatası:", e); }
                 }
+            })
+            .catch(e => {
+                document.getElementById('sync-status').innerText = "Bağlantı Hatası 🌐";
             });
         },
         
