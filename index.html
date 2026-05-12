@@ -1099,10 +1099,42 @@ updatePersonel(i, alan, yeniDeger) {
         },
 
         deleteTask(ref) {
-            if(confirm("Bu işlem geri alınamaz. Kaydı silmek istediğinize emin misiniz?")) {
+            // Silme onayı (Mesajı da akıllı sisteme göre biraz güncelledik)
+            if(confirm("Bu işlem geri alınamaz. Kayıt ve varsa sonraki aya sarkan 'Devreden Miktar' bakiyeleri tamamen silinecektir. Emin misiniz?")) {
+                
+                // 1. Önce silinecek kaydı bulalım ki kimin ve hangi ayın silindiğini bilelim
+                const silinecekKayit = this.db.kayitlar.find(x => String(x.ref) === String(ref));
+
+                // 2. Ana kaydı (Örn: Nisan ayındaki kısıtlamayı) filtreleyip silelim
                 this.db.kayitlar = this.db.kayitlar.filter(x => String(x.ref) !== String(ref));
                 this.addLog("Görev İptali", "Görev ve hakedişler sistemden tamamen silindi.", ref);
+
+                // 3. TEMİZLİK ROBOTU DEVREYE GİRİYOR 🤖
+                if (silinecekKayit && silinecekKayit.isim && silinecekKayit.ay) {
+                    const silinenPersonel = silinecekKayit.isim;
+                    const silinenAy = silinecekKayit.ay;
+                    
+                    const aylar = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+                    const silinenAyIndex = aylar.indexOf(silinenAy);
+
+                    // Eğer silinen ayın bir sonraki ayı varsa (Aralık değilse)
+                    if (silinenAyIndex >= 0 && silinenAyIndex < 11) {
+                        const sonrakiAy = aylar[silinenAyIndex + 1];
+
+                        // Sonraki ayda, bu kişiye ait olan ve içinde "devre" geçen hayalet kayıtları bul ve yok et
+                        this.db.kayitlar = this.db.kayitlar.filter(x => {
+                            // Kaydın açıklamasında veya görevinde "devre" yazıyor mu diye bakıyoruz
+                            const aciklamaMetni = (x.aciklama || x.gorev || "").toLowerCase();
+                            const hayaletMi = (x.isim === silinenPersonel) && (x.ay === sonrakiAy) && aciklamaMetni.includes("devre");
+                            
+                            return !hayaletMi; // Hayaletse sil, değilse tut
+                        });
+                    }
+                }
+
+                // 4. Veritabanını kaydet (ve sistemin arayüzünü güncelle)
                 this.save();
+                if(typeof this.render === 'function') this.render();
             }
         },
 
@@ -1398,16 +1430,16 @@ updatePersonel(i, alan, yeniDeger) {
                     if (islenenAy > hedefAy) return; 
 
                     // --- TARİHE DUYARLI LİMİT KONTROLÜ (HAYAT KURTARAN KISIM) ---
-                    let yollukLimit = 50600; 
-                    if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
-                        // İşlediğimiz aya kadar olan en güncel limiti bulur
-                        let gecerliAylar = Object.keys(this.db.yollukSiniri).filter(a => a <= islenenAy).sort();
-                        if (gecerliAylar.length > 0) {
-                            yollukLimit = this.db.yollukSiniri[gecerliAylar[gecerliAylar.length - 1]];
-                        }
-                    } else if (this.db.yollukSiniri) {
-                        yollukLimit = parseFloat(this.db.yollukSiniri); 
-                    }
+                    let yollukLimit = Infinity; 
+
+if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
+    if (this.db.yollukSiniri[islenenAy] !== undefined) {
+        // Eğer o ay için özel bir sınır girilmişse onu uygula
+        yollukLimit = parseFloat(this.db.yollukSiniri[islenenAy]);
+    }
+} else if (this.db.yollukSiniri) {
+    yollukLimit = parseFloat(this.db.yollukSiniri); 
+}
                     // -------------------------------------------------------------
                     
                     let buAyKullanilanYollukLimiti = 0;
