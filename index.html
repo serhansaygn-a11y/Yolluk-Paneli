@@ -211,8 +211,6 @@
             <button id="btn-uyari" class="btn hidden" style="background:var(--danger); color:#fff;" onclick="app.showUyariModal()">🔔 EKSİK DEKONTLAR (<span id="uyari-sayi">0</span>)</button>
             
             <div id="admin-toggle-area" class="hidden">
-                <label style="font-size:12px; color:var(--warning)">ŞEF ONAYINI DEVRE DIŞI BIRAK:</label>
-                <input type="checkbox" id="bypass-sef" style="width:auto;" onchange="app.db.bypassSef = this.checked; app.save()">
                 <button class="btn btn-success" style="margin-left:20px; font-size:10px; padding:4px 10px;" onclick="app.hardBackup()">💾 SİSTEMİ BİLGİSAYARA YEDEKLE (.JSON)</button>
                 <button id="btn-uyari-sifirla" class="btn hidden" style="margin-left:10px; background:#8e44ad; color:#fff; font-size:10px; padding:4px 10px;" onclick="app.acTümUyarilari()">🔔 KAPATILAN UYARI SİSTEMİNİ AÇ</button>
             </div>
@@ -288,6 +286,31 @@
         </div>
 
         <!-- Admin Section -->
+       <div style="background: rgba(255, 71, 87, 0.05); border: 1px solid rgba(255, 71, 87, 0.3); padding: 15px; border-radius: 8px; margin-top: 15px;">
+    
+    <h4 style="margin: 0 0 12px 0; color: #ff4757; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 16px;">⚙️</span> Sistem Yetki Şalterleri
+    </h4>
+    
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        
+        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin: 0;">
+            <input type="checkbox" id="check-sefonayi" style="margin-top: 2px; width: 16px; height: 16px; cursor: pointer; flex-shrink: 0;" onchange="app.db.sefOnayiDevreDisi = this.checked; app.save(); alert(this.checked ? 'Şef Onayı DEVRE DIŞI bırakıldı! İşlemler direkt Müdür onayına düşecek.' : 'Şef Onayı AKTİF edildi!');"> 
+            <span style="font-size: 12px; color: var(--text); line-height: 1.4; font-weight: bold;">Şef Onayını Devre Dışı Bırak</span>
+        </label>
+        
+        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin: 0;">
+            <input type="checkbox" id="check-ciktial" style="margin-top: 2px; width: 16px; height: 16px; cursor: pointer; flex-shrink: 0;" onchange="app.db.memurOnaysizCikti = this.checked; app.save(); alert(this.checked ? 'Onaysız Çıktı İzni AÇILDI' : 'Onaysız Çıktı İzni KAPATILDI');"> 
+            <span style="font-size: 12px; color: var(--text); line-height: 1.4;">Memurlar Onaylanmamış Görevlerin Çıktısını Alabilsin</span>
+        </label>
+        
+        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin: 0;">
+            <input type="checkbox" id="check-topluonay" style="margin-top: 2px; width: 16px; height: 16px; cursor: pointer; flex-shrink: 0;" onchange="app.db.mudurTopluOnay = this.checked; app.save(); alert(this.checked ? 'Toplu Onay Yetkisi AÇILDI' : 'Toplu Onay Yetkisi KAPATILDI');"> 
+            <span style="font-size: 12px; color: var(--text); line-height: 1.4;">Müdür ve Müdür Yardımcısı "Toplu Onay" Yapabilsin</span>
+        </label>
+
+    </div>
+</div>
         <div id="admin-section" class="hidden">
             <div class="card-section" style="grid-column: span 2; border: 1px solid var(--warning);">
     <h3 style="border-bottom:1px solid var(--warning); padding-bottom:8px; color:var(--warning)">⚙️ Dinamik Yolluk Sınırı Ayarı (Tarihe Duyarlı)</h3>
@@ -320,6 +343,16 @@
                             <option>Gümrük Şefi</option><option>Kısım Amiri</option><option>Bölge Amiri</option>
                             <option>Gümrük Müdür Yardımcısı</option><option>Gümrük Müdürü</option><option>KİM Müdürü</option><option value="Diğer">Diğer</option>
                         </select>
+                        <div style="margin-top: 15px; padding: 15px; background: var(--card); border: 1px solid var(--border); border-radius: 8px;">
+    <h4 style="margin-top: 0; color: var(--accent); font-size: 14px;">📥 Excel'den Toplu Personel Ekle</h4>
+    <p style="font-size: 11px; color: var(--muted); margin-bottom: 10px;">
+        Excel'in 1. satırı başlık olmalıdır. Sütun sırası: <b>A: Ad Soyad, B: Sicil No, C: Ünvan</b> şeklinde olmalıdır.
+    </p>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <input type="file" id="personel-excel-input" accept=".xlsx, .xls" class="input" style="flex: 1; padding: 5px; font-size: 12px;">
+        <button class="btn btn-success" onclick="app.personelExcelYukle()" style="white-space: nowrap;">📄 Yükle ve Aktar</button>
+    </div>
+</div>
                     </div>
                     <button class="btn btn-primary" style="width:100%" onclick="app.addPersonel()">YENİ PERSONEL EKLE</button>
                     <div style="max-height: 400px; overflow-y: auto; margin-top:10px; border-top:1px solid var(--border);">
@@ -418,10 +451,14 @@
         </div>
 
         <!-- İşlem Takip Listesi -->
+        
         <div class="card-section" id="task-list-section">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:15px;">
                 <h3 style="border:none; padding:0; margin:0;">İşlem Takip Listesi</h3>
                 <div>
+                    <button id="btn-toplu-onay" class="btn btn-success" style="background:#27ae60; color:#fff;" onclick="app.topluOnayVer()">
+    ✅ BEKLEYENLERİ TOPLU ONAYLA
+</button>
                     <button class="btn btn-primary" onclick="app.exportTaskListExcel()">LİSTEYİ EXCEL AKTAR</button>
                     <button class="btn btn-success" onclick="app.importEbysDekontExcel()" style="margin-left:8px;">
                         📥 EXCEL’DEN EBYS/DEKONT İÇE AKTAR
@@ -445,7 +482,7 @@
                 <button class="btn btn-warning" style="font-size:9px;" onclick="app.clearAllFilters()">FİLTREYİ TEMİZLE</button>
             </div>
             <table>
-                <thead><tr><th>Referans</th><th>Evrak No</th><th>Görevliler</th><th>Tutar Detayı ("Yardır")</th><th>Durum</th><th>EBYS</th><th>Dekont</th><th>İşlem</th></tr></thead>
+                <thead><tr><th>Referans</th><th>Dekont No</th><th>Görevliler</th><th>Tutar Detayı ("Yardır")</th><th>Durum</th><th>EBYS</th><th>Dekont</th><th>İşlem</th></tr></thead>
                 <tbody id="main-list"></tbody>
             </table>
         </div>
@@ -487,6 +524,7 @@
             bypassSef: false
         },
         user: null,
+        isSaving: false, // YENİ EKLENEN KİLİT
         selectedPs: [],
         seciliAy: null,
         gosterimMod: 'yolluk',
@@ -504,7 +542,7 @@ addLog(tip, detay, ref = "-") {
         },
         openLogMerkezi() {
             const r = this.user.rol;
-            if(!['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(r)) return alert("Bu alana giriş yetkiniz bulunmamaktadır!");
+            if(!['Admin'].includes(r)) return alert("Bu alana giriş yetkiniz bulunmamaktadır!");
             this.addLog("Modül Erişimi", "Sistem Log Merkezi ekranı açıldı ve görüntülendi."); // <-- BU SATIRI EKLE
             this.save(); // <-- BU SATIRI EKLE
             document.getElementById('log-modal').classList.remove('hidden');
@@ -883,6 +921,62 @@ updatePersonel(i, alan, yeniDeger) {
                 this.save();
             }
         },
+
+        personelExcelYukle() {
+            const input = document.getElementById('personel-excel-input');
+            const file = input.files[0];
+            if (!file) return alert("Lütfen önce bir Excel dosyası seçin!");
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                
+                // Excel'i Dizi (Array) formatında okuyoruz (header: 1)
+                const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                
+                if (rows.length < 2) return alert("Excel dosyasında eklenecek personel verisi bulunamadı.");
+
+                let eklenenSayisi = 0;
+                
+                // 1. Satır (index 0) başlık olduğu için döngüye index 1'den (2. satırdan) başlıyoruz
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (!row || row.length === 0) continue; // Boş satırı atla
+                    
+                    const isim = (row[0] || "").toString().trim();
+                    const sicil = (row[1] || "").toString().trim();
+                    const unvan = (row[2] || "").toString().trim();
+                    
+                    if (isim) {
+                        // Aynı isimde personel zaten var mı diye kontrol ediyoruz
+                        const zatenVarMi = this.db.personeller.find(p => p.ad.toLowerCase() === isim.toLowerCase());
+                        
+                        if (!zatenVarMi) {
+                            this.db.personeller.push({
+                                ad: isim,
+                                sicil: sicil,
+                                unvan: unvan
+                            });
+                            eklenenSayisi++;
+                        }
+                    }
+                }
+
+                if (eklenenSayisi > 0) {
+                    this.save();
+                    if(typeof this.renderPersonelListesi === 'function') this.renderPersonelListesi(); // Tabloyu yeniler (Sende renderPersoneller ise adını ona göre düzelt)
+                    alert(`✅ İşlem Başarılı!\nExcel'den ${eklenenSayisi} yeni personel sisteme eklendi.`);
+                } else {
+                    alert("⚠️ Yeni personel eklenemedi.\nSebebi: Listedeki isimler zaten sistemde mevcut olabilir veya format hatalıdır.");
+                }
+                
+                input.value = ""; // İşlem bitince dosya seçiciyi temizle
+            };
+            
+            reader.readAsArrayBuffer(file);
+        },
         addPersonel() {
             const sicil = document.getElementById('p-sicil').value.trim();
             const ad = document.getElementById('p-ad').value.trim();
@@ -1097,6 +1191,38 @@ updatePersonel(i, alan, yeniDeger) {
             
             this.save();
         },
+topluOnayVer() {
+            // 1. Rol Kontrolü (Memurlar bu butona bassa bile çalışmaz)
+            const rol = this.user.rol;
+            if (rol !== 'Gümrük Müdürü' && rol !== 'Müdür Yardımcısı' && rol !== 'Admin') {
+                return alert("Yetkisiz İşlem: Toplu onay yapma yetkiniz bulunmamaktadır.");
+            }
+            
+            // 2. Admin Şalteri Kontrolü (Admin hariç herkesi kilitler)
+            if (rol !== 'Admin' && !this.db.mudurTopluOnay) {
+                return alert("⛔ Admin bu yetkiyi geçici olarak kapatmıştır. Lütfen sistem yöneticisiyle görüşün.");
+            }
+
+            // 3. Bekleyen İşleri Bul
+            let bekleyenler = this.db.kayitlar.filter(x => x.durum === 'Bekliyor');
+            if (bekleyenler.length === 0) {
+                return alert("Şu anda onay bekleyen hiçbir görev bulunmuyor.");
+            }
+
+            // 4. Toplu Onayı Gerçekleştir
+            if (confirm(`Sistemde ${bekleyenler.length} adet bekleyen görev var. Hepsini TEK SEFERDE onaylamak istediğinize emin misiniz?`)) {
+                bekleyenler.forEach(k => k.durum = 'Onaylandı');
+                
+                // Log merkezine yaz
+                if (typeof this.addLog === 'function') {
+                    this.addLog("Toplu Onay", `${this.user.user}, ${bekleyenler.length} adet görevi tek seferde onayladı.`);
+                }
+                
+                this.save();
+                if (typeof this.render === 'function') this.render();
+                alert("✅ Tüm bekleyen görevler başarıyla onaylandı!");
+            }
+        },
 
         deleteTask(ref) {
             // Silme onayı (Mesajı da akıllı sisteme göre biraz güncelledik)
@@ -1159,11 +1285,26 @@ updatePersonel(i, alan, yeniDeger) {
             }
         },
 
-        printDoc(ref) {
+       printDoc(ref) {
             const l = this.db.kayitlar.find(x => x.ref === ref);
+            if (!l) return;
+
+            // --- YENİ ÇIKTI YETKİ KONTROLÜ (ADIM 4) ---
+            if (l.durum !== 'Onaylandı') {
+                // Admin şalteri kapalıysa KESİNLİKLE yazdırma!
+                if (!this.db.memurOnaysizCikti) {
+                    alert("⛔ Admin Onaysız Çıktı Alımını KAPATTI! Sadece 'Onaylandı' durumundaki görevlerin çıktısını alabilirsiniz.");
+                    return; // İşlemi durdur
+                } else {
+                    // Admin şalteri açıksa uyarı ver, onaylarsa yazdır
+                    if (!confirm("⚠️ DİKKAT: Bu görev henüz müdür tarafından onaylanmamıştır! Yine de taslak olarak çıktı almak istiyor musunuz?")) return;
+                }
+            }
+            // -----------------------------------------
+
             const area = document.getElementById('print-area');
-            const m = l.mTotal || l.toplamMesai;
-            const y = l.yTotal || l.toplamYolluk;
+            const m = l.mTotal || l.toplamMesai || 0;
+            const y = l.yTotal || l.toplamYolluk || 0;
             const total = m + y;
 
             let breakdownHtml = "";
@@ -1182,11 +1323,11 @@ updatePersonel(i, alan, yeniDeger) {
                 <h1>GÖREV VE TAHAKKUK FORMU</h1>
                 <h2>REF: ${l.ref}</h2>
                 <div class="line"><strong>GÖREVLİLER:</strong></div>
-                ${l.personeller.map((p, index) => {
+                ${(l.personeller || []).map((p, index) => {
                     const d = this.db.personeller.find(x => x.ad === p);
                     return `<div class="line">${index + 1} - ${d ? d.sicil : ''} ${p} (${d ? d.unvan : ''})</div>`;
                 }).join('')}
-                <div class="line" style="margin-top:5px;">Evrak No: ${l.no}</div>
+                <div class="line" style="margin-top:5px;">Evrak No: ${l.no || ''}</div>
                 ${breakdownHtml}
                 <div class="line" style="margin-top:5px;">EBYS: ${l.ebys || '_______'} | DEKONT: ${l.dekont || '_______'}</div>
                 <div class="line" style="margin-top:10px;">ONAYLAYAN<br>....................</div>
@@ -1227,42 +1368,56 @@ updatePersonel(i, alan, yeniDeger) {
         },
 
         save() { 
-            this.lastLocalChange = Date.now(); // Değişiklik anını kaydet
+            // 1. Ekranı ve yerel hafızayı anında güncelle (Sen hiç beklemezsin)
+            this.lastLocalChange = Date.now(); 
             localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db)); 
             this.render(); 
-            
-            const GIZLI_ANAHTAR = "KayseriGumruk2026_GizliAnahtar!123";
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbxn2ZWZKfpqRwF1RItRIjXc9jpkhlKtfV_kPp8_foSp8zQq9tx7bVhydYx3f6alfD2o/exec';            
-            
-            fetch(scriptURL, {
-                method: 'POST',
-                cache: 'no-cache',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({
-                    user: this.user ? this.user.user : 'Sistem',
-                    action: 'Veri Yedekleme',
-                    payload: this.db,
-                    token: GIZLI_ANAHTAR 
+
+            // 2. Eğer yola çıkmaya hazırlanan eski bir kurye varsa onu iptal et
+            if (this.cloudSaveTimer) {
+                clearTimeout(this.cloudSaveTimer);
+            }
+
+            // 3. 2 saniye bekle, başka işlem yapılmazsa GÜNCEL VE TEK BİR PAKETİ buluta yolla
+            this.cloudSaveTimer = setTimeout(() => {
+                document.getElementById('sync-status').innerText = "Buluta Gönderiliyor... ⏳";
+                
+                const GIZLI_ANAHTAR = "KayseriGumruk2026_GizliAnahtar!123";
+                const scriptURL = 'https://script.google.com/macros/s/AKfycbxn2ZWZKfpqRwF1RItRIjXc9jpkhlKtfV_kPp8_foSp8zQq9tx7bVhydYx3f6alfD2o/exec';            
+                
+                fetch(scriptURL, {
+                    method: 'POST',
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        user: this.user ? this.user.user : 'Sistem',
+                        action: 'Veri Yedekleme',
+                        payload: this.db, // EN GÜNCEL 7 KAYIT BURADA GİDİYOR
+                        token: GIZLI_ANAHTAR 
+                    })
                 })
-            })
-            .then(r => r.json())
-            .then(d => {
-                console.log("Bulut Güncellendi ✔", d);
-                document.getElementById('sync-status').innerText = "Buluta Yazıldı ✔";
-            })
-            .catch(e => {
-                console.error("Bulut Hatası:", e);
-                document.getElementById('sync-status').innerText = "Yazma Hatası! ❌";
-            });
+                .then(r => r.json())
+                .then(d => {
+                    console.log("Bulut Güncellendi ✔", d);
+                    document.getElementById('sync-status').innerText = "Buluta Yazıldı ✔";
+                    this.lastLocalChange = Date.now(); // Eşitleme döngüsünü rahatlat
+                })
+                .catch(e => {
+                    console.error("Bulut Hatası:", e);
+                    document.getElementById('sync-status').innerText = "Yazma Hatası! ❌";
+                });
+            }, 2000); // 2 saniye bekleme süresi
         },
 
         loadFromCloud() {
-            const now = Date.now();
-            // Eğer son 20 saniye içinde yerel bir değişiklik yapıldıysa senkronizasyonu atla
-            if (now - this.lastLocalChange < 20000) { 
-                document.getElementById('sync-status').innerText = "Bulut bekleniyor... ⏳";
-                return; 
-            }
+    // EĞER ŞU AN VERİ GÖNDERİLİYORSA, ESKİ VERİYİ ÇEKMEYİ İPTAL ET
+    if (this.isSaving) return; 
+
+    const now = Date.now();
+    if (now - this.lastLocalChange < 5000) { 
+        document.getElementById('sync-status').innerText = "Bulut bekleniyor... ⏳";
+        return; 
+    } 
 
             const GIZLI_ANAHTAR = "KayseriGumruk2026_GizliAnahtar!123";
             const scriptURL = 'https://script.google.com/macros/s/AKfycbxn2ZWZKfpqRwF1RItRIjXc9jpkhlKtfV_kPp8_foSp8zQq9tx7bVhydYx3f6alfD2o/exec';
@@ -1291,9 +1446,9 @@ updatePersonel(i, alan, yeniDeger) {
         
         startAutoSync() {
             if(this.syncInterval) clearInterval(this.syncInterval);
-            this.syncInterval = setInterval(() => {
-                if(this.user) this.loadFromCloud();
-            }, 10000);
+           this.syncInterval = setInterval(() => {
+    if(this.user) this.loadFromCloud();
+}, 5000);
         },
 
         render() {
@@ -1929,7 +2084,7 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
         , // Önceki fonksiyonla bağlantı kuran kritik virgül
         openAnalizMerkezi() {
             const r = this.user.rol;
-            if(!['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı', 'Gümrük Şefi'].includes(r)) {
+            if(!['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı', 'Gümrük Şefi', 'Personel Servisi'].includes(r)) {
                 return alert("Bu alana giriş yetkiniz bulunmamaktadır!");
             }
             this.addLog("Modül Erişimi", "Personel Analiz & Arşiv Merkezi ekranı açıldı."); // <-- BU SATIRI EKLE
@@ -2051,7 +2206,7 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                             <tr>
                                 <td>${k.tarih}</td>
                                 <td>${k.ref}</td>
-                                <td>${k.no}</td>
+                                <td>${k.dekont || '-'}</td>
                                 <td>${k.personeller.join(', ')}</td>
                                 <td>${((k.yTotal || k.toplamYolluk) / k.personelSayisi).toFixed(2)} TL</td>
                             </tr>
