@@ -211,9 +211,8 @@
             <button id="btn-uyari" class="btn hidden" style="background:var(--danger); color:#fff;" onclick="app.showUyariModal()">🔔 EKSİK DEKONTLAR (<span id="uyari-sayi">0</span>)</button>
             
             <div id="admin-toggle-area" class="hidden">
-                <button class="btn btn-success" style="margin-left:20px; font-size:10px; padding:4px 10px;" onclick="app.hardBackup()">💾 SİSTEMİ BİLGİSAYARA YEDEKLE (.JSON)</button>
-                <button class="btn btn-danger" style="margin-left:10px; font-size:10px; padding:4px 10px;" onclick="app.restoreLastBackup()">🔄 SON YEREL YEDEĞİ GERI YÜKLE</button>
-                <button class="btn btn-primary" style="margin-left:10px; font-size:10px; padding:4px 10px; background:#1abc9c; color:#fff;" onclick="app.forceCloudRestore()">☁️ BULUTTAN GERİ YÜKLE</button>
+                <button class="btn btn-success" style="margin-left:20px; font-size:10px; padding:4px 10px;" onclick="app.takeBackup()">💾 YEREL YEDEK AL</button>
+                <button class="btn btn-danger" style="margin-left:10px; font-size:10px; padding:4px 10px;" onclick="app.restoreLastBackup()">🔄 YEDEKTEN GERİ YÜKLE</button>
                 <button id="btn-uyari-sifirla" class="btn hidden" style="margin-left:10px; background:#8e44ad; color:#fff; font-size:10px; padding:4px 10px;" onclick="app.acTümUyarilari()">🔔 KAPATILAN UYARI SİSTEMİNİ AÇ</button>
             </div>
             <div id="sync-status" style="font-size:10px; color:var(--accent); display:flex; align-items:center;">Veriler Güncel</div>
@@ -314,7 +313,7 @@
     </div>
 </div>
         <div id="admin-section" class="hidden">
-            <div class="card-section" style="grid-column: span 2; border: 1px solid var(--warning);">
+            <div class="card-section admin-only" style="grid-column: span 2; border: 1px solid var(--warning);">
     <h3 style="border-bottom:1px solid var(--warning); padding-bottom:8px; color:var(--warning)">⚙️ Dinamik Yolluk Sınırı Ayarı (Tarihe Duyarlı)</h3>
     <div style="display:flex; gap:10px; margin-top:10px; align-items:center; flex-wrap:wrap;">
         <label style="font-size:12px;">Hangi Aydan İtibaren Geçerli?:</label>
@@ -332,7 +331,7 @@
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                 <div id="personel-kayit-paneli" class="card-section">
     <h3 style="border-bottom:1px solid var(--border); padding-bottom:8px;">Personel Kayıt & Düzenleme</h3>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:5px;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:5px;">
                         <input type="text" id="p-sicil" placeholder="Sicil">
                         <input type="text" id="p-ad" placeholder="Ad Soyad">
                         <select id="p-birim">
@@ -345,14 +344,19 @@
                             <option>Gümrük Şefi</option><option>Kısım Amiri</option><option>Bölge Amiri</option>
                             <option>Gümrük Müdür Yardımcısı</option><option>Gümrük Müdürü</option><option>KİM Müdürü</option><option value="Diğer">Diğer</option>
                         </select>
-                        <div style="margin-top: 15px; padding: 15px; background: var(--card); border: 1px solid var(--border); border-radius: 8px;">
-    <h4 style="margin-top: 0; color: var(--accent); font-size: 14px;">📥 Excel'den Toplu Personel Ekle</h4>
-    <p style="font-size: 11px; color: var(--muted); margin-bottom: 10px;">
+                        <div style="margin-top: 5px; padding: 12px 14px; background: rgba(0,0,0,0.24); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; width: 100%; grid-column: 1 / span 2; justify-self: stretch; display:flex; flex-direction:column; gap:10px;">
+    <h4 style="margin: 0; color: var(--accent); font-size: 14px; letter-spacing: 0.3px;">📥 Excel'den Toplu Personel Ekle</h4>
+    <p style="font-size: 11px; color: var(--muted); margin: 0; line-height: 1.4;">
         Excel'in 1. satırı başlık olmalıdır. Sütun sırası: <b style="color: #fff;">A: Sicil, B: Ad Soyad, C: Birim, D: Ünvan</b> şeklinde olmalıdır.
     </p>
-    <div style="display: flex; gap: 10px; align-items: center;">
-        <input type="file" id="personel-excel-input" accept=".xlsx, .xls" class="input" style="flex: 1; padding: 5px; font-size: 12px;">
-        <button class="btn btn-success" onclick="app.personelExcelYukle()" style="white-space: nowrap;">📄 Yükle ve Aktar</button>
+    <div style="display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap; text-align:right;">
+        <input type="file" id="personel-excel-input" accept=".xlsx, .xls" style="display:none;" onchange="document.getElementById('personel-file-name').innerText = this.files && this.files[0] ? this.files[0].name : 'Dosya seçilmedi';">
+        <label for="personel-excel-input" class="btn" style="background:rgba(0,246,210,0.08); border:1px solid rgba(0,246,210,0.18); color:var(--accent); padding:7px 14px; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; font-size:12px; letter-spacing:0.6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7l4-4 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Seç ve Yükle
+        </label>
+        <span id="personel-file-name" style="font-size:11px; color:var(--muted); min-width:100px;">Dosya seçilmedi</span>
+        <button class="btn btn-success" onclick="app.personelExcelYukle()" style="white-space: nowrap; min-width: 130px; padding:8px 14px; font-size:12px; border-radius:999px;">📄 Yükle ve Aktar</button>
     </div>
 </div>
                     </div>
@@ -364,7 +368,7 @@
                         </table>
                     </div>
                 </div>
-                <div class="card-section">
+                <div class="card-section admin-only">
                     <h3 style="border-bottom:1px solid var(--border); padding-bottom:8px;">Hizmet Ücret Kalemleri</h3>
                     <div style="display:flex; gap:5px;">
                         <input type="text" id="y-ad" placeholder="Gemi Mesaisi vb.">
@@ -376,7 +380,7 @@
                 </div>
             </div>
 
-            <div class="card-section">
+            <div class="card-section admin-only">
                 <h3 style="border-bottom:1px solid var(--border); padding-bottom:8px;">Sistem Giriş Yetkileri (Kullanıcılar)</h3>
                 <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:5px; margin-bottom:10px;">
                     <input type="text" id="acc-user" placeholder="Yeni Kullanıcı Adı">
@@ -484,7 +488,7 @@
                 <button class="btn btn-warning" style="font-size:9px;" onclick="app.clearAllFilters()">FİLTREYİ TEMİZLE</button>
             </div>
             <table>
-                <thead><tr><th>Referans</th><th>Dekont No</th><th>Görevliler</th><th>Tutar Detayı ("Yardır")</th><th>Durum</th><th>EBYS</th><th>Dekont</th><th>İşlem</th></tr></thead>
+                <thead><tr><th>Referans</th><th>Açıklama</th><th>Görevliler</th><th>Tutar Detayı ("Yardır")</th><th>Durum</th><th>EBYS</th><th>Dekont</th><th>İşlem</th></tr></thead>
                 <tbody id="main-list"></tbody>
             </table>
         </div>
@@ -551,6 +555,10 @@ backupLocalState() {
                 console.error('Backup kaydedilemedi:', e);
             }
         },
+takeBackup() {
+            this.backupLocalState();
+            alert('Yerel yedek alındı. Şimdi "YEDEKTEN GERİ YÜKLE" butonunu kullanabilirsiniz.');
+        },
 restoreLastBackup() {
             try {
                 const backups = JSON.parse(localStorage.getItem(this.backupKey) || '[]');
@@ -568,56 +576,7 @@ restoreLastBackup() {
                 alert('Yedek geri yüklenemedi. Konsolu kontrol edin.');
             }
         },
-        forceCloudRestore() {
-            if (!confirm('Buluttaki verileri yerel verinin üzerine yazmak istediğinize emin misiniz? Yerel eklenmemiş kayıtlar korunacak.')) return;
-            if (this.isSaving) return alert('Şu an buluta yazma işlemi devam ediyor. Lütfen birkaç saniye bekleyin.');
-            if (this.cloudSaveTimer) {
-                clearTimeout(this.cloudSaveTimer);
-                this.cloudSaveTimer = null;
-            }
-            this.backupLocalState();
-            const GIZLI_ANAHTAR = "KayseriGumruk2026_GizliAnahtar!123";
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbxn2ZWZKfpqRwF1RItRIjXc9jpkhlKtfV_kPp8_foSp8zQq9tx7bVhydYx3f6alfD2o/exec';
-            document.getElementById('sync-status').innerText = 'Buluttan zorunlu geri yükleme...';
-            fetch(scriptURL + '?token=' + GIZLI_ANAHTAR)
-                .then(res => res.text())
-                .then(data => {
-                    if (data && data.trim() !== '' && data !== 'null') {
-                        try {
-                            const cloudData = JSON.parse(data);
-                            if (cloudData && Array.isArray(cloudData.kayitlar)) {
-                                const mergedMap = new Map();
-                                this.db.kayitlar.filter(k => k && k.ref).forEach(k => mergedMap.set(k.ref, k));
-                                cloudData.kayitlar.forEach(k => {
-                                    if (!k || !k.ref) return;
-                                    const local = mergedMap.get(k.ref);
-                                    mergedMap.set(k.ref, local ? { ...local, ...k } : k);
-                                });
-                                const mergedKayitlar = [...mergedMap.values()];
-                                cloudData.kayitlar = mergedKayitlar;
-                                if (!cloudData.logs || !Array.isArray(cloudData.logs)) cloudData.logs = [];
-                                this.db = cloudData;
-                                if (!this.logEnabled) this.db.logs = [];
-                                localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db));
-                                this.sortPersoneller();
-                                this.render();
-                                document.getElementById('sync-status').innerText = 'Buluttan geri yüklendi ✔';
-                                this.save();
-                            }
-                        } catch (e) {
-                            console.error('Bulut okuma hatası:', e);
-                            alert('Bulut verisi okunamadı. Konsolu kontrol edin.');
-                        }
-                    } else {
-                        alert('Buluttan veri alınamadı. Veri boş veya geçersiz.');
-                    }
-                })
-                .catch(e => {
-                    console.error('Bulut geri yükleme hatası:', e);
-                    document.getElementById('sync-status').innerText = 'Bulut geri yükleme hatası ❌';
-                });
-        },
-addLog(tip, detay, ref = "-") {
+        addLog(tip, detay, ref = "-") {
             if (!this.logEnabled) return;
             if (!this.db.logs) this.db.logs = [];
             const d = new Date();
@@ -848,20 +807,33 @@ hardBackup() {
                     document.getElementById('task-list-section').classList.remove('hidden');
                     document.getElementById('stats-section').classList.remove('hidden');
                     document.getElementById('ps-panel').classList.remove('hidden');
+                    document.querySelectorAll('#admin-section .admin-only').forEach(el => el.classList.remove('hidden'));
                 } 
                 else if (r === 'Personel Servisi') {
+                    document.getElementById('admin-section').classList.remove('hidden');
                     document.getElementById('ps-panel').classList.remove('hidden');
+                    document.getElementById('personel-kayit-paneli').style.display = 'block';
+                    document.querySelectorAll('#admin-section .admin-only').forEach(el => el.classList.add('hidden'));
                 }
                 else {
                     document.getElementById('record-section').classList.remove('hidden');
                     document.getElementById('task-list-section').classList.remove('hidden');
                     document.getElementById('stats-section').classList.remove('hidden');
+                    document.querySelectorAll('#admin-section .admin-only').forEach(el => el.classList.add('hidden'));
                 }
 
                 if(r === 'Gümrük Müdürü') document.getElementById('admin-section').classList.add('hidden');
                 if(['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(r) && document.getElementById('btn-log')) {
     document.getElementById('btn-log').classList.remove('hidden');
 }
+                const salterler = document.getElementById('sistem-salterleri');
+                if (salterler) {
+                    if (['Admin', 'Gümrük Müdürü'].includes(r)) {
+                        salterler.style.display = 'flex';
+                    } else {
+                        salterler.style.display = 'none';
+                    }
+                }
 
                 this.loadFromCloud();
                 this.startAutoSync();
@@ -897,14 +869,19 @@ hardBackup() {
                     document.getElementById('task-list-section').classList.remove('hidden');
                     document.getElementById('stats-section').classList.remove('hidden');
                     document.getElementById('ps-panel').classList.remove('hidden');
+                    document.querySelectorAll('#admin-section .admin-only').forEach(el => el.classList.remove('hidden'));
                 } 
                 else if (r === 'Personel Servisi') {
+                    document.getElementById('admin-section').classList.remove('hidden');
                     document.getElementById('ps-panel').classList.remove('hidden');
+                    document.getElementById('personel-kayit-paneli').style.display = 'block';
+                    document.querySelectorAll('#admin-section .admin-only').forEach(el => el.classList.add('hidden'));
                 }
                 else {
                     document.getElementById('record-section').classList.remove('hidden');
                     document.getElementById('task-list-section').classList.remove('hidden');
                     document.getElementById('stats-section').classList.remove('hidden');
+                    document.querySelectorAll('#admin-section .admin-only').forEach(el => el.classList.add('hidden'));
                 }
 
                 if(r === 'Gümrük Müdürü') document.getElementById('admin-section').classList.add('hidden');
@@ -1160,15 +1137,34 @@ updatePersonel(i, alan, yeniDeger) {
         generateRef() {
             const d = new Date();
             const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            const prefix = `GM-${dateStr}/`; 
-            const todaysRecords = this.db.kayitlar.filter(k => k.ref && k.ref.startsWith(prefix));
-            if (todaysRecords.length === 0) return prefix + "1"; 
-            const sequenceNumbers = todaysRecords.map(k => {
-                const parts = k.ref.split('/');
-                return parseInt(parts[1]) || 0; 
-            });
-            const maxSeq = Math.max(...sequenceNumbers);
-            return prefix + (maxSeq + 1); 
+            const prefix = `GM-${dateStr}/`;
+            const records = Array.isArray(this.db.kayitlar) ? this.db.kayitlar : [];
+            const todaysRecords = records.filter(k => k && k.ref && k.ref.startsWith(prefix));
+
+            let seq = 1;
+            if (todaysRecords.length > 0) {
+                const sequenceNumbers = todaysRecords.map(k => {
+                    const parts = (k.ref || '').split('/');
+                    return parseInt(parts[1]) || 0;
+                });
+                seq = Math.max(...sequenceNumbers) + 1;
+            }
+
+            // Ensure uniqueness on this client (avoid accidental overwrite if another client hasn't synced yet)
+            let candidate = prefix + seq;
+            const exists = () => records.some(k => k && k.ref === candidate);
+            let safety = 0;
+            while (exists()) {
+                seq += 1;
+                candidate = prefix + seq;
+                safety += 1;
+                if (safety > 10000) { // fallback to timestamp suffix if something is seriously wrong
+                    candidate = prefix + Date.now();
+                    break;
+                }
+            }
+
+            return candidate;
         },
 
         saveTask() {
@@ -1254,8 +1250,9 @@ updatePersonel(i, alan, yeniDeger) {
                 };
             });
 
-            for (let i = 0; i < repeatCount; i++) {
+                for (let i = 0; i < repeatCount; i++) {
                 const yeniRef = this.generateRef();
+                const nowTs = Date.now();
                 this.db.kayitlar.push({
                     ref: yeniRef,
                     no: document.getElementById('task-no').value || "Belirtilmedi",
@@ -1269,7 +1266,8 @@ updatePersonel(i, alan, yeniDeger) {
                     durum: ilkDurum,
                     ebys: "", 
                     dekont: "",
-                    tarih: ayStr
+                    tarih: ayStr,
+                    updatedAt: nowTs
                 });
                 this.addLog("Yeni Görev Kaydı", `${personelSayisi} personel için görev oluşturuldu. Tutar: ${(toplamMesai+toplamYolluk).toFixed(2)} TL`, yeniRef);
             }
@@ -1305,7 +1303,8 @@ topluOnayVer() {
 
             // 4. Toplu Onayı Gerçekleştir
             if (confirm(`Sistemde ${bekleyenler.length} adet bekleyen görev var. Hepsini TEK SEFERDE onaylamak istediğinize emin misiniz?`)) {
-                bekleyenler.forEach(k => k.durum = 'Onaylandı');
+                const nowTsBulk = Date.now();
+                bekleyenler.forEach(k => { k.durum = 'Onaylandı'; k.updatedAt = nowTsBulk; });
                 
                 // Log merkezine yaz
                 if (typeof this.addLog === 'function') {
@@ -1359,7 +1358,8 @@ topluOnayVer() {
         },
 
         process(ref, s) { 
-            this.db.kayitlar.find(x=>x.ref===ref).durum = s; 
+            const rec = this.db.kayitlar.find(x=>x.ref===ref);
+            if (rec) { rec.durum = s; rec.updatedAt = Date.now(); }
             this.addLog("Durum Güncellemesi", `Görev durumu "${s}" olarak güncellendi.`, ref);
             this.save(); 
         },
@@ -1374,7 +1374,8 @@ topluOnayVer() {
                         return;
                     }
                 }
-                this.db.kayitlar.find(x=>x.ref===ref)[key.toLowerCase()] = v; 
+                const rec = this.db.kayitlar.find(x=>x.ref===ref);
+                if (rec) { rec[key.toLowerCase()] = v; rec.updatedAt = Date.now(); }
                 this.save(); 
             }
         },
@@ -1548,22 +1549,72 @@ topluOnayVer() {
                     try {
                         const cloudData = JSON.parse(data);
                         if (cloudData && Array.isArray(cloudData.kayitlar)) {
+                            // Merge kayitlar by ref (preserve local fields where present)
                             const mergedMap = new Map();
-                            this.db.kayitlar.filter(k => k && k.ref).forEach(k => mergedMap.set(k.ref, k));
-                            cloudData.kayitlar.forEach(k => {
+                            (this.db.kayitlar || []).filter(k => k && k.ref).forEach(k => mergedMap.set(k.ref, k));
+                            (cloudData.kayitlar || []).forEach(k => {
                                 if (!k || !k.ref) return;
                                 const local = mergedMap.get(k.ref);
-                                mergedMap.set(k.ref, local ? { ...local, ...k } : k);
+                                if (!local) {
+                                    mergedMap.set(k.ref, k);
+                                } else {
+                                    const localTs = local.updatedAt || 0;
+                                    const cloudTs = k.updatedAt || 0;
+                                    if (cloudTs > localTs) {
+                                        // Cloud is newer: merge by taking local fields first then cloud (cloud overrides)
+                                        mergedMap.set(k.ref, { ...local, ...k });
+                                    } else {
+                                        // Local is newer: preserve local values, but ensure any missing cloud keys are added
+                                        mergedMap.set(k.ref, { ...k, ...local });
+                                    }
+                                }
                             });
                             const mergedKayitlar = [...mergedMap.values()];
-                            cloudData.kayitlar = mergedKayitlar;
-                            if (!cloudData.logs || !Array.isArray(cloudData.logs)) cloudData.logs = [];
-                            this.db = cloudData;
-                            if (!this.logEnabled) this.db.logs = [];
+
+                            // Start with a local-safe merged DB to avoid clobbering local arrays/flags
+                            const mergedDb = JSON.parse(JSON.stringify(this.db || {}));
+                            mergedDb.kayitlar = mergedKayitlar;
+
+                            // Merge personeller (by sicil if present, otherwise by name)
+                            const personMap = new Map();
+                            (mergedDb.personeller || []).forEach(p => personMap.set(p.sicil || p.ad, p));
+                            (cloudData.personeller || []).forEach(p => {
+                                const key = p.sicil || p.ad;
+                                if (!personMap.has(key)) personMap.set(key, p);
+                                else {
+                                    const existing = personMap.get(key);
+                                    personMap.set(key, { ...existing, ...p });
+                                }
+                            });
+                            mergedDb.personeller = [...personMap.values()];
+
+                            // Merge accounts by username
+                            const accMap = new Map();
+                            (mergedDb.accounts || []).forEach(a => accMap.set(a.user, a));
+                            (cloudData.accounts || []).forEach(a => {
+                                if (!accMap.has(a.user)) accMap.set(a.user, a);
+                                else accMap.set(a.user, { ...accMap.get(a.user), ...a });
+                            });
+                            mergedDb.accounts = [...accMap.values()];
+
+                            // Merge simple flags from cloud (admin switches should propagate)
+                            const flags = ['memurOnaysizCikti','sefOnayiDevreDisi','mudurTopluOnay','bypassSef'];
+                            flags.forEach(f => {
+                                if (typeof cloudData[f] !== 'undefined') mergedDb[f] = cloudData[f];
+                            });
+
+                            // Merge yollukSiniri objects (shallow)
+                            mergedDb.yollukSiniri = Object.assign({}, mergedDb.yollukSiniri || {}, cloudData.yollukSiniri || {});
+
+                            if (!mergedDb.logs || !Array.isArray(mergedDb.logs)) mergedDb.logs = [];
+                            if (!this.logEnabled) mergedDb.logs = [];
+
+                            this.db = mergedDb;
                             localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db));
                             this.sortPersoneller();
                             this.render();
                             document.getElementById('sync-status').innerText = "Bulut Senkronize ✔ (" + new Date().toLocaleTimeString() + ")";
+                            console.log('Cloud merge: kayitlar=', mergedKayitlar.length, 'personeller=', mergedDb.personeller.length, 'accounts=', mergedDb.accounts.length);
                         }
                     } catch(e) { console.error("Bulut okuma hatası:", e); }
                 }
@@ -2375,12 +2426,83 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
             this.save();
             XLSX.writeFile(wb, `${ad}_${yil}_Yolluk_Arsivi.xlsx`);
         }
+
+        ,forcePersistMemory() {
+            try {
+                if (!this.db) return alert('Bellekte kaydedilecek veri yok.');
+                // Önce mevcut localStorage içeriğini yedekle
+                const prev = localStorage.getItem('gumruk_final_v60');
+                localStorage.setItem('gumruk_final_v60_before_force', prev || '');
+                // Bellekteki DB'yi doğrudan yerel depoya yaz
+                localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db));
+                // Ayrıca uygulamanın kendi yedek mekanizmasını çalıştır
+                if (typeof this.backupLocalState === 'function') this.backupLocalState();
+                this.render();
+                alert('Bellekteki veriler yerelde saklandı ve yedeklendi (key: gumruk_final_v60_before_force).');
+            } catch (e) { console.error(e); alert('Hata: ' + e.message); }
+        }
+
+        ,exportMemory(key = 'gumruk_final_v60_manual_export') {
+            try {
+                if (!this.db) return alert('Bellekte veri yok.');
+                localStorage.setItem(key, JSON.stringify(this.db));
+                alert('Bellek export edildi: ' + key);
+            } catch (e) { console.error(e); alert('Hata: ' + e.message); }
+        }
+
+        ,restoreLocalBackup(key = 'gumruk_final_v60_before_force') {
+            try {
+                const v = localStorage.getItem(key);
+                if (!v) return alert('Yedek bulunamadı: ' + key);
+                this.db = JSON.parse(v);
+                this.save();
+                alert('Yedek yüklendi ve kaydedildi: ' + key);
+            } catch (e) { console.error(e); alert('Hata: ' + e.message); }
+        }
     };
 
     // SİSTEM BAŞLATICI
     app.loadFromCloud(); 
     app.checkSession();
     app.startAutoSync();
+    // Cross-tab sync: when another tab updates localStorage, merge changes here
+    window.addEventListener('storage', (e) => {
+        try {
+            if (e.key !== 'gumruk_final_v60') return;
+            if (!e.newValue) return;
+            const remote = JSON.parse(e.newValue);
+            if (!remote) return;
+            // Merge kayitlar by ref
+            const local = app.db || {};
+            const records = Array.isArray(local.kayitlar) ? local.kayitlar : [];
+            const remoteRecords = Array.isArray(remote.kayitlar) ? remote.kayitlar : [];
+            const map = new Map();
+            records.filter(k => k && k.ref).forEach(k => map.set(k.ref, k));
+            remoteRecords.forEach(k => { if(k && k.ref) { const l = map.get(k.ref); map.set(k.ref, l ? { ...l, ...k } : k); }});
+            local.kayitlar = [...map.values()];
+
+            // Merge personeller
+            const pMap = new Map();
+            (local.personeller || []).forEach(p => pMap.set(p.sicil || p.ad, p));
+            (remote.personeller || []).forEach(p => { const key = p.sicil || p.ad; if(!pMap.has(key)) pMap.set(key,p); else pMap.set(key, {...pMap.get(key), ...p}); });
+            local.personeller = [...pMap.values()];
+
+            // Merge accounts
+            const aMap = new Map();
+            (local.accounts || []).forEach(a => aMap.set(a.user, a));
+            (remote.accounts || []).forEach(a => { if(!aMap.has(a.user)) aMap.set(a.user,a); else aMap.set(a.user, {...aMap.get(a.user), ...a}); });
+            local.accounts = [...aMap.values()];
+
+            // Flags - prefer remote for admin toggles
+            ['memurOnaysizCikti','sefOnayiDevreDisi','mudurTopluOnay','bypassSef'].forEach(f => { if(typeof remote[f] !== 'undefined') local[f] = remote[f]; });
+
+            // assign and render
+            app.db = local;
+            app.sortPersoneller();
+            app.render();
+            console.log('Storage event: merged remote changes');
+        } catch (err) { console.error('storage merge error', err); }
+    });
     
     // PERDEYİ KALDIRMA MOTORU (Giriş/Çıkış Hatalarını Önleyen Versiyon)
     setTimeout(() => {
