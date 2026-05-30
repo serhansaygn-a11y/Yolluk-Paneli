@@ -1484,6 +1484,7 @@ topluOnayVer() {
                 this.isSaving = true; // send in-progress flag to avoid read races
 
                 const GIZLI_ANAHTAR = "KayseriGumruk2026_GizliAnahtar!123";
+                const SHEET_ID = '1r76I248-isAex-9jjdsO6KrHOOXwHoXf1InhnC1jhVE';
                 const scriptURL = 'https://script.google.com/macros/s/AKfycbw-LjdAw426o9mc3wT8MNBGjKtv04qQL0lfI5nmmz20m2Tn2ggo6ra9QbyZc7c9R38/exec';
 
                 try {
@@ -1497,10 +1498,11 @@ topluOnayVer() {
                     fetch(scriptURL, {
                         method: 'POST',
                         cache: 'no-cache',
-                        headers: { 'Content-Type': 'text/plain' },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             user: this.user ? this.user.user : 'Sistem',
                             action: 'Veri Yedekleme',
+                            sheetId: SHEET_ID,
                             payload: sendDb,
                             token: GIZLI_ANAHTAR
                         })
@@ -1539,10 +1541,11 @@ topluOnayVer() {
             this.backupLocalState();
 
             const GIZLI_ANAHTAR = "KayseriGumruk2026_GizliAnahtar!123";
+            const SHEET_ID = '1r76I248-isAex-9jjdsO6KrHOOXwHoXf1InhnC1jhVE';
             const scriptURL = 'https://script.google.com/macros/s/AKfycbw-LjdAw426o9mc3wT8MNBGjKtv04qQL0lfI5nmmz20m2Tn2ggo6ra9QbyZc7c9R38/exec';
             document.getElementById('sync-status').innerText = "Veri Kontrolü...";
             
-            fetch(scriptURL + '?token=' + GIZLI_ANAHTAR)
+            fetch(scriptURL + '?token=' + GIZLI_ANAHTAR + '&sheetId=' + encodeURIComponent(SHEET_ID))
             .then(res => res.text())
             .then(data => {
                 if (data && data.trim() !== "" && data !== "null") {
