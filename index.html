@@ -43,6 +43,9 @@
       #admin-section.personnel-service-view > .admin-management-grid > * { display:none !important; }
       #admin-section.personnel-service-view #personnel-management-card { display:block !important; }
       .personnel-excel-actions { display:flex; flex-wrap:wrap; gap:8px; margin:9px 0; }
+      .admin-menu-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-top:18px; }
+      .admin-menu-tile { min-height:78px; padding:14px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.06); color:var(--text); cursor:pointer; font-weight:bold; text-align:left; transition:.2s; }
+      .admin-menu-tile:hover { transform:translateY(-2px); border-color:var(--accent); box-shadow:var(--accent-glow); }
       .main-container { padding:20px; border-radius:16px; background:var(--card); border: 1px solid var(--border); backdrop-filter:blur(20px); }
       .card-section { background: rgba(0,0,0,0.4); padding: 18px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
       h3 { color: var(--accent); margin-top: 0; margin-bottom: 0; font-size: 15px; text-transform: uppercase; }
@@ -238,6 +241,7 @@
         <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
             <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
                 <button class="btn btn-warning" onclick="app.changePassword()">🔑 ŞİFRE DEĞİŞTİR</button>
+                <button id="btn-admin-management" class="btn btn-success hidden" onclick="app.openAdminManagement()">🛠️ SİSTEM YÖNETİMİ</button>
                 <button id="btn-analiz" class="btn btn-primary" style="background:#8e44ad; color:#fff;" onclick="app.openAnalizMerkezi()">🔍 PERSONEL ANALİZ MERKEZİ</button>
             </div>
             <button id="btn-log" class="btn hidden" style="background:#e67e22; color:#fff;" onclick="app.openLogMerkezi()">📜 SİSTEM LOG MERKEZİ</button>
@@ -342,7 +346,7 @@
 
         <!-- Admin Section -->
         <div id="admin-section" class="hidden">
-            <div class="card-section" style="grid-column: span 2; border: 1px solid var(--warning);">
+            <div id="admin-limit-card" class="card-section" style="grid-column: span 2; border: 1px solid var(--warning);">
     <h3 style="border-bottom:1px solid var(--warning); padding-bottom:8px; color:var(--warning)">⚙️ Dinamik Yolluk Sınırı Ayarı (Tarihe Duyarlı)</h3>
     <div style="display:flex; gap:10px; margin-top:10px; align-items:center; flex-wrap:wrap;">
         <label style="font-size:12px;">Hangi Aydan İtibaren Geçerli?:</label>
@@ -357,7 +361,7 @@
         <!-- Kayıtlı limitler buraya otomatik gelecek -->
     </div>
 </div>
-            <div class="admin-management-grid" style="display:grid; grid-template-columns:1fr; gap:15px;">
+            <div id="admin-management-grid" class="admin-management-grid" style="display:grid; grid-template-columns:1fr; gap:15px;">
                 <div id="personnel-management-card" class="card-section">
                     <h3 style="border-bottom:1px solid var(--border); padding-bottom:8px;">Personel Kayıt & Düzenleme</h3>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:5px;">
@@ -387,7 +391,7 @@
                         </table>
                     </div>
                 </div>
-                <div class="card-section">
+                <div id="service-fees-card" class="card-section">
                     <h3 style="border-bottom:1px solid var(--border); padding-bottom:8px;">Hizmet Ücret Kalemleri</h3>
                     <div style="display:flex; gap:5px;">
                         <input type="text" id="y-ad" placeholder="Gemi Mesaisi vb.">
@@ -399,7 +403,7 @@
                 </div>
             </div>
 
-            <div class="card-section">
+            <div id="admin-users-card" class="card-section">
                 <h3 style="border-bottom:1px solid var(--border); padding-bottom:8px;">Sistem Giriş Yetkileri (Kullanıcılar)</h3>
                 <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:5px; margin-bottom:10px;">
                     <input type="text" id="acc-user" placeholder="Yeni Kullanıcı Adı">
@@ -728,11 +732,13 @@ hardBackup() {
 
             const btn = document.getElementById('btn-uyari');
             const sayac = document.getElementById('uyari-sayi');
+            const adminSayac = document.getElementById('admin-uyari-sayi');
             const adminAcmaButonu = document.getElementById('btn-uyari-sifirla');
             
             // 2. Sistem tamamen kapalıysa butonu gizle ve çık
             if (this.db.uyariAyarlari.tamamenKapali) {
                 if (btn) btn.classList.add('hidden');
+                if (adminSayac) adminSayac.innerText = '0';
                 // Sadece admine "Tekrar Aç" butonunu göster
                 if (adminAcmaButonu && this.user.rol === 'Admin') adminAcmaButonu.classList.remove('hidden');
                 return;
@@ -748,8 +754,10 @@ hardBackup() {
             );
             
             if (eksikler.length > 0 && btn) {
-                btn.classList.remove('hidden');
+                if (this.user.rol === 'Admin') btn.classList.add('hidden');
+                else btn.classList.remove('hidden');
                 sayac.innerText = eksikler.length;
+                if (adminSayac) adminSayac.innerText = eksikler.length;
                 
                 const today = new Date().toISOString().slice(0,10);
                 const okunduMu = localStorage.getItem(`dekont_uyari_okundu_${this.user.user}_${today}`);
@@ -794,6 +802,7 @@ hardBackup() {
                 
             } else if (btn) {
                 btn.classList.add('hidden'); // Kriterlere uyan eksik kalmadıysa gizle
+                if (adminSayac) adminSayac.innerText = '0';
             }
         },
 
@@ -847,6 +856,76 @@ hardBackup() {
             }
         },
 
+        hideAdminModuleSections() {
+            document.getElementById('admin-section').classList.add('hidden');
+            document.getElementById('ps-panel').classList.add('hidden');
+            document.getElementById('admin-module-return').classList.add('hidden');
+            ['admin-limit-card', 'personnel-management-card', 'service-fees-card', 'admin-users-card'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.style.display = 'none';
+            });
+            const grid = document.getElementById('admin-management-grid');
+            if (grid) grid.style.display = 'none';
+        },
+
+        updateAdminMenuState() {
+            const tile = document.getElementById('admin-sef-toggle-tile');
+            if (!tile) return;
+            tile.innerHTML = this.db.bypassSef
+                ? '🚫 Şef Onayı Devre Dışı<br><small style="color:#2ecc71">Şu anda aktif — açmak için tıklayın</small>'
+                : '✅ Şef Onayını Devre Dışı Bırak<br><small style="color:var(--muted)">Etkinleştirmek için tıklayın</small>';
+        },
+
+        openAdminManagement() {
+            if (!this.user || this.user.rol !== 'Admin') return alert('Bu menüyü yalnızca Admin açabilir.');
+            this.hideAdminModuleSections();
+            this.updateAdminMenuState();
+            this.checkDekontUyarilari();
+            document.getElementById('admin-management-modal').classList.remove('hidden');
+        },
+
+        closeAdminManagement() {
+            document.getElementById('admin-management-modal').classList.add('hidden');
+        },
+
+        openAdminModule(moduleName) {
+            if (!this.user || this.user.rol !== 'Admin') return alert('Bu modülü yalnızca Admin açabilir.');
+            this.closeAdminManagement();
+            this.hideAdminModuleSections();
+            const adminSection = document.getElementById('admin-section');
+            const grid = document.getElementById('admin-management-grid');
+            let target = null;
+            if (moduleName === 'leave') {
+                target = document.getElementById('ps-panel');
+                target.classList.remove('hidden');
+            } else {
+                adminSection.classList.remove('hidden');
+                adminSection.classList.remove('personnel-service-view');
+                if (moduleName === 'limit') target = document.getElementById('admin-limit-card');
+                if (moduleName === 'users') target = document.getElementById('admin-users-card');
+                if (moduleName === 'personnel' || moduleName === 'fees') {
+                    grid.style.display = 'grid';
+                    target = document.getElementById(moduleName === 'personnel' ? 'personnel-management-card' : 'service-fees-card');
+                }
+                if (target) target.style.display = 'block';
+            }
+            document.getElementById('admin-module-return').classList.remove('hidden');
+            if (target) setTimeout(() => target.scrollIntoView({ behavior:'smooth', block:'start' }), 0);
+        },
+
+        returnToAdminManagement() {
+            this.hideAdminModuleSections();
+            this.openAdminManagement();
+        },
+
+        toggleSefApprovalFromMenu() {
+            if (!this.user || this.user.rol !== 'Admin') return alert('Bu ayarı yalnızca Admin değiştirebilir.');
+            this.db.bypassSef = !this.db.bypassSef;
+            this.addLog('Sistem Ayarı', `Şef onayını devre dışı bırakma ayarı ${this.db.bypassSef ? 'açıldı' : 'kapatıldı'}.`);
+            this.save();
+            this.updateAdminMenuState();
+        },
+
         checkSession() {
             const current = localStorage.getItem('currentUser');
             if(current) {
@@ -857,6 +936,9 @@ hardBackup() {
                 document.getElementById('header-profile-row').classList.remove('hidden');
 
                 const r = this.user.rol;
+                document.getElementById('btn-admin-management').classList.add('hidden');
+                document.getElementById('btn-analiz').classList.remove('hidden');
+                document.getElementById('btn-log').classList.add('hidden');
                 document.getElementById('admin-section').classList.add('hidden');
                 document.getElementById('admin-section').classList.remove('personnel-service-view');
                 document.getElementById('admin-toggle-area').classList.add('hidden');
@@ -866,13 +948,13 @@ hardBackup() {
                 document.getElementById('ps-panel').classList.add('hidden');
 
                 if(r === 'Admin') {
-                    document.getElementById('admin-section').classList.remove('hidden');
                     document.getElementById('admin-section').classList.remove('personnel-service-view');
-                    document.getElementById('admin-toggle-area').classList.remove('hidden');
+                    document.getElementById('btn-admin-management').classList.remove('hidden');
+                    document.getElementById('btn-analiz').classList.add('hidden');
                     document.getElementById('record-section').classList.remove('hidden');
                     document.getElementById('task-list-section').classList.remove('hidden');
                     document.getElementById('stats-section').classList.remove('hidden');
-                    document.getElementById('ps-panel').classList.remove('hidden');
+                    this.hideAdminModuleSections();
                 } 
                 else if (r === 'Personel Servisi') {
                     document.getElementById('ps-panel').classList.remove('hidden');
@@ -886,7 +968,7 @@ hardBackup() {
                 }
 
                 if(r === 'Gümrük Müdürü') document.getElementById('admin-section').classList.add('hidden');
-                if(['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(r) && document.getElementById('btn-log')) {
+                if(['Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(r) && document.getElementById('btn-log')) {
     document.getElementById('btn-log').classList.remove('hidden');
 }
 
@@ -911,6 +993,9 @@ hardBackup() {
                 document.getElementById('header-profile-row').classList.remove('hidden');
 
                 const r = acc.rol;
+                document.getElementById('btn-admin-management').classList.add('hidden');
+                document.getElementById('btn-analiz').classList.remove('hidden');
+                document.getElementById('btn-log').classList.add('hidden');
                 document.getElementById('admin-section').classList.add('hidden');
                 document.getElementById('admin-section').classList.remove('personnel-service-view');
                 document.getElementById('admin-toggle-area').classList.add('hidden');
@@ -920,13 +1005,13 @@ hardBackup() {
                 document.getElementById('ps-panel').classList.add('hidden');
 
                 if(r === 'Admin') {
-                    document.getElementById('admin-section').classList.remove('hidden');
                     document.getElementById('admin-section').classList.remove('personnel-service-view');
-                    document.getElementById('admin-toggle-area').classList.remove('hidden');
+                    document.getElementById('btn-admin-management').classList.remove('hidden');
+                    document.getElementById('btn-analiz').classList.add('hidden');
                     document.getElementById('record-section').classList.remove('hidden');
                     document.getElementById('task-list-section').classList.remove('hidden');
                     document.getElementById('stats-section').classList.remove('hidden');
-                    document.getElementById('ps-panel').classList.remove('hidden');
+                    this.hideAdminModuleSections();
                 } 
                 else if (r === 'Personel Servisi') {
                     document.getElementById('ps-panel').classList.remove('hidden');
@@ -940,7 +1025,7 @@ hardBackup() {
                 }
 
                 if(r === 'Gümrük Müdürü') document.getElementById('admin-section').classList.add('hidden');
-                if(['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(r) && document.getElementById('btn-log')) {
+                if(['Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(r) && document.getElementById('btn-log')) {
     document.getElementById('btn-log').classList.remove('hidden');
 }
 
@@ -2744,6 +2829,30 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
         }
     }, 2000); // 2 saniye ideal süredir
   </script>
+  <!-- ADMIN SİSTEM YÖNETİMİ MODAL -->
+<div id="admin-management-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:10020; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(10px);">
+    <div style="background:#0d1117; width:94%; max-width:1050px; max-height:90vh; overflow-y:auto; border:1px solid var(--accent); border-radius:16px; padding:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; border-bottom:1px solid var(--border); padding-bottom:14px;">
+            <div><h2 style="color:var(--accent); margin:0;">🛠️ Sistem Yönetimi</h2><div style="color:var(--muted); font-size:11px; margin-top:5px;">Açmak istediğiniz yönetim modülünü seçin</div></div>
+            <button class="btn btn-danger" onclick="app.closeAdminManagement()">KAPAT [X]</button>
+        </div>
+        <div class="admin-menu-grid">
+            <button class="admin-menu-tile" onclick="app.openAdminModule('leave')">🏥 Personel İzin & Rapor Takibi</button>
+            <button class="admin-menu-tile" onclick="app.openAdminModule('limit')">⚙️ Dinamik Yolluk Sınırı Ayarı<br><small style="color:var(--muted)">Tarihe duyarlı</small></button>
+            <button class="admin-menu-tile" onclick="app.openAdminModule('personnel')">👥 Personel Kayıt & Düzenleme</button>
+            <button class="admin-menu-tile" onclick="app.openAdminModule('fees')">💰 Hizmet Ücret Kalemleri</button>
+            <button class="admin-menu-tile" onclick="app.openAdminModule('users')">🔐 Sistem Giriş Yetkileri<br><small style="color:var(--muted)">Kullanıcılar</small></button>
+            <button id="admin-sef-toggle-tile" class="admin-menu-tile" onclick="app.toggleSefApprovalFromMenu()">✅ Şef Onayını Devre Dışı Bırak</button>
+            <button class="admin-menu-tile" onclick="app.hardBackup()">💾 Yedekle</button>
+            <button class="admin-menu-tile" onclick="app.chooseBackupRestore()">♻️ Yedeği Geri Yükle</button>
+            <button class="admin-menu-tile" onclick="app.closeAdminManagement(); app.openAnalizMerkezi()">🔍 Personel Analiz Merkezi</button>
+            <button class="admin-menu-tile" onclick="app.closeAdminManagement(); app.openLogMerkezi()">📜 Sistem Log Merkezi</button>
+            <button class="admin-menu-tile" onclick="app.closeAdminManagement(); app.showUyariModal()">🔔 Eksik Dekontlar <span style="color:var(--danger)">(<span id="admin-uyari-sayi">0</span>)</span></button>
+        </div>
+    </div>
+</div>
+<button id="admin-module-return" class="btn btn-success hidden" style="position:fixed; right:24px; bottom:24px; z-index:10010; padding:12px 18px; box-shadow:var(--accent-glow);" onclick="app.returnToAdminManagement()">🛠️ YÖNETİM MENÜSÜNE DÖN</button>
+
   <!-- PERSONEL ANALİZ MODAL -->
 <div id="analiz-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(10px);">
     <div style="background:#0d1117; width:96%; max-width:1500px; height:92vh; border:1px solid var(--accent); border-radius:15px; padding:22px; display:flex; flex-direction:column;">
