@@ -219,7 +219,6 @@
         </div>
         <div id="header-profile-row" class="header-profile-row hidden">
           <p id="user-display">Giriş Bekleniyor...</p>
-          <button class="btn btn-warning header-account-btn" onclick="app.changePassword()">🔑 ŞİFRE DEĞİŞTİR</button>
           <button class="btn btn-danger header-account-btn" onclick="localStorage.removeItem('currentUser'); location.reload();">🚪 ÇIKIŞ YAP</button>
         </div>
       </div>
@@ -237,7 +236,10 @@
 
       <div id="panel-content" class="hidden">
         <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
-            <button id="btn-analiz" class="btn btn-primary" style="background:#8e44ad; color:#fff;" onclick="app.openAnalizMerkezi()">🔍 PERSONEL ANALİZ MERKEZİ</button>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                <button class="btn btn-warning" onclick="app.changePassword()">🔑 ŞİFRE DEĞİŞTİR</button>
+                <button id="btn-analiz" class="btn btn-primary" style="background:#8e44ad; color:#fff;" onclick="app.openAnalizMerkezi()">🔍 PERSONEL ANALİZ MERKEZİ</button>
+            </div>
             <button id="btn-log" class="btn hidden" style="background:#e67e22; color:#fff;" onclick="app.openLogMerkezi()">📜 SİSTEM LOG MERKEZİ</button>
             <button id="btn-uyari" class="btn hidden" style="background:var(--danger); color:#fff;" onclick="app.showUyariModal()">🔔 EKSİK DEKONTLAR (<span id="uyari-sayi">0</span>)</button>
             
@@ -246,7 +248,9 @@
                     <input type="checkbox" id="bypass-sef" onchange="app.db.bypassSef = this.checked; app.save()">
                     <span>Şef Onayını Devre Dışı Bırak</span>
                 </label>
-                <button class="btn btn-success" style="margin-left:20px; font-size:10px; padding:4px 10px;" onclick="app.hardBackup()">💾 SİSTEMİ BİLGİSAYARA YEDEKLE (.JSON)</button>
+                <button class="btn btn-success" style="margin-left:20px; font-size:10px; padding:4px 10px;" onclick="app.hardBackup()">💾 YEDEKLE</button>
+                <button class="btn btn-warning" style="margin-left:8px; font-size:10px; padding:4px 10px;" onclick="app.chooseBackupRestore()">♻️ YEDEĞİ GERİ YÜKLE</button>
+                <input id="backup-restore-input" type="file" accept=".json,application/json" class="hidden" onchange="app.restoreBackup(this.files[0]); this.value=''">
                 <button id="btn-uyari-sifirla" class="btn hidden" style="margin-left:10px; background:#8e44ad; color:#fff; font-size:10px; padding:4px 10px;" onclick="app.acTümUyarilari()">🔔 KAPATILAN UYARI SİSTEMİNİ AÇ</button>
             </div>
             <div id="sync-status" style="font-size:10px; color:var(--accent); display:flex; align-items:center;">Veriler Güncel</div>
@@ -353,7 +357,7 @@
         <!-- Kayıtlı limitler buraya otomatik gelecek -->
     </div>
 </div>
-            <div class="admin-management-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            <div class="admin-management-grid" style="display:grid; grid-template-columns:1fr; gap:15px;">
                 <div id="personnel-management-card" class="card-section">
                     <h3 style="border-bottom:1px solid var(--border); padding-bottom:8px;">Personel Kayıt & Düzenleme</h3>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:5px;">
@@ -636,6 +640,82 @@ hardBackup() {
             downloadAnchorNode.remove();
             this.addLog("Sistem Yedeği Alındı", "Tüm sistem veritabanı bilgisayara manuel olarak .json formatında indirildi.");
             alert("Sistemin tam anlık kopyası bilgisayarınıza indirildi!");
+        },
+
+        chooseBackupRestore() {
+            if (!this.user || this.user.rol !== 'Admin') {
+                return alert('Yedek geri yükleme işlemini yalnızca Admin yapabilir.');
+            }
+            document.getElementById('backup-restore-input').click();
+        },
+
+        async restoreBackup(file) {
+            if (!this.user || this.user.rol !== 'Admin') {
+                return alert('Yedek geri yükleme işlemini yalnızca Admin yapabilir.');
+            }
+            if (!file) return;
+            try {
+                const parsed = JSON.parse(await file.text());
+                const isObject = parsed && typeof parsed === 'object' && !Array.isArray(parsed);
+                const hasCoreData = isObject && Array.isArray(parsed.personeller) && Array.isArray(parsed.kayitlar) && Array.isArray(parsed.accounts);
+                if (!hasCoreData) {
+                    return alert('Seçilen dosya geçerli bir Kayseri Gümrük sistem yedeği değil. Personel, görev veya kullanıcı alanları eksik.');
+                }
+
+                const summary = `Görev: ${parsed.kayitlar.length}\nPersonel: ${parsed.personeller.length}\nKullanıcı: ${parsed.accounts.length}\nİzin/Rapor: ${Array.isArray(parsed.izinler) ? parsed.izinler.length : 0}`;
+                const approved = confirm(
+                    `YEDEK GERİ YÜKLENECEK\n\n${summary}\n\nMevcut sistem verileri seçilen yedekteki verilerle değiştirilecek ve sonuç buluta gönderilecektir. İşlem öncesinde mevcut verinin güvenlik yedeği otomatik indirilecektir.\n\nDevam etmek istiyor musunuz?`
+                );
+                if (!approved) return;
+
+                // Geri yüklemeden hemen önce mevcut durumun kurtarma kopyasını indir.
+                const recoveryBlob = new Blob([JSON.stringify(this.db)], { type:'application/json;charset=utf-8' });
+                const recoveryUrl = URL.createObjectURL(recoveryBlob);
+                const recoveryLink = document.createElement('a');
+                recoveryLink.href = recoveryUrl;
+                recoveryLink.download = `Geri_Yukleme_Oncesi_Yedek_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+                document.body.appendChild(recoveryLink);
+                recoveryLink.click();
+                recoveryLink.remove();
+                setTimeout(() => URL.revokeObjectURL(recoveryUrl), 1000);
+
+                const oldTasks = (this.db.kayitlar || []).map(task => ({ id: String(task.id || (task.ref ? 'legacy:' + task.ref : '')) })).filter(x => x.id);
+                const restored = this.normalizeDb(parsed);
+                const restoredIds = new Set((restored.kayitlar || []).map(task => String(task.id || (task.ref ? 'legacy:' + task.ref : ''))).filter(Boolean));
+                const now = new Date().toISOString();
+
+                // Buluttaki daha yeni kayıtların eski yedeği ezmesini önlemek için geri yüklenen görevleri yeni sürüm olarak işaretle.
+                restored.kayitlar.forEach(task => {
+                    if (!task.id) task.id = task.ref ? 'legacy:' + task.ref : this.uuid();
+                    task.updatedAt = now;
+                    if (!task.createdAt) task.createdAt = now;
+                });
+
+                // Yedekte bulunmayan mevcut görevlerin buluttan yeniden dirilmesini engelle.
+                const tombstones = new Map();
+                (restored.deletedTaskIds || []).forEach(item => {
+                    const value = typeof item === 'string' ? { id:item, deletedAt:'1970-01-01T00:00:00.000Z' } : item;
+                    if (value && value.id) tombstones.set(String(value.id), value);
+                });
+                oldTasks.forEach(task => {
+                    if (!restoredIds.has(task.id)) tombstones.set(task.id, { id:task.id, deletedAt:now });
+                });
+                restored.deletedTaskIds = Array.from(tombstones.values());
+
+                this.db = restored;
+                this.selectedPs = [];
+                this.addLog('Sistem Yedeği Geri Yüklendi', `${file.name} dosyasından ${restored.kayitlar.length} görev ve ${restored.personeller.length} personel geri yüklendi.`);
+                this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
+                await this.writeLocalDatabase(this.db);
+                localStorage.setItem(this.PENDING_KEY, '1');
+                this.render();
+                this.setSyncStatus('Geri yüklenen yedek buluta gönderiliyor…');
+                this.queueCloudWrite(0);
+                alert('Yedek başarıyla geri yüklendi. Veriler arka planda buluta gönderiliyor.');
+            } catch (error) {
+                console.error('Yedek geri yükleme hatası:', error);
+                alert('Yedek dosyası okunamadı veya JSON biçimi geçersiz.');
+            }
         },
 
         checkDekontUyarilari() {
@@ -2432,10 +2512,6 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
         }
         , // Önceki fonksiyonla bağlantı kuran kritik virgül
         openAnalizMerkezi() {
-            const r = this.user.rol;
-            if(!['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı', 'Gümrük Şefi'].includes(r)) {
-                return alert("Bu alana giriş yetkiniz bulunmamaktadır!");
-            }
             this.addLog("Modül Erişimi", "Personel Analiz & Arşiv Merkezi ekranı açıldı."); // <-- BU SATIRI EKLE
             this.save(); // <-- BU SATIRI EKLE
             document.getElementById('analiz-modal').classList.remove('hidden');
@@ -2443,12 +2519,12 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
         },
 
         getTaskDate(kayit) {
+            const refMatch = String((kayit && kayit.ref) || '').match(/(20\d{2})-(\d{2})-(\d{2})/);
+            if (refMatch) return `${refMatch[1]}-${refMatch[2]}-${refMatch[3]}`;
             if (kayit && kayit.createdAt) {
                 const created = new Date(kayit.createdAt);
                 if (!Number.isNaN(created.getTime())) return created.toISOString().slice(0, 10);
             }
-            const refMatch = String((kayit && kayit.ref) || '').match(/(20\d{2})-(\d{2})-(\d{2})/);
-            if (refMatch) return `${refMatch[1]}-${refMatch[2]}-${refMatch[3]}`;
             const monthMatch = String((kayit && kayit.tarih) || '').match(/^(20\d{2})-(\d{2})/);
             return monthMatch ? `${monthMatch[1]}-${monthMatch[2]}-01` : '';
         },
