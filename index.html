@@ -27,9 +27,15 @@
       
       #print-area { display: none; }
 
-      header { display:flex; justify-content:space-between; align-items:center; padding:15px; border-radius:18px; background:var(--card); box-shadow: var(--accent-glow); margin-bottom:20px; border: 1px solid var(--border); }
+      header { display:grid; grid-template-columns:minmax(180px,1fr) minmax(420px,1.6fr) minmax(260px,1fr); align-items:center; gap:20px; padding:18px 22px; border-radius:18px; background:var(--card); box-shadow: var(--accent-glow); margin-bottom:20px; border: 1px solid var(--border); }
       .header-left img, .right-images img { height:65px; border-radius:10px; box-shadow:0 0 8px rgba(0,0,0,0.5); }
-      .header-center h1 { margin:0; font-size:22px; color:var(--accent); text-transform: uppercase; text-shadow: var(--accent-glow); }
+      .header-left { display:flex; align-items:center; gap:6px; }
+      .header-right, .right-images { display:flex; justify-content:flex-end; align-items:center; gap:6px; }
+      .header-center { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; }
+      .header-center h1 { margin:0; font-size:24px; color:var(--accent); text-transform:uppercase; text-shadow:var(--accent-glow); }
+      .header-profile-row { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px; }
+      #user-display { margin:0; padding:8px 13px; border-radius:9px; background:rgba(0,246,210,.08); border:1px solid rgba(0,246,210,.35); color:var(--text); font-size:12px; font-weight:600; }
+      .header-account-btn { padding:8px 11px; white-space:nowrap; }
       .main-container { padding:20px; border-radius:16px; background:var(--card); border: 1px solid var(--border); backdrop-filter:blur(20px); }
       .card-section { background: rgba(0,0,0,0.4); padding: 18px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
       h3 { color: var(--accent); margin-top: 0; margin-bottom: 0; font-size: 15px; text-transform: uppercase; }
@@ -40,6 +46,10 @@
       .btn-danger { background: var(--danger); color: #fff; }
       .btn-warning { background: var(--warning); color: #000; }
       .btn-success { background: var(--success); color: #000; }
+      .approval-toggle { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:6px; background:#2a2f36; color:var(--warning); font-size:10px; font-weight:bold; cursor:pointer; text-transform:uppercase; transition:.2s; border:1px solid rgba(255,193,7,.45); }
+      .approval-toggle:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.25); }
+      .approval-toggle input { width:16px; height:16px; margin:0; accent-color:var(--success); cursor:pointer; }
+      .approval-toggle:has(input:checked) { background:var(--warning); color:#111; border-color:var(--warning); }
       table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
       th { text-align: left; color: var(--accent); border-bottom: 1px solid var(--border); padding: 9px 6px; font-size: 12px; }
       td { padding: 9px 6px; border-bottom: 1px solid var(--border); font-size: 11px; vertical-align: middle; }
@@ -49,6 +59,9 @@
       footer { margin-top:20px; padding: 15px; border-top: 1px solid var(--border); color: var(--accent); font-weight: bold; }
       .filter-area { margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: center; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; }
       .task-filter { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; align-items: center; }
+      .leave-filter { display:grid; grid-template-columns:minmax(220px,1.5fr) minmax(160px,.8fr) repeat(2,minmax(145px,.7fr)); gap:8px; align-items:center; padding:12px; margin:12px 0; background:rgba(0,0,0,.28); border:1px solid var(--border); border-radius:10px; }
+      .leave-filter-actions { grid-column:1/-1; display:flex; flex-wrap:wrap; align-items:center; gap:7px; }
+      @media (max-width: 850px) { .leave-filter { grid-template-columns:1fr; } }
 
       @media print {
         .app { display: none !important; }
@@ -156,6 +169,11 @@
         box-shadow: var(--accent-glow);
         transform: translateY(-2px);
       }
+      @media (max-width: 950px) {
+        header { grid-template-columns:1fr; }
+        .header-left, .header-right, .right-images { justify-content:center; }
+        .header-center { order:-1; }
+      }
     </style>
 </head>
 <body>
@@ -176,11 +194,13 @@
       </div>
       <div class="header-center">
         <h1>Yolluk Yönetim Sistemi</h1>
-        <p id="user-display">Giriş Bekleniyor...</p>
-        <div style="margin-top: 10px;">
-          <a href="https://serhansaygn-a11y.github.io/gumruk-memuru/" target="_blank" class="nav-card">
-             🌐 Gümrük – Hızlı Erişim Paneli'ne Git
-          </a>
+        <a href="https://serhansaygn-a11y.github.io/gumruk-memuru/" target="_blank" class="nav-card">
+           🌐 Gümrük – Hızlı Erişim Paneli'ne Git
+        </a>
+        <div id="header-profile-row" class="header-profile-row hidden">
+          <p id="user-display">Giriş Bekleniyor...</p>
+          <button class="btn btn-warning header-account-btn" onclick="app.changePassword()">🔑 ŞİFRE DEĞİŞTİR</button>
+          <button class="btn btn-danger header-account-btn" onclick="localStorage.removeItem('currentUser'); location.reload();">🚪 ÇIKIŞ YAP</button>
         </div>
       </div>
       <div class="header-right">
@@ -204,15 +224,15 @@
 
       <div id="panel-content" class="hidden">
         <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
-            <button class="btn btn-danger" onclick="localStorage.removeItem('currentUser'); location.reload();">ÇIKIŞ YAP</button>
-            <button class="btn btn-warning" onclick="app.changePassword()">ŞİFRE DEĞİŞTİR</button>
             <button id="btn-analiz" class="btn btn-primary" style="background:#8e44ad; color:#fff;" onclick="app.openAnalizMerkezi()">🔍 PERSONEL ANALİZ MERKEZİ</button>
             <button id="btn-log" class="btn hidden" style="background:#e67e22; color:#fff;" onclick="app.openLogMerkezi()">📜 SİSTEM LOG MERKEZİ</button>
             <button id="btn-uyari" class="btn hidden" style="background:var(--danger); color:#fff;" onclick="app.showUyariModal()">🔔 EKSİK DEKONTLAR (<span id="uyari-sayi">0</span>)</button>
             
             <div id="admin-toggle-area" class="hidden">
-                <label style="font-size:12px; color:var(--warning)">ŞEF ONAYINI DEVRE DIŞI BIRAK:</label>
-                <input type="checkbox" id="bypass-sef" style="width:auto;" onchange="app.db.bypassSef = this.checked; app.save()">
+                <label class="approval-toggle" title="Aktif olduğunda görevler Şef yerine doğrudan Müdür Yardımcısı onayına gönderilir">
+                    <input type="checkbox" id="bypass-sef" onchange="app.db.bypassSef = this.checked; app.save()">
+                    <span>Şef Onayını Devre Dışı Bırak</span>
+                </label>
                 <button class="btn btn-success" style="margin-left:20px; font-size:10px; padding:4px 10px;" onclick="app.hardBackup()">💾 SİSTEMİ BİLGİSAYARA YEDEKLE (.JSON)</button>
                 <button id="btn-uyari-sifirla" class="btn hidden" style="margin-left:10px; background:#8e44ad; color:#fff; font-size:10px; padding:4px 10px;" onclick="app.acTümUyarilari()">🔔 KAPATILAN UYARI SİSTEMİNİ AÇ</button>
             </div>
@@ -278,8 +298,24 @@
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; margin:15px 0 10px 0;">
-                <h4>AKTİF İZİN/RAPOR LİSTESİ</h4>
+                <h4>İZİN/RAPOR LİSTESİ <span id="leave-filter-count" style="color:var(--muted); font-weight:normal;"></span></h4>
                 <button class="btn btn-primary" onclick="app.exportLeavesExcel()">İzinleri Excel’e Aktar</button>
+            </div>
+            <div class="leave-filter">
+                <input type="text" id="leave-search" placeholder="Personel adına göre ara" oninput="app.leaveFilter.arama=this.value; app.render()">
+                <select id="leave-type-filter" onchange="app.leaveFilter.tur=this.value; app.render()">
+                    <option value="">Tüm İzin/Rapor Türleri</option>
+                    <option>Yıllık İzin</option><option>Sıhhi Rapor</option><option>Mazeret İzni</option><option>Görevli</option>
+                </select>
+                <input type="date" id="leave-filter-start" title="Filtre başlangıç tarihi" onchange="app.leaveFilter.baslangic=this.value; app.leaveFilter.mode='custom'; app.render()">
+                <input type="date" id="leave-filter-end" title="Filtre bitiş tarihi" onchange="app.leaveFilter.bitis=this.value; app.leaveFilter.mode='custom'; app.render()">
+                <div class="leave-filter-actions">
+                    <button class="btn btn-warning" onclick="app.quickLeaveFilter('today')">BUGÜN</button>
+                    <button class="btn btn-warning" onclick="app.quickLeaveFilter('week')">BU HAFTA</button>
+                    <button class="btn btn-warning" onclick="app.quickLeaveFilter('month')">BU AY</button>
+                    <button class="btn btn-primary" onclick="app.showAllLeaves()">TÜMÜNÜ GÖSTER</button>
+                    <button class="btn btn-danger" onclick="app.clearLeaveFilters()">FİLTREYİ TEMİZLE</button>
+                </div>
             </div>
             <table>
                 <thead><tr><th>Personel</th><th>Başlangıç</th><th>Bitiş</th><th>Tür</th><th>İşlem</th></tr></thead>
@@ -412,7 +448,7 @@
                         </label>
                     </div>
 
-                    <button class="btn btn-primary" style="width:100%; height:42px; margin-top:10px;" onclick="app.saveTask()">GÖREVİ KAYDET VE HAVALE ET</button>
+                    <button class="btn btn-primary" style="width:100%; height:42px; margin-top:10px;" onclick="app.saveTask()">GÖREVİ KAYDET VE HAVALE ET&nbsp;&nbsp; ↵ ENTER</button>
                 </div>
             </div>
         </div>
@@ -422,6 +458,7 @@
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:15px;">
                 <h3 style="border:none; padding:0; margin:0;">İşlem Takip Listesi</h3>
                 <div>
+                    <button id="btn-bulk-approve" class="btn btn-warning hidden" onclick="app.bulkApproveTasks()" style="margin-right:8px;">✅ TOPLU GÖREV ONAYLA</button>
                     <button class="btn btn-primary" onclick="app.exportTaskListExcel()">LİSTEYİ EXCEL AKTAR</button>
                     <button class="btn btn-success" onclick="app.importEbysDekontExcel()" style="margin-left:8px;">
                         📥 EXCEL’DEN EBYS/DEKONT İÇE AKTAR
@@ -462,6 +499,17 @@
   <script>
     const app = {
         lastLocalChange: 0,
+        CLOUD_URL: 'https://script.google.com/macros/s/AKfycbw-LjdAw426o9mc3wT8MNBGjKtv04qQL0lfI5nmmz20m2Tn2ggo6ra9QbyZc7c9R38/exec',
+        CLOUD_TOKEN: 'KayseriGumruk2026_GizliAnahtar!123',
+        DB_KEY: 'gumruk_final_v60',
+        PENDING_KEY: 'gumruk_pending_sync_v1',
+        writeInFlight: false,
+        pullInFlight: false,
+        writeTimer: null,
+        writeAgain: false,
+        initialCloudLoadDone: false,
+        cloudCursor: localStorage.getItem('gumruk_cloud_cursor_v1') || '',
+        cloudRevision: Number(localStorage.getItem('gumruk_cloud_revision_v1') || 0),
         updateYollukLimit() {
             const val = parseFloat(document.getElementById('sys-yolluk-limit').value);
             const ay = document.getElementById('sys-limit-ay').value;
@@ -481,7 +529,7 @@
                 alert(`${ay} ayından itibaren geçerli olacak yolluk sınırı ${val} TL olarak kaydedildi!\n\nMerak etmeyin, geçmiş aylar bu değişiklikten KESİNLİKLE etkilenmeyecek.`);
             }
         },
-        db: JSON.parse(localStorage.getItem('gumruk_final_v60')) || {
+        db: {
             accounts: [], // ŞİFRELER GİZLENDİ! Sistem açılışta güncel şifreleri Google Bulut'tan indirecek.
             personeller: [], yolluklar: [], kayitlar: [], izinler: [], 
             bypassSef: false
@@ -491,6 +539,7 @@
         seciliAy: null,
         gosterimMod: 'yolluk',
         taskFilter: {arama: '', durum: '', baslangic: '', bitis: ''},
+        leaveFilter: {arama: '', tur: '', baslangic: '', bitis: '', mode: 'today'},
         keepSelectedAfterSave: true,
         unvanlar: ["Gümrük Memuru", "Gümrük Muayene Memuru", "Gümrük Muhafaza Memuru", "Gümrük Şefi", "Kısım Amiri", "Bölge Amiri", "Gümrük Müdür Yardımcısı", "Gümrük Müdürü", "KİM Müdürü", "Diğer"],
 addLog(tip, detay, ref = "-") {
@@ -706,7 +755,8 @@ hardBackup() {
                 this.user = JSON.parse(current);
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('panel-content').classList.remove('hidden');
-                document.getElementById('user-display').innerText = `Yetkili: ${this.user.user} (${this.user.rol})`;
+                document.getElementById('user-display').innerText = `👤 ${this.user.user} · ${this.user.rol}`;
+                document.getElementById('header-profile-row').classList.remove('hidden');
 
                 const r = this.user.rol;
                 document.getElementById('admin-section').classList.add('hidden');
@@ -755,7 +805,8 @@ hardBackup() {
 
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('panel-content').classList.remove('hidden');
-                document.getElementById('user-display').innerText = `Yetkili: ${acc.user} (${acc.rol})`;
+                document.getElementById('user-display').innerText = `👤 ${acc.user} · ${acc.rol}`;
+                document.getElementById('header-profile-row').classList.remove('hidden');
 
                 const r = acc.rol;
                 document.getElementById('admin-section').classList.add('hidden');
@@ -948,6 +999,7 @@ updatePersonel(i, alan, yeniDeger) {
             if(p && bas && bit) {
                 if(!this.db.izinler) this.db.izinler = [];
                 this.db.izinler.push({ personel: p, baslangic: bas, bitis: bit, tur: tur });
+                this.leaveFilter = { arama: p, tur: '', baslangic: bas, bitis: bit, mode: 'custom' };
                 this.addLog("İzin İşlemi", `${p} için ${bas} / ${bit} arasına "${tur}" eklendi.`);
                 this.save();
                 alert("İzin/Rapor kaydı başarıyla oluşturuldu.");
@@ -974,13 +1026,75 @@ updatePersonel(i, alan, yeniDeger) {
             const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             const prefix = `GM-${dateStr}/`; 
             const todaysRecords = this.db.kayitlar.filter(k => k.ref && k.ref.startsWith(prefix));
-            if (todaysRecords.length === 0) return prefix + "1"; 
+            if (todaysRecords.length === 0) return prefix + "1-" + this.deviceCode(); 
             const sequenceNumbers = todaysRecords.map(k => {
                 const parts = k.ref.split('/');
                 return parseInt(parts[1]) || 0; 
             });
             const maxSeq = Math.max(...sequenceNumbers);
-            return prefix + (maxSeq + 1); 
+            return prefix + (maxSeq + 1) + "-" + this.deviceCode(); 
+        },
+
+        localDateString(date = new Date()) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        },
+
+        quickLeaveFilter(type) {
+            const now = new Date();
+            let start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            let end = new Date(start);
+            if (type === 'week') {
+                const mondayOffset = (start.getDay() + 6) % 7;
+                start.setDate(start.getDate() - mondayOffset);
+                end = new Date(start);
+                end.setDate(end.getDate() + 6);
+            } else if (type === 'month') {
+                start = new Date(now.getFullYear(), now.getMonth(), 1);
+                end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            }
+            this.leaveFilter.baslangic = this.localDateString(start);
+            this.leaveFilter.bitis = this.localDateString(end);
+            this.leaveFilter.mode = type;
+            this.render();
+        },
+
+        showAllLeaves() {
+            this.leaveFilter = { arama: '', tur: '', baslangic: '', bitis: '', mode: 'all' };
+            this.render();
+        },
+
+        clearLeaveFilters() {
+            this.leaveFilter = { arama: '', tur: '', baslangic: '', bitis: '', mode: 'today' };
+            this.quickLeaveFilter('today');
+        },
+
+        getFilteredLeaves() {
+            if (!this.leaveFilter.baslangic && !this.leaveFilter.bitis && this.leaveFilter.mode === 'today') {
+                const today = this.localDateString();
+                this.leaveFilter.baslangic = today;
+                this.leaveFilter.bitis = today;
+            }
+            const search = String(this.leaveFilter.arama || '').toLocaleLowerCase('tr-TR').trim();
+            return (this.db.izinler || []).map((leave, index) => ({ leave, index })).filter(item => {
+                const leave = item.leave;
+                if (search && !String(leave.personel || '').toLocaleLowerCase('tr-TR').includes(search)) return false;
+                if (this.leaveFilter.tur && leave.tur !== this.leaveFilter.tur) return false;
+                if (this.leaveFilter.baslangic && String(leave.bitis || '') < this.leaveFilter.baslangic) return false;
+                if (this.leaveFilter.bitis && String(leave.baslangic || '') > this.leaveFilter.bitis) return false;
+                return true;
+            });
+        },
+
+        deviceCode() {
+            let code = localStorage.getItem('gumruk_device_code_v1');
+            if (!code) {
+                code = this.uuid().replace(/-/g, '').slice(0, 6).toUpperCase();
+                localStorage.setItem('gumruk_device_code_v1', code);
+            }
+            return code;
         },
 
         saveTask() {
@@ -1014,7 +1128,8 @@ updatePersonel(i, alan, yeniDeger) {
             }
 
             const isYonetici = (this.user.rol === 'Admin' || this.user.rol.includes('Müdür'));
-            const ilkDurum = isYonetici ? "Onaylandı" : (this.db.bypassSef ? "Müdür Yrd. Onayında" : "Taslak");
+            // Kaydet düğmesi aynı zamanda havale eder; görev artık Taslak aşamasında beklemez.
+            const ilkDurum = isYonetici ? "Onaylandı" : (this.db.bypassSef ? "Müdür Yrd. Onayında" : "Şef Onayında");
 
             const now = new Date();
             const ayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -1068,7 +1183,9 @@ updatePersonel(i, alan, yeniDeger) {
 
             for (let i = 0; i < repeatCount; i++) {
                 const yeniRef = this.generateRef();
+                const simdi = new Date().toISOString();
                 this.db.kayitlar.push({
+                    id: this.uuid(),
                     ref: yeniRef,
                     no: document.getElementById('task-no').value || "Belirtilmedi",
                     personeller: [...this.selectedPs],
@@ -1081,7 +1198,9 @@ updatePersonel(i, alan, yeniDeger) {
                     durum: ilkDurum,
                     ebys: "", 
                     dekont: "",
-                    tarih: ayStr
+                    tarih: ayStr,
+                    createdAt: simdi,
+                    updatedAt: simdi
                 });
                 this.addLog("Yeni Görev Kaydı", `${personelSayisi} personel için görev oluşturuldu. Tutar: ${(toplamMesai+toplamYolluk).toFixed(2)} TL`, yeniRef);
             }
@@ -1106,6 +1225,11 @@ updatePersonel(i, alan, yeniDeger) {
                 const silinecekKayit = this.db.kayitlar.find(x => String(x.ref) === String(ref));
 
                 // 2. Ana kaydı (Örn: Nisan ayındaki kısıtlamayı) filtreleyip silelim
+                if (silinecekKayit) {
+                    if (!silinecekKayit.id) silinecekKayit.id = this.uuid();
+                    if (!Array.isArray(this.db.deletedTaskIds)) this.db.deletedTaskIds = [];
+                    this.db.deletedTaskIds.push({ id: silinecekKayit.id, deletedAt: new Date().toISOString() });
+                }
                 this.db.kayitlar = this.db.kayitlar.filter(x => String(x.ref) !== String(ref));
                 this.addLog("Görev İptali", "Görev ve hakedişler sistemden tamamen silindi.", ref);
 
@@ -1142,6 +1266,25 @@ updatePersonel(i, alan, yeniDeger) {
             this.db.kayitlar.find(x=>x.ref===ref).durum = s; 
             this.addLog("Durum Güncellemesi", `Görev durumu "${s}" olarak güncellendi.`, ref);
             this.save(); 
+        },
+
+        bulkApproveTasks() {
+            const role = this.user ? this.user.rol : '';
+            if (!['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(role)) {
+                return alert('Toplu onay yetkiniz bulunmamaktadır.');
+            }
+            const pendingStatuses = new Set(['Taslak', 'Şef Onayında', 'Müdür Yrd. Onayında']);
+            const pending = (this.lastRenderedTasks || []).filter(task => pendingStatuses.has(task.durum));
+            if (!pending.length) return alert('Ekrandaki filtreye uygun, onay bekleyen görev bulunmuyor.');
+            if (!confirm(`Ekranda görünen ${pending.length} görev topluca ONAYLANACAK. Devam etmek istiyor musunuz?`)) return;
+            const now = new Date().toISOString();
+            pending.forEach(task => {
+                task.durum = 'Onaylandı';
+                task.updatedAt = now;
+            });
+            this.addLog('Toplu Görev Onayı', `${pending.length} görev topluca onaylandı.`);
+            this.save();
+            alert(`${pending.length} görev başarıyla onaylandı.`);
         },
 
         updateExtra(ref, key) {
@@ -1226,80 +1369,313 @@ updatePersonel(i, alan, yeniDeger) {
             return aylar;
         },
 
-        save() { 
-            this.lastLocalChange = Date.now(); // Değişiklik anını kaydet
-            localStorage.setItem('gumruk_final_v60', JSON.stringify(this.db)); 
-            this.render(); 
-            
-            const GIZLI_ANAHTAR = "KayseriGumruk2026_GizliAnahtar!123";
-            const SHEET_ID = '1yqWIt9T9N3m5llEqmbGZLploZ8nsVfvwFREGD2OWx3g';
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbw-LjdAw426o9mc3wT8MNBGjKtv04qQL0lfI5nmmz20m2Tn2ggo6ra9QbyZc7c9R38/exec';
-            
-            fetch(scriptURL, {
-                method: 'POST',
-                cache: 'no-cache',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({
-                    user: this.user ? this.user.user : 'Sistem',
-                    action: 'Veri Yedekleme',
-                    payload: this.db,
-                    token: GIZLI_ANAHTAR 
-                })
-            })
-            .then(r => r.json())
-            .then(d => {
-                console.log("Bulut Güncellendi ✔", d);
-                document.getElementById('sync-status').innerText = "Buluta Yazıldı ✔";
-            })
-            .catch(e => {
-                console.error("Bulut Hatası:", e);
-                document.getElementById('sync-status').innerText = "Yazma Hatası! ❌";
+        uuid() {
+            if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                const r = Math.random() * 16 | 0;
+                return (c === 'x' ? r : (r & 3 | 8)).toString(16);
             });
         },
 
-        loadFromCloud() {
-            const now = Date.now();
-            // Eğer son 20 saniye içinde yerel bir değişiklik yapıldıysa senkronizasyonu atla
-            if (now - this.lastLocalChange < 20000) { 
-                document.getElementById('sync-status').innerText = "Bulut bekleniyor... ⏳";
-                return; 
+        taskId(task) {
+            return String((task && (task.id || task.uuid)) || '');
+        },
+
+        normalizeDb(data) {
+            const db = data && typeof data === 'object' && !Array.isArray(data) ? data : {};
+            db.kayitlar = Array.isArray(db.kayitlar) ? db.kayitlar : [];
+            db.deletedTaskIds = Array.isArray(db.deletedTaskIds) ? db.deletedTaskIds : [];
+            const now = new Date().toISOString();
+            db.kayitlar.forEach(task => {
+                if (!task.id) task.id = task.ref ? 'legacy:' + String(task.ref) : this.uuid();
+                if (!task.createdAt) task.createdAt = task.updatedAt || now;
+                if (!task.updatedAt) task.updatedAt = task.createdAt;
+            });
+            return db;
+        },
+
+        openLocalDatabase() {
+            if (this.localDbPromise) return this.localDbPromise;
+            this.localDbPromise = new Promise((resolve, reject) => {
+                const request = indexedDB.open('kayseri_gumruk_local_v1', 1);
+                request.onupgradeneeded = () => {
+                    const database = request.result;
+                    if (!database.objectStoreNames.contains('state')) database.createObjectStore('state');
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error || new Error('Yerel veritabanı açılamadı'));
+            });
+            return this.localDbPromise;
+        },
+
+        async readLocalDatabase() {
+            const database = await this.openLocalDatabase();
+            return new Promise((resolve, reject) => {
+                const request = database.transaction('state', 'readonly').objectStore('state').get('main');
+                request.onsuccess = () => resolve(request.result || null);
+                request.onerror = () => reject(request.error || new Error('Yerel veri okunamadı'));
+            });
+        },
+
+        writeLocalDatabase(snapshot) {
+            const value = JSON.parse(JSON.stringify(snapshot));
+            this.localWriteChain = (this.localWriteChain || Promise.resolve()).then(async () => {
+                const database = await this.openLocalDatabase();
+                await new Promise((resolve, reject) => {
+                    const transaction = database.transaction('state', 'readwrite');
+                    transaction.objectStore('state').put(value, 'main');
+                    transaction.oncomplete = resolve;
+                    transaction.onerror = () => reject(transaction.error || new Error('Yerel veri yazılamadı'));
+                    transaction.onabort = () => reject(transaction.error || new Error('Yerel veri yazımı iptal edildi'));
+                });
+            }).catch(error => {
+                console.error('IndexedDB yazma hatası:', error);
+                this.setSyncStatus('Yerel yedekleme hatası — bulut gönderimi sürüyor');
+            });
+            return this.localWriteChain;
+        },
+
+        prepareTaskTimestamps() {
+            const previous = this.lastPersistedDb || {};
+            const oldById = new Map((previous.kayitlar || []).map(t => [String(t.id || ''), t]));
+            const now = new Date().toISOString();
+            this.normalizeDb(this.db).kayitlar.forEach(task => {
+                const old = oldById.get(String(task.id));
+                const clean = value => {
+                    const copy = Object.assign({}, value);
+                    delete copy.updatedAt;
+                    return JSON.stringify(copy);
+                };
+                if (!old || clean(old) !== clean(task)) task.updatedAt = now;
+            });
+        },
+
+        mergeDatabases(localData, cloudData) {
+            const local = this.normalizeDb(localData || {});
+            const cloud = this.normalizeDb(cloudData || {});
+            // Personel, hesaplar ve sistem ayarlarında bulut güncel kaynak olsun.
+            // Görevler aşağıda ayrıca UUID üzerinden iki yönlü birleştirilir.
+            const result = Object.assign({}, local, cloud);
+            const tombstones = new Map();
+            [...(cloud.deletedTaskIds || []), ...(local.deletedTaskIds || [])].forEach(item => {
+                const tomb = typeof item === 'string' ? { id: item, deletedAt: '1970-01-01T00:00:00.000Z' } : item;
+                if (!tomb || !tomb.id) return;
+                const old = tombstones.get(String(tomb.id));
+                if (!old || String(tomb.deletedAt || '') > String(old.deletedAt || '')) tombstones.set(String(tomb.id), tomb);
+            });
+            const tasks = new Map();
+            [...(cloud.kayitlar || []), ...(local.kayitlar || [])].forEach(task => {
+                if (!task.id) task.id = task.ref ? 'legacy:' + String(task.ref) : this.uuid();
+                const id = String(task.id);
+                const old = tasks.get(id);
+                if (!old || String(task.updatedAt || task.createdAt || '') >= String(old.updatedAt || old.createdAt || '')) tasks.set(id, task);
+            });
+            tombstones.forEach((tomb, id) => {
+                const task = tasks.get(id);
+                if (task && String(tomb.deletedAt || '') >= String(task.updatedAt || task.createdAt || '')) tasks.delete(id);
+            });
+            result.kayitlar = Array.from(tasks.values());
+            result.deletedTaskIds = Array.from(tombstones.values());
+            return result;
+        },
+
+        setSyncStatus(text) {
+            const el = document.getElementById('sync-status');
+            if (el) el.innerText = text;
+        },
+
+        save() {
+            this.lastLocalChange = Date.now();
+            this.prepareTaskTimestamps();
+            this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
+            this.writeLocalDatabase(this.db);
+            localStorage.setItem(this.PENDING_KEY, '1');
+            this.render();
+            this.setSyncStatus('Buluta gönderim bekliyor…');
+            this.queueCloudWrite();
+        },
+
+        queueCloudWrite(delay = 700) {
+            if (this.writeTimer) clearTimeout(this.writeTimer);
+            this.writeTimer = setTimeout(() => this.flushCloudWrite(), delay);
+        },
+
+        async flushCloudWrite() {
+            if (this.writeInFlight) {
+                this.writeAgain = true;
+                return;
             }
-
-            const GIZLI_ANAHTAR = "KayseriGumruk2026_GizliAnahtar!123";
-            const SHEET_ID = '1yqWIt9T9N3m5llEqmbGZLploZ8nsVfvwFREGD2OWx3g'; 
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbw-LjdAw426o9mc3wT8MNBGjKtv04qQL0lfI5nmmz20m2Tn2ggo6ra9QbyZc7c9R38/exec';
-            
-            fetch(scriptURL + '?token=' + GIZLI_ANAHTAR)
-            .then(res => res.text())
-            .then(data => {
-                if (data && data.trim() !== "" && data !== "null") {
-                    try {
-                        const cloudData = JSON.parse(data);
-                        if (cloudData && Array.isArray(cloudData.kayitlar)) {
-                            this.db = cloudData;
-                            localStorage.setItem('gumruk_final_v60', data);
-                            this.sortPersoneller();
-                            this.render();
-                            document.getElementById('sync-status').innerText = "Bulut Senkronize ✔ (" + new Date().toLocaleTimeString() + ")";
-                        }
-                    } catch(e) { console.error("Bulut okuma hatası:", e); }
-                }
-            })
-            .catch(e => {
-                document.getElementById('sync-status').innerText = "Bağlantı Hatası 🌐";
-            });
+            if (this.pullInFlight) {
+                this.queueCloudWrite(500);
+                return;
+            }
+            this.writeInFlight = true;
+            this.writeAgain = false;
+            const snapshot = JSON.parse(JSON.stringify(this.db));
+            this.setSyncStatus('Buluta yazılıyor…');
+            try {
+                const response = await fetch(this.CLOUD_URL, {
+                    method: 'POST',
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        user: this.user ? this.user.user : 'Sistem',
+                        action: 'Veri Yedekleme',
+                        payload: snapshot,
+                        token: this.CLOUD_TOKEN
+                    })
+                });
+                const answer = await response.json();
+                if (!response.ok || !answer || answer.status !== 'success') throw new Error((answer && answer.message) || 'Sunucu yazmayı onaylamadı');
+                const unchanged = JSON.stringify(snapshot) === JSON.stringify(this.db);
+                if (unchanged && !this.writeAgain) localStorage.removeItem(this.PENDING_KEY);
+                else this.writeAgain = true;
+                this.setSyncStatus('Buluta yazıldı ✔ (' + new Date().toLocaleTimeString() + ')');
+                if (!this.initialCloudLoadDone) setTimeout(() => this.loadFromCloud({ initial: true }), 0);
+            } catch (error) {
+                console.error('Bulut yazma hatası:', error);
+                localStorage.setItem(this.PENDING_KEY, '1');
+                this.setSyncStatus('Gönderim bekliyor — bağlantı hatası');
+                this.writeAgain = true;
+                setTimeout(() => this.queueCloudWrite(0), 15000);
+            } finally {
+                this.writeInFlight = false;
+                if (this.writeAgain) this.queueCloudWrite(100);
+            }
         },
-        
+
+        async loadFromCloud(options = {}) {
+            const manual = options.manual === true;
+            if (!manual && this.initialCloudLoadDone) return;
+            if (this.writeInFlight || localStorage.getItem(this.PENDING_KEY) === '1') {
+                if (manual) this.setSyncStatus('Önce bekleyen kayıt gönderiliyor…');
+                this.queueCloudWrite(0);
+                if (manual) alert('Bekleyen yerel kayıtlar buluta gönderildikten sonra tekrar deneyin.');
+                return;
+            }
+            if (this.pullInFlight) return;
+            this.pullInFlight = true;
+            this.setSyncStatus(manual ? 'Bulut güncelleniyor…' : 'Bulut verisi alınıyor…');
+            try {
+                const response = await fetch(this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN), { cache: 'no-store' });
+                const cloudData = await response.json();
+                if (!response.ok || (cloudData && cloudData.status === 'error')) throw new Error((cloudData && cloudData.message) || 'Bulut verisi alınamadı');
+                this.db = this.mergeDatabases(this.db, cloudData);
+                this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
+                await this.writeLocalDatabase(this.db);
+                this.initialCloudLoadDone = true;
+                this.cloudCursor = cloudData.serverCursor || cloudData.serverUpdatedAt || new Date().toISOString();
+                localStorage.setItem('gumruk_cloud_cursor_v1', this.cloudCursor);
+                this.cloudRevision = Number(cloudData.serverRevision || 0);
+                localStorage.setItem('gumruk_cloud_revision_v1', String(this.cloudRevision));
+                this.sortPersoneller();
+                this.render();
+                this.setSyncStatus('Bulut birleştirildi ✔ (' + new Date().toLocaleTimeString() + ')');
+            } catch (error) {
+                console.error('Bulut okuma hatası:', error);
+                this.setSyncStatus('Yerel veriyle çalışılıyor — bağlantı hatası');
+            } finally {
+                this.pullInFlight = false;
+            }
+        },
+
         startAutoSync() {
-            if(this.syncInterval) clearInterval(this.syncInterval);
-            this.syncInterval = setInterval(() => {
-                if(this.user) this.loadFromCloud();
-            }, 10000);
+            if (this.syncInterval) clearInterval(this.syncInterval);
+            this.syncInterval = setInterval(() => this.loadChangesFromCloud(), 10000);
+        },
+
+        async loadChangesFromCloud() {
+            if (!this.initialCloudLoadDone || !this.user || this.pullInFlight || this.writeInFlight) return;
+            if (localStorage.getItem(this.PENDING_KEY) === '1') return;
+            this.pullInFlight = true;
+            let hasMore = false;
+            try {
+                const url = this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN) +
+                    '&afterRevision=' + encodeURIComponent(String(this.cloudRevision || 0));
+                const response = await fetch(url, { cache: 'no-store' });
+                const delta = await response.json();
+                if (!response.ok || (delta && delta.status === 'error')) throw new Error((delta && delta.message) || 'Değişiklikler alınamadı');
+                const changedCount = (delta.kayitlar || []).length + (delta.deletedTaskIds || []).length;
+                if (changedCount > 0) {
+                    this.db = this.mergeDatabases(this.db, delta);
+                    this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
+                    await this.writeLocalDatabase(this.db);
+                    this.render();
+                }
+                this.cloudCursor = delta.serverCursor || this.cloudCursor;
+                if (this.cloudCursor) localStorage.setItem('gumruk_cloud_cursor_v1', this.cloudCursor);
+                this.cloudRevision = Number(delta.serverRevision || this.cloudRevision || 0);
+                localStorage.setItem('gumruk_cloud_revision_v1', String(this.cloudRevision));
+                hasMore = delta.hasMore === true;
+                this.setSyncStatus(changedCount > 0
+                    ? changedCount + ' bulut değişikliği alındı ✔'
+                    : 'Veriler güncel ✔');
+            } catch (error) {
+                console.error('Değişiklik kontrolü hatası:', error);
+                this.setSyncStatus('Bağlantı bekleniyor — yerel kayıtlar güvende');
+            } finally {
+                this.pullInFlight = false;
+                if (hasMore) setTimeout(() => this.loadChangesFromCloud(), 100);
+            }
+        },
+
+        async initialize() {
+            this.setupTaskEnterShortcut();
+            try {
+                let stored = await this.readLocalDatabase();
+                if (!stored) {
+                    try { stored = JSON.parse(localStorage.getItem(this.DB_KEY) || 'null'); } catch (_) {}
+                    if (stored) {
+                        await this.writeLocalDatabase(stored);
+                        localStorage.removeItem(this.DB_KEY);
+                    }
+                }
+                this.db = this.normalizeDb(stored || this.db);
+                this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
+            } catch (error) {
+                console.error('Yerel veritabanı başlatma hatası:', error);
+                this.db = this.normalizeDb(this.db);
+            }
+            const pending = localStorage.getItem(this.PENDING_KEY) === '1';
+            if (!pending) await this.loadFromCloud({ initial: true });
+            this.checkSession();
+            if (pending) {
+                this.setSyncStatus('Bekleyen kayıt yeniden gönderiliyor…');
+                this.queueCloudWrite(0);
+            }
+        },
+
+        setupTaskEnterShortcut() {
+            if (this.taskEnterShortcutReady) return;
+            this.taskEnterShortcutReady = true;
+            document.addEventListener('keydown', event => {
+                if (event.key !== 'Enter' || event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
+                const target = event.target;
+                const recordSection = target && target.closest ? target.closest('#record-section') : null;
+                if (!recordSection || recordSection.classList.contains('hidden')) return;
+                const tag = String(target.tagName || '').toLowerCase();
+                if (tag === 'textarea' || tag === 'select' || tag === 'button' || target.isContentEditable) return;
+                event.preventDefault();
+                if (this.taskEnterSaveLocked) return;
+                this.taskEnterSaveLocked = true;
+                try {
+                    this.saveTask();
+                } finally {
+                    setTimeout(() => { this.taskEnterSaveLocked = false; }, 1200);
+                }
+            });
         },
 
         render() {
             if (!this.user) return; // Sadece hesaplamaları durdurur, perdeye dokunmaz.
             this.sortPersoneller();
+            const bulkApproveButton = document.getElementById('btn-bulk-approve');
+            if (bulkApproveButton) {
+                const canBulkApprove = ['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(this.user.rol);
+                bulkApproveButton.classList.toggle('hidden', !canBulkApprove);
+            }
+            const bypassToggle = document.getElementById('bypass-sef');
+            if (bypassToggle) bypassToggle.checked = !!this.db.bypassSef;
             
 
             this.gosterimMod = this.gosterimMod || 'yolluk';
@@ -1337,16 +1713,29 @@ updatePersonel(i, alan, yeniDeger) {
             }
 
             if(document.getElementById('leave-list-body')) {
-                const leaveData = this.db.izinler || [];
-                document.getElementById('leave-list-body').innerHTML = leaveData.length > 0 ? leaveData.map((l, i) => `
+                const leaveItems = this.getFilteredLeaves();
+                this.lastFilteredLeaves = leaveItems.map(item => item.leave);
+                const searchInput = document.getElementById('leave-search');
+                const typeInput = document.getElementById('leave-type-filter');
+                const startInput = document.getElementById('leave-filter-start');
+                const endInput = document.getElementById('leave-filter-end');
+                if (searchInput && searchInput.value !== this.leaveFilter.arama) searchInput.value = this.leaveFilter.arama;
+                if (typeInput) typeInput.value = this.leaveFilter.tur;
+                if (startInput) startInput.value = this.leaveFilter.baslangic;
+                if (endInput) endInput.value = this.leaveFilter.bitis;
+                const count = document.getElementById('leave-filter-count');
+                if (count) count.textContent = `(${leaveItems.length} kayıt)`;
+                document.getElementById('leave-list-body').innerHTML = leaveItems.length > 0 ? leaveItems.map(item => {
+                    const l = item.leave;
+                    return `
                     <tr>
                         <td><b>${l.personel}</b></td>
                         <td>${l.baslangic}</td>
                         <td>${l.bitis}</td>
                         <td><span class="tag" style="background:#e74c3c33; color:#e74c3c; border-color:#e74c3c;">${l.tur}</span></td>
-                        <td><button class="btn btn-danger" style="font-size:9px;" onclick="app.deleteLeave(${i})">SİL</button></td>
+                        <td><button class="btn btn-danger" style="font-size:9px;" onclick="app.deleteLeave(${item.index})">SİL</button></td>
                     </tr>
-                `).join('') : '<tr><td colspan="5" style="text-align:center; color:#666;">Aktif izin/rapor kaydı yok.</td></tr>';
+                `; }).join('') : '<tr><td colspan="5" style="text-align:center; color:#666; padding:25px;">Seçilen filtreye uygun izin/rapor bulunamadı.</td></tr>';
             }
 
          const hedefAy = this.seciliAy || this.mevcutAy();
@@ -1670,6 +2059,7 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                 });
             }
             filtered.reverse();
+            this.lastRenderedTasks = filtered.slice();
 
             document.getElementById('main-list').innerHTML = filtered.map(l => {
                 let btns = "";
@@ -1684,8 +2074,10 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                 } 
                 else if (isMemur) {
                     if(l.durum === "Taslak") btns += `<button class="btn btn-warning" onclick="app.process('${l.ref}','Şef Onayında')">HAVALE</button>`;
-                    if(l.durum === "Onaylandı") {
+                    if(!["Reddedildi", "Silme Talebinde"].includes(l.durum)) {
                         btns += `<button class="btn btn-primary" onclick="app.printDoc('${l.ref}')">YAZDIR</button> `;
+                    }
+                    if(l.durum === "Onaylandı") {
                         btns += `<button class="btn btn-warning" onclick="app.process('${l.ref}','Silme Talebinde')">SİLME TALEP</button>`;
                     }
                 }
@@ -1840,10 +2232,11 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
         },
 
         exportLeavesExcel() {
-            if (!this.db.izinler || this.db.izinler.length === 0) {
-                return alert("Aktif izin/rapor kaydı bulunmuyor!");
+            const filteredLeaves = this.lastFilteredLeaves || [];
+            if (filteredLeaves.length === 0) {
+                return alert("Ekrandaki filtreye uygun izin/rapor kaydı bulunmuyor!");
             }
-            const data = this.db.izinler.map(l => ({
+            const data = filteredLeaves.map(l => ({
                 "Personel": l.personel,
                 "Başlangıç": l.baslangic,
                 "Bitiş": l.bitis,
@@ -1852,7 +2245,7 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Izin_Rapor");
-            this.addLog("Excel İşlemi", "Personel İzin/Rapor kayıtları Excel olarak dışa aktarıldı.");
+            this.addLog("Excel İşlemi", `${filteredLeaves.length} filtrelenmiş Personel İzin/Rapor kaydı Excel olarak dışa aktarıldı.`);
             this.save();
             XLSX.writeFile(wb, `Izin_Rapor_Listesi_${new Date().toISOString().slice(0,10)}.xlsx`);
         },
@@ -2084,9 +2477,7 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
     };
 
     // SİSTEM BAŞLATICI
-    app.loadFromCloud(); 
-    app.checkSession();
-    app.startAutoSync();
+    app.initialize();
     
     // PERDEYİ KALDIRMA MOTORU (Giriş/Çıkış Hatalarını Önleyen Versiyon)
     setTimeout(() => {
