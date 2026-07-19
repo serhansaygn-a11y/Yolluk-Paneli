@@ -1730,10 +1730,6 @@ updatePersonel(i, alan, yeniDeger) {
                 <div class="line" style="margin-top:3px; font-size:6pt;">${new Date().toLocaleDateString('tr-TR')}</div>
             `;
 
-            if (!localStorage.getItem('gumruk_print_header_tip_seen')) {
-                alert('Temiz çıktı için yazdırma penceresinde "Diğer ayarlar" bölümünü açıp "Üstbilgiler ve altbilgiler" seçeneğinin kapalı olduğundan emin olun. Bu ayar tarih/saat, sayfa adı ve dosya konumunu kaldırır.');
-                localStorage.setItem('gumruk_print_header_tip_seen', '1');
-            }
             const previousTitle = document.title;
             document.title = ' ';
             const restorePrintTitle = () => {
