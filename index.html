@@ -46,6 +46,12 @@
       .admin-menu-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-top:18px; }
       .admin-menu-tile { min-height:78px; padding:14px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.06); color:var(--text); cursor:pointer; font-weight:bold; text-align:left; transition:.2s; }
       .admin-menu-tile:hover { transform:translateY(-2px); border-color:var(--accent); box-shadow:var(--accent-glow); }
+      .health-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin-top:16px; }
+      .health-card { padding:14px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.05); }
+      .health-card-title { color:var(--muted); font-size:10px; text-transform:uppercase; margin-bottom:7px; }
+      .health-card-value { color:var(--text); font-size:15px; font-weight:bold; line-height:1.35; }
+      .health-ok { color:var(--success); } .health-warn { color:var(--warning); } .health-bad { color:var(--danger); }
+      .maintenance-banner { margin-bottom:14px; padding:13px 16px; border:2px solid var(--warning); border-radius:10px; background:rgba(241,196,15,.14); color:var(--warning); font-weight:bold; text-align:center; box-shadow:0 0 16px rgba(241,196,15,.22); }
       .main-container { padding:20px; border-radius:16px; background:var(--card); border: 1px solid var(--border); backdrop-filter:blur(20px); }
       .card-section { background: rgba(0,0,0,0.4); padding: 18px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
       h3 { color: var(--accent); margin-top: 0; margin-bottom: 0; font-size: 15px; text-transform: uppercase; }
@@ -74,6 +80,7 @@
       @media (max-width: 850px) { .leave-filter { grid-template-columns:1fr; } }
 
       @media print {
+        @page { size:auto; margin:0; }
         .app { display: none !important; }
         body { margin: 0 !important; padding: 0 !important; background-color: white !important; height: 100%; }
         #print-area {
@@ -238,11 +245,13 @@
       </div>
 
       <div id="panel-content" class="hidden">
+        <div id="maintenance-banner" class="maintenance-banner hidden"></div>
         <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
             <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
                 <button class="btn btn-warning" onclick="app.changePassword()">🔑 ŞİFRE DEĞİŞTİR</button>
                 <button id="btn-admin-management" class="btn btn-success hidden" onclick="app.openAdminManagement()">🛠️ SİSTEM YÖNETİMİ</button>
                 <button id="btn-analiz" class="btn btn-primary" style="background:#8e44ad; color:#fff;" onclick="app.openAnalizMerkezi()">🔍 PERSONEL ANALİZ MERKEZİ</button>
+                <button id="btn-system-health-public" class="btn btn-success" onclick="app.openSystemHealth()">🩺 SİSTEM SAĞLIĞI</button>
             </div>
             <button id="btn-log" class="btn hidden" style="background:#e67e22; color:#fff;" onclick="app.openLogMerkezi()">📜 SİSTEM LOG MERKEZİ</button>
             <button id="btn-uyari" class="btn hidden" style="background:var(--danger); color:#fff;" onclick="app.showUyariModal()">🔔 EKSİK DEKONTLAR (<span id="uyari-sayi">0</span>)</button>
@@ -580,8 +589,10 @@ addLog(tip, detay, ref = "-") {
         openLogMerkezi() {
             const r = this.user.rol;
             if(!['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(r)) return alert("Bu alana giriş yetkiniz bulunmamaktadır!");
-            this.addLog("Modül Erişimi", "Sistem Log Merkezi ekranı açıldı ve görüntülendi."); // <-- BU SATIRI EKLE
-            this.save(); // <-- BU SATIRI EKLE
+            if (!this.isMaintenanceBlocked(false)) {
+                this.addLog("Modül Erişimi", "Sistem Log Merkezi ekranı açıldı ve görüntülendi.");
+                this.save();
+            }
             document.getElementById('log-modal').classList.remove('hidden');
             this.renderLogList();
         },
@@ -642,6 +653,7 @@ hardBackup() {
             document.body.appendChild(downloadAnchorNode); 
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
+            localStorage.setItem('gumruk_last_backup_at', new Date().toISOString());
             this.addLog("Sistem Yedeği Alındı", "Tüm sistem veritabanı bilgisayara manuel olarak .json formatında indirildi.");
             alert("Sistemin tam anlık kopyası bilgisayarınıza indirildi!");
         },
@@ -838,8 +850,10 @@ hardBackup() {
         },
 
         showUyariModal() {
-            this.addLog("Modül Erişimi", "Eksik Dekontlar uyarı modalı incelendi."); // <-- BU SATIRI EKLE
-            this.save(); // <-- BU SATIRI EKLE
+            if (!this.isMaintenanceBlocked(false)) {
+                this.addLog("Modül Erişimi", "Eksik Dekontlar uyarı modalı incelendi.");
+                this.save();
+            }
             document.getElementById('uyari-modal').classList.remove('hidden');
         },
 
@@ -870,10 +884,111 @@ hardBackup() {
 
         updateAdminMenuState() {
             const tile = document.getElementById('admin-sef-toggle-tile');
-            if (!tile) return;
-            tile.innerHTML = this.db.bypassSef
-                ? '🚫 Şef Onayı Devre Dışı<br><small style="color:#2ecc71">Şu anda aktif — açmak için tıklayın</small>'
-                : '✅ Şef Onayını Devre Dışı Bırak<br><small style="color:var(--muted)">Etkinleştirmek için tıklayın</small>';
+            if (tile) {
+                tile.innerHTML = this.db.bypassSef
+                    ? '🚫 Şef Onayı Devre Dışı<br><small style="color:#2ecc71">Şu anda aktif — açmak için tıklayın</small>'
+                    : '✅ Şef Onayını Devre Dışı Bırak<br><small style="color:var(--muted)">Etkinleştirmek için tıklayın</small>';
+            }
+            const maintenanceTile = document.getElementById('admin-maintenance-toggle-tile');
+            if (maintenanceTile) {
+                const enabled = !!(this.db.maintenanceMode && this.db.maintenanceMode.enabled);
+                maintenanceTile.innerHTML = enabled
+                    ? '🛑 Bakım Modunu Kapat<br><small style="color:#ff6b6b">Sistem şu anda bakımda</small>'
+                    : '🧰 Bakım Modunu Aç<br><small style="color:var(--muted)">Kullanıcı işlemlerini geçici olarak durdur</small>';
+            }
+        },
+
+        isMaintenanceBlocked(showWarning = true) {
+            const enabled = !!(this.db.maintenanceMode && this.db.maintenanceMode.enabled);
+            const blocked = enabled && this.user && this.user.rol !== 'Admin';
+            if (blocked && showWarning) alert('🧰 Patron sistem bakımı yapıyor. Şu anda kayıt ekleme, değiştirme veya silme işlemi yapılamaz. Lütfen daha sonra tekrar deneyin.');
+            return blocked;
+        },
+
+        updateMaintenanceUI() {
+            const banner = document.getElementById('maintenance-banner');
+            if (!banner || !this.user) return;
+            const mode = this.db.maintenanceMode || {};
+            banner.classList.toggle('hidden', !mode.enabled);
+            if (mode.enabled) {
+                banner.innerText = this.user.rol === 'Admin'
+                    ? '🧰 BAKIM MODU AÇIK — Diğer kullanıcıların veri değiştirmesi engelleniyor.'
+                    : '🧰 Patron sistem bakımı yapıyor. Verileri görüntüleyebilirsiniz ancak işlem yapamazsınız.';
+            }
+            this.updateAdminMenuState();
+        },
+
+        toggleMaintenanceMode() {
+            if (!this.user || this.user.rol !== 'Admin') return alert('Bakım modunu yalnızca Admin değiştirebilir.');
+            const current = !!(this.db.maintenanceMode && this.db.maintenanceMode.enabled);
+            const question = current
+                ? 'Bakım modu kapatılacak ve kullanıcılar yeniden işlem yapabilecek. Devam edilsin mi?'
+                : 'Bakım modu açılacak. Diğer kullanıcılar verileri görebilecek fakat kayıt ekleyemeyecek, değiştiremeyecek veya silemeyecek. Devam edilsin mi?';
+            if (!confirm(question)) return;
+            this.db.maintenanceMode = {
+                enabled: !current,
+                updatedAt: new Date().toISOString(),
+                updatedBy: this.user.user
+            };
+            this.addLog('Bakım Modu', `Bakım modu ${!current ? 'açıldı' : 'kapatıldı'}.`);
+            this.save();
+            this.updateMaintenanceUI();
+        },
+
+        formatHealthTime(storageKey) {
+            const value = localStorage.getItem(storageKey);
+            if (!value) return 'Henüz kayıt yok';
+            const date = new Date(value);
+            return Number.isNaN(date.getTime()) ? 'Bilinmiyor' : date.toLocaleString('tr-TR');
+        },
+
+        renderSystemHealth() {
+            const target = document.getElementById('system-health-content');
+            if (!target) return;
+            const online = navigator.onLine;
+            const pending = localStorage.getItem(this.PENDING_KEY) === '1';
+            const activeOperation = this.writeInFlight ? 'Buluta yazılıyor' : (this.pullInFlight ? 'Buluttan alınıyor' : 'Bekleyen ağ işlemi yok');
+            const syncText = document.getElementById('sync-status')?.innerText || 'Durum bilgisi yok';
+            const cards = [
+                ['İnternet bağlantısı', online ? 'Bağlı ✔' : 'Bağlantı yok', online ? 'health-ok' : 'health-bad'],
+                ['Senkronizasyon', syncText, pending ? 'health-warn' : 'health-ok'],
+                ['Bekleyen gönderi', pending ? 'Gönderilmeyi bekliyor' : 'Yok ✔', pending ? 'health-warn' : 'health-ok'],
+                ['Aktif işlem', activeOperation, (this.writeInFlight || this.pullInFlight) ? 'health-warn' : 'health-ok'],
+                ['Son bulut gönderimi', this.formatHealthTime('gumruk_last_cloud_write_at'), ''],
+                ['Son bulut kontrolü', this.formatHealthTime('gumruk_last_cloud_read_at'), ''],
+                ['Son bilgisayar yedeği', this.formatHealthTime('gumruk_last_backup_at'), ''],
+                ['Yerel veritabanı', this.localDbPromise ? 'IndexedDB hazır ✔' : 'Başlatılıyor', this.localDbPromise ? 'health-ok' : 'health-warn'],
+                ['Bulut sürümü', String(this.cloudRevision || 0), ''],
+                ['Otomatik kontrol', 'Her 10 saniyede bir', 'health-ok'],
+                ['Bakım modu', this.db.maintenanceMode?.enabled ? 'Açık — işlemler kısıtlı' : 'Kapalı ✔', this.db.maintenanceMode?.enabled ? 'health-warn' : 'health-ok'],
+                ['Görev kayıtları', String((this.db.kayitlar || []).length), ''],
+                ['Personel kayıtları', String((this.db.personeller || []).length), ''],
+                ['İzin / rapor kayıtları', String((this.db.izinler || []).length), ''],
+                ['Kullanıcı hesapları', String((this.db.accounts || []).length), ''],
+                ['Silme işaretleri', String((this.db.deletedTaskIds || []).length), ''],
+                ['Bulut yapılandırması', this.CLOUD_URL && this.CLOUD_TOKEN ? 'Hazır ✔' : 'Eksik', this.CLOUD_URL && this.CLOUD_TOKEN ? 'health-ok' : 'health-bad']
+            ];
+            target.innerHTML = cards.map(card => `<div class="health-card"><div class="health-card-title">${card[0]}</div><div class="health-card-value ${card[2]}">${card[1]}</div></div>`).join('');
+            const stamp = document.getElementById('system-health-updated');
+            if (stamp) stamp.innerText = 'Son kontrol: ' + new Date().toLocaleTimeString('tr-TR');
+        },
+
+        openSystemHealth() {
+            if (!this.user) return alert('Sistem Sağlık ekranı için oturum açmalısınız.');
+            const isAdmin = this.user.rol === 'Admin';
+            if (isAdmin) this.closeAdminManagement();
+            document.getElementById('btn-health-refresh').classList.toggle('hidden', !isAdmin);
+            document.getElementById('btn-health-admin-menu').classList.toggle('hidden', !isAdmin);
+            this.renderSystemHealth();
+            document.getElementById('system-health-modal').classList.remove('hidden');
+            if (this.healthInterval) clearInterval(this.healthInterval);
+            this.healthInterval = isAdmin ? setInterval(() => this.renderSystemHealth(), 2000) : null;
+        },
+
+        closeSystemHealth() {
+            document.getElementById('system-health-modal').classList.add('hidden');
+            if (this.healthInterval) clearInterval(this.healthInterval);
+            this.healthInterval = null;
         },
 
         openAdminManagement() {
@@ -938,6 +1053,7 @@ hardBackup() {
                 const r = this.user.rol;
                 document.getElementById('btn-admin-management').classList.add('hidden');
                 document.getElementById('btn-analiz').classList.remove('hidden');
+                document.getElementById('btn-system-health-public').classList.remove('hidden');
                 document.getElementById('btn-log').classList.add('hidden');
                 document.getElementById('admin-section').classList.add('hidden');
                 document.getElementById('admin-section').classList.remove('personnel-service-view');
@@ -951,6 +1067,7 @@ hardBackup() {
                     document.getElementById('admin-section').classList.remove('personnel-service-view');
                     document.getElementById('btn-admin-management').classList.remove('hidden');
                     document.getElementById('btn-analiz').classList.add('hidden');
+                    document.getElementById('btn-system-health-public').classList.add('hidden');
                     document.getElementById('record-section').classList.remove('hidden');
                     document.getElementById('task-list-section').classList.remove('hidden');
                     document.getElementById('stats-section').classList.remove('hidden');
@@ -995,6 +1112,7 @@ hardBackup() {
                 const r = acc.rol;
                 document.getElementById('btn-admin-management').classList.add('hidden');
                 document.getElementById('btn-analiz').classList.remove('hidden');
+                document.getElementById('btn-system-health-public').classList.remove('hidden');
                 document.getElementById('btn-log').classList.add('hidden');
                 document.getElementById('admin-section').classList.add('hidden');
                 document.getElementById('admin-section').classList.remove('personnel-service-view');
@@ -1008,6 +1126,7 @@ hardBackup() {
                     document.getElementById('admin-section').classList.remove('personnel-service-view');
                     document.getElementById('btn-admin-management').classList.remove('hidden');
                     document.getElementById('btn-analiz').classList.add('hidden');
+                    document.getElementById('btn-system-health-public').classList.add('hidden');
                     document.getElementById('record-section').classList.remove('hidden');
                     document.getElementById('task-list-section').classList.remove('hidden');
                     document.getElementById('stats-section').classList.remove('hidden');
@@ -1611,6 +1730,17 @@ updatePersonel(i, alan, yeniDeger) {
                 <div class="line" style="margin-top:3px; font-size:6pt;">${new Date().toLocaleDateString('tr-TR')}</div>
             `;
 
+            if (!localStorage.getItem('gumruk_print_header_tip_seen')) {
+                alert('Temiz çıktı için yazdırma penceresinde "Diğer ayarlar" bölümünü açıp "Üstbilgiler ve altbilgiler" seçeneğinin kapalı olduğundan emin olun. Bu ayar tarih/saat, sayfa adı ve dosya konumunu kaldırır.');
+                localStorage.setItem('gumruk_print_header_tip_seen', '1');
+            }
+            const previousTitle = document.title;
+            document.title = ' ';
+            const restorePrintTitle = () => {
+                document.title = previousTitle;
+                window.removeEventListener('afterprint', restorePrintTitle);
+            };
+            window.addEventListener('afterprint', restorePrintTitle);
             setTimeout(() => window.print(), 100);
         },
 
@@ -1760,6 +1890,11 @@ updatePersonel(i, alan, yeniDeger) {
         },
 
         save() {
+            if (this.isMaintenanceBlocked(true)) {
+                if (this.lastPersistedDb) this.db = JSON.parse(JSON.stringify(this.lastPersistedDb));
+                this.render();
+                return false;
+            }
             this.lastLocalChange = Date.now();
             this.prepareTaskTimestamps();
             this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
@@ -1802,6 +1937,7 @@ updatePersonel(i, alan, yeniDeger) {
                 });
                 const answer = await response.json();
                 if (!response.ok || !answer || answer.status !== 'success') throw new Error((answer && answer.message) || 'Sunucu yazmayı onaylamadı');
+                localStorage.setItem('gumruk_last_cloud_write_at', new Date().toISOString());
                 const unchanged = JSON.stringify(snapshot) === JSON.stringify(this.db);
                 if (unchanged && !this.writeAgain) localStorage.removeItem(this.PENDING_KEY);
                 else this.writeAgain = true;
@@ -1839,6 +1975,7 @@ updatePersonel(i, alan, yeniDeger) {
                 this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
                 await this.writeLocalDatabase(this.db);
                 this.initialCloudLoadDone = true;
+                localStorage.setItem('gumruk_last_cloud_read_at', new Date().toISOString());
                 this.cloudCursor = cloudData.serverCursor || cloudData.serverUpdatedAt || new Date().toISOString();
                 localStorage.setItem('gumruk_cloud_cursor_v1', this.cloudCursor);
                 this.cloudRevision = Number(cloudData.serverRevision || 0);
@@ -1856,7 +1993,38 @@ updatePersonel(i, alan, yeniDeger) {
 
         startAutoSync() {
             if (this.syncInterval) clearInterval(this.syncInterval);
-            this.syncInterval = setInterval(() => this.loadChangesFromCloud(), 10000);
+            this.syncInterval = setInterval(async () => {
+                await this.loadMaintenanceStatus();
+                await this.loadChangesFromCloud();
+            }, 10000);
+        },
+
+        async loadMaintenanceStatus() {
+            if (!this.initialCloudLoadDone || !this.user || this.writeInFlight || this.maintenanceCheckInFlight) return;
+            if (localStorage.getItem(this.PENDING_KEY) === '1') return;
+            this.maintenanceCheckInFlight = true;
+            try {
+                const response = await fetch(this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN), { cache:'no-store' });
+                const fullData = await response.json();
+                if (!response.ok || (fullData && fullData.status === 'error')) throw new Error((fullData && fullData.message) || 'Bakım durumu alınamadı');
+                const remoteMode = fullData.maintenanceMode || { enabled:false };
+                const localMode = this.db.maintenanceMode || { enabled:false };
+                if (JSON.stringify(remoteMode) !== JSON.stringify(localMode)) {
+                    const justEnabled = remoteMode.enabled && !localMode.enabled;
+                    this.db.maintenanceMode = remoteMode;
+                    this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
+                    await this.writeLocalDatabase(this.db);
+                    this.render();
+                    if (justEnabled && this.user.rol !== 'Admin') {
+                        alert('🧰 Patron sistem bakımı yapıyor. Bakım bitene kadar kayıt ekleme, değiştirme ve silme işlemleri durduruldu.');
+                    }
+                }
+                localStorage.setItem('gumruk_last_cloud_read_at', new Date().toISOString());
+            } catch (error) {
+                console.error('Bakım durumu kontrolü hatası:', error);
+            } finally {
+                this.maintenanceCheckInFlight = false;
+            }
         },
 
         async loadChangesFromCloud() {
@@ -1871,7 +2039,8 @@ updatePersonel(i, alan, yeniDeger) {
                 const delta = await response.json();
                 if (!response.ok || (delta && delta.status === 'error')) throw new Error((delta && delta.message) || 'Değişiklikler alınamadı');
                 const changedCount = (delta.kayitlar || []).length + (delta.deletedTaskIds || []).length;
-                if (changedCount > 0) {
+                const maintenanceChanged = delta.maintenanceMode && JSON.stringify(delta.maintenanceMode) !== JSON.stringify(this.db.maintenanceMode || { enabled:false });
+                if (changedCount > 0 || maintenanceChanged) {
                     this.db = this.mergeDatabases(this.db, delta);
                     this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
                     await this.writeLocalDatabase(this.db);
@@ -1881,9 +2050,10 @@ updatePersonel(i, alan, yeniDeger) {
                 if (this.cloudCursor) localStorage.setItem('gumruk_cloud_cursor_v1', this.cloudCursor);
                 this.cloudRevision = Number(delta.serverRevision || this.cloudRevision || 0);
                 localStorage.setItem('gumruk_cloud_revision_v1', String(this.cloudRevision));
+                localStorage.setItem('gumruk_last_cloud_read_at', new Date().toISOString());
                 hasMore = delta.hasMore === true;
-                this.setSyncStatus(changedCount > 0
-                    ? changedCount + ' bulut değişikliği alındı ✔'
+                this.setSyncStatus(changedCount > 0 || maintenanceChanged
+                    ? (changedCount + (maintenanceChanged ? ' + bakım durumu' : '') + ' bulut değişikliği alındı ✔')
                     : 'Veriler güncel ✔');
             } catch (error) {
                 console.error('Değişiklik kontrolü hatası:', error);
@@ -1943,6 +2113,7 @@ updatePersonel(i, alan, yeniDeger) {
 
         render() {
             if (!this.user) return; // Sadece hesaplamaları durdurur, perdeye dokunmaz.
+            this.updateMaintenanceUI();
             this.sortPersoneller();
             const bulkApproveButton = document.getElementById('btn-bulk-approve');
             if (bulkApproveButton) {
@@ -2597,8 +2768,10 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
         }
         , // Önceki fonksiyonla bağlantı kuran kritik virgül
         openAnalizMerkezi() {
-            this.addLog("Modül Erişimi", "Personel Analiz & Arşiv Merkezi ekranı açıldı."); // <-- BU SATIRI EKLE
-            this.save(); // <-- BU SATIRI EKLE
+            if (!this.isMaintenanceBlocked(false)) {
+                this.addLog("Modül Erişimi", "Personel Analiz & Arşiv Merkezi ekranı açıldı.");
+                this.save();
+            }
             document.getElementById('analiz-modal').classList.remove('hidden');
             this.renderAnalizList();
         },
@@ -2829,6 +3002,24 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
         }
     }, 2000); // 2 saniye ideal süredir
   </script>
+  <!-- SİSTEM SAĞLIK MODAL -->
+<div id="system-health-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,.93); z-index:10030; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(10px);">
+    <div style="background:#0d1117; width:94%; max-width:1150px; max-height:90vh; overflow-y:auto; border:1px solid var(--success); border-radius:16px; padding:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border); padding-bottom:14px;">
+            <div><h2 style="color:var(--success); margin:0;">🩺 Sistem Sağlık Ekranı</h2><div id="system-health-updated" style="color:var(--muted); font-size:11px; margin-top:5px;"></div></div>
+            <div style="display:flex; gap:8px;">
+                <button id="btn-health-refresh" class="btn btn-primary" onclick="app.renderSystemHealth()">🔄 YENİLE</button>
+                <button id="btn-health-admin-menu" class="btn btn-warning" onclick="app.closeSystemHealth(); app.openAdminManagement()">YÖNETİM MENÜSÜ</button>
+                <button class="btn btn-danger" onclick="app.closeSystemHealth()">KAPAT [X]</button>
+            </div>
+        </div>
+        <div id="system-health-content" class="health-grid"></div>
+        <div style="margin-top:16px; padding:12px; border:1px dashed var(--border); border-radius:8px; color:var(--muted); font-size:11px; line-height:1.6;">
+            Sarı alanlar bekleyen veya devam eden işlemleri, kırmızı alanlar bağlantı/yapılandırma sorunlarını gösterir. Bekleyen gönderi varsa sayfayı kapatmadan internet bağlantısının düzelmesini bekleyin.
+        </div>
+    </div>
+</div>
+
   <!-- ADMIN SİSTEM YÖNETİMİ MODAL -->
 <div id="admin-management-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:10020; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(10px);">
     <div style="background:#0d1117; width:94%; max-width:1050px; max-height:90vh; overflow-y:auto; border:1px solid var(--accent); border-radius:16px; padding:24px;">
@@ -2843,6 +3034,8 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
             <button class="admin-menu-tile" onclick="app.openAdminModule('fees')">💰 Hizmet Ücret Kalemleri</button>
             <button class="admin-menu-tile" onclick="app.openAdminModule('users')">🔐 Sistem Giriş Yetkileri<br><small style="color:var(--muted)">Kullanıcılar</small></button>
             <button id="admin-sef-toggle-tile" class="admin-menu-tile" onclick="app.toggleSefApprovalFromMenu()">✅ Şef Onayını Devre Dışı Bırak</button>
+            <button id="admin-maintenance-toggle-tile" class="admin-menu-tile" onclick="app.toggleMaintenanceMode()">🧰 Bakım Modunu Aç</button>
+            <button class="admin-menu-tile" onclick="app.openSystemHealth()">🩺 Sistem Sağlık Ekranı<br><small style="color:var(--muted)">Bağlantı, senkronizasyon ve kayıt durumu</small></button>
             <button class="admin-menu-tile" onclick="app.hardBackup()">💾 Yedekle</button>
             <button class="admin-menu-tile" onclick="app.chooseBackupRestore()">♻️ Yedeği Geri Yükle</button>
             <button class="admin-menu-tile" onclick="app.closeAdminManagement(); app.openAnalizMerkezi()">🔍 Personel Analiz Merkezi</button>
