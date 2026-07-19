@@ -58,7 +58,7 @@
       .assignment-personnel-grid select { min-height:315px; margin-bottom:0; }
       .assignment-lower-grid { display:grid; grid-template-columns:minmax(280px,.72fr) minmax(520px,1.45fr); gap:12px; margin-top:6px; align-items:stretch; }
       .task-fee-panel, .task-control-panel { padding:12px; border:1px solid var(--border); border-radius:10px; background:rgba(0,0,0,.22); }
-      .task-fee-panel #task-types { height:190px; margin-bottom:0; }
+      .task-fee-panel #task-types { height:312px; margin-bottom:0; overflow-y:auto; }
       .task-option-grid { display:grid; grid-template-columns:1.5fr .8fr; gap:8px; margin-top:8px; }
       .task-option-button { display:flex; align-items:center; justify-content:center; gap:7px; min-height:42px; padding:8px 10px; border:1px solid rgba(0,246,210,.42); border-radius:8px; background:rgba(0,246,210,.08); color:var(--accent); font-size:10px; font-weight:bold; cursor:pointer; text-align:center; }
       .task-option-button input { width:16px; height:16px; margin:0; accent-color:var(--success); }
@@ -109,7 +109,7 @@
             left: auto !important;
             top: auto !important;
             right: 5px !important;
-            bottom: 55px !important;
+            bottom: calc(55px + 30mm) !important;
             width: 410px !important;
             height: auto !important;
             min-height: 0 !important;
@@ -225,6 +225,18 @@
         .header-right { align-items:center; }
         .header-profile-row { justify-content:center; }
       }
+      /* Yeni tasarımdan yalnız sistem başlığı korunur */
+      @media screen {
+        .header-center h1 {
+          font-size:clamp(23px,2.2vw,34px);
+          letter-spacing:1.8px;
+          background:linear-gradient(90deg,#ffffff 5%,var(--accent) 55%,#b8fff7 100%);
+          -webkit-background-clip:text;
+          background-clip:text;
+          color:transparent;
+          text-shadow:none;
+        }
+      }
     </style>
 </head>
 <body>
@@ -281,7 +293,7 @@
                 <button id="btn-analiz" class="btn btn-primary" style="background:#8e44ad; color:#fff;" onclick="app.openAnalizMerkezi()">🔍 PERSONEL ANALİZ MERKEZİ</button>
                 <button id="btn-system-health-public" class="btn btn-success" onclick="app.openSystemHealth()">🩺 SİSTEM SAĞLIĞI</button>
             </div>
-            <button id="btn-log" class="btn hidden" style="background:#e67e22; color:#fff;" onclick="app.openLogMerkezi()">📜 SİSTEM LOG MERKEZİ</button>
+            <button id="btn-log" class="btn" style="background:#e67e22; color:#fff;" onclick="app.openLogMerkezi()">📜 SİSTEM LOG MERKEZİ</button>
             <button id="btn-uyari" class="btn hidden" style="background:var(--danger); color:#fff;" onclick="app.showUyariModal()">🔔 EKSİK DEKONTLAR (<span id="uyari-sayi">0</span>)</button>
             
             <div id="admin-toggle-area" class="hidden">
@@ -478,7 +490,7 @@
             <div class="assignment-lower-grid">
                 <div class="task-fee-panel">
                     <label style="font-size:11px; color:var(--accent)">Hakediş Kalemleri (CTRL ile Çoklu Seçim):</label>
-                    <select id="task-types" multiple></select>
+                    <select id="task-types" multiple size="13"></select>
                 </div>
                 <div class="task-control-panel">
                     <label style="font-size:11px; color:var(--accent)">Beyanname / Karar / Referans No:</label>
@@ -615,8 +627,6 @@ addLog(tip, detay, ref = "-") {
             if(this.db.logs.length > 5000) this.db.logs.pop(); 
         },
         openLogMerkezi() {
-            const r = this.user.rol;
-            if(!['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(r)) return alert("Bu alana giriş yetkiniz bulunmamaktadır!");
             if (!this.isMaintenanceBlocked(false)) {
                 this.addLog("Modül Erişimi", "Sistem Log Merkezi ekranı açıldı ve görüntülendi.");
                 this.save();
@@ -1082,7 +1092,7 @@ hardBackup() {
                 document.getElementById('btn-admin-management').classList.add('hidden');
                 document.getElementById('btn-analiz').classList.remove('hidden');
                 document.getElementById('btn-system-health-public').classList.remove('hidden');
-                document.getElementById('btn-log').classList.add('hidden');
+                document.getElementById('btn-log').classList.toggle('hidden', r === 'Admin');
                 document.getElementById('admin-section').classList.add('hidden');
                 document.getElementById('admin-section').classList.remove('personnel-service-view');
                 document.getElementById('admin-toggle-area').classList.add('hidden');
@@ -1141,7 +1151,7 @@ hardBackup() {
                 document.getElementById('btn-admin-management').classList.add('hidden');
                 document.getElementById('btn-analiz').classList.remove('hidden');
                 document.getElementById('btn-system-health-public').classList.remove('hidden');
-                document.getElementById('btn-log').classList.add('hidden');
+                document.getElementById('btn-log').classList.toggle('hidden', r === 'Admin');
                 document.getElementById('admin-section').classList.add('hidden');
                 document.getElementById('admin-section').classList.remove('personnel-service-view');
                 document.getElementById('admin-toggle-area').classList.add('hidden');
@@ -2112,6 +2122,13 @@ updatePersonel(i, alan, yeniDeger) {
             document.addEventListener('keydown', event => {
                 if (event.key !== 'Enter' || event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
                 const target = event.target;
+                const loginScreen = document.getElementById('login-screen');
+                if (loginScreen && !loginScreen.classList.contains('hidden') &&
+                    (target?.id === 'username' || target?.id === 'password')) {
+                    event.preventDefault();
+                    this.login();
+                    return;
+                }
                 const recordSection = target && target.closest ? target.closest('#record-section') : null;
                 if (!recordSection || recordSection.classList.contains('hidden')) return;
                 const tag = String(target.tagName || '').toLowerCase();
