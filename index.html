@@ -58,13 +58,13 @@
       .assignment-personnel-grid select { min-height:315px; margin-bottom:0; }
       .assignment-lower-grid { display:grid; grid-template-columns:minmax(280px,.72fr) minmax(520px,1.45fr); gap:12px; margin-top:6px; align-items:stretch; }
       .task-fee-panel, .task-control-panel { padding:12px; border:1px solid var(--border); border-radius:10px; background:rgba(0,0,0,.22); }
-      .task-fee-panel #task-types { height:312px; margin-bottom:0; overflow-y:auto; }
+      .task-fee-panel #task-types { height:auto; min-height:0; max-height:none; margin-bottom:0; overflow-y:auto; }
       .task-option-grid { display:grid; grid-template-columns:1.5fr .8fr; gap:8px; margin-top:8px; }
       .task-option-button { display:flex; align-items:center; justify-content:center; gap:7px; min-height:42px; padding:8px 10px; border:1px solid rgba(0,246,210,.42); border-radius:8px; background:rgba(0,246,210,.08); color:var(--accent); font-size:10px; font-weight:bold; cursor:pointer; text-align:center; }
       .task-option-button input { width:16px; height:16px; margin:0; accent-color:var(--success); }
       .repeat-control { display:flex; align-items:center; justify-content:center; gap:8px; }
       .repeat-control input { width:74px; height:36px; margin:0; text-align:center; border:1px solid var(--accent); background:rgba(0,246,210,.08) !important; font-weight:900; }
-      .manual-save-row { display:grid; grid-template-columns:minmax(105px,.75fr) 115px minmax(260px,1.45fr); gap:7px; align-items:center; margin-top:9px; }
+      .manual-save-row { display:grid; grid-template-columns:minmax(105px,.75fr) 115px minmax(260px,1.45fr); gap:7px; align-items:center; margin-top:2px; }
       .manual-save-row input, .manual-save-row select { margin:0; }
       .manual-save-row button { height:43px; }
       @media (max-width:950px) {
@@ -235,6 +235,100 @@
           background-clip:text;
           color:transparent;
           text-shadow:none;
+        }
+      }
+      /* Admin Sistem Yönetimi — daha düzenli ve kurumsal kart görünümü */
+      @media screen {
+        #admin-management-modal > div {
+          max-width:1180px!important;
+          padding:26px!important;
+          background:linear-gradient(145deg,#111518,#0a0d0f)!important;
+          border-color:rgba(0,246,210,.42)!important;
+          box-shadow:0 28px 80px rgba(0,0,0,.58),0 0 30px rgba(0,246,210,.07);
+        }
+        #admin-management-modal h2 { font-size:25px; letter-spacing:.2px; }
+        .admin-menu-grid {
+          grid-template-columns:repeat(4,minmax(0,1fr));
+          gap:14px;
+          margin-top:22px;
+        }
+        .admin-menu-tile {
+          position:relative;
+          min-height:94px;
+          padding:18px 42px 18px 18px;
+          overflow:hidden;
+          border:1px solid rgba(255,255,255,.14);
+          border-top:2px solid rgba(0,246,210,.65);
+          border-radius:13px;
+          background:linear-gradient(145deg,#1a2024,#111518);
+          color:#f2f5f6;
+          font-size:12px;
+          line-height:1.42;
+          text-align:left;
+          box-shadow:0 8px 20px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.025);
+        }
+        .admin-menu-tile::after {
+          content:'›';
+          position:absolute;
+          right:17px;
+          top:50%;
+          transform:translateY(-50%);
+          color:rgba(0,246,210,.58);
+          font-size:25px;
+          font-weight:300;
+          transition:.2s;
+        }
+        .admin-menu-tile:nth-child(4n+2),
+        .admin-menu-tile:nth-child(4n+4) { border-top-color:rgba(241,196,15,.72); }
+        .admin-menu-tile:nth-child(4n+2)::after,
+        .admin-menu-tile:nth-child(4n+4)::after { color:rgba(241,196,15,.62); }
+        .admin-menu-tile small {
+          display:block;
+          margin-top:5px;
+          color:#91a1ad!important;
+          font-size:10px;
+          line-height:1.35;
+        }
+        .admin-menu-tile:hover {
+          transform:translateY(-3px);
+          border-color:rgba(0,246,210,.62);
+          background:linear-gradient(145deg,#20282d,#141a1d);
+          box-shadow:0 14px 28px rgba(0,0,0,.34),0 0 20px rgba(0,246,210,.08);
+        }
+        .admin-menu-tile:hover::after { right:12px; color:var(--accent); }
+        .admin-menu-tile:last-child {
+          grid-column:1/-1;
+          min-height:68px;
+          border-top-color:var(--danger);
+          background:linear-gradient(90deg,rgba(255,71,87,.13),#111518 58%);
+          color:#fff;
+        }
+        .admin-menu-tile:last-child::after { color:var(--danger); }
+        #admin-sef-toggle-tile { border-left:3px solid var(--success); }
+        #admin-maintenance-toggle-tile { border-left:3px solid var(--warning); }
+        @media(max-width:1050px) { .admin-menu-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+        @media(max-width:620px) {
+          #admin-management-modal > div { padding:16px!important; }
+          .admin-menu-grid { grid-template-columns:1fr; }
+          .admin-menu-tile:last-child { grid-column:auto; }
+        }
+      }
+      /* Yalnız Hakediş tablosu satırlarını kompaktlaştıran deneme */
+      @media screen {
+        .assignment-lower-grid { align-items:start; }
+        #task-list-section > div:first-child { margin-bottom:8px!important; padding-bottom:8px!important; }
+        #task-list-section .task-filter { row-gap:3px; column-gap:10px; margin-bottom:8px; }
+        #task-list-section .task-filter input,
+        #task-list-section .task-filter select { margin:1px 0; padding-top:8px; padding-bottom:8px; }
+        #task-list-section .task-filter .btn { margin-top:1px; margin-bottom:1px; }
+        .hakedis-table th,
+        .hakedis-table td { padding-top:5px; padding-bottom:5px; }
+        .hakedis-table .birim-header { padding-top:7px; padding-bottom:7px; }
+        .assignment-personnel-grid select {
+          height:258px;
+          min-height:258px;
+          max-height:258px;
+          overflow-y:auto;
         }
       }
     </style>
@@ -478,9 +572,9 @@
         <div id="record-section" class="card-section hidden">
             <h3 style="border-bottom:1px solid var(--border); padding-bottom:8px;">Görevlendirme Formu</h3>
             <div class="assignment-personnel-grid">
-                <div class="assignment-personnel-column"><span class="assignment-personnel-title">GÜMRÜK</span><select id="sel-g" multiple size="15" onchange="app.selectMultiple(this)"></select></div>
-                <div class="assignment-personnel-column"><span class="assignment-personnel-title">MUHAFAZA</span><select id="sel-m" multiple size="15" onchange="app.selectMultiple(this)"></select></div>
-                <div class="assignment-personnel-column"><span class="assignment-personnel-title">KİM</span><select id="sel-k" multiple size="15" onchange="app.selectMultiple(this)"></select></div>
+                <div class="assignment-personnel-column"><span class="assignment-personnel-title">GÜMRÜK</span><select id="sel-g" multiple size="13" onchange="app.selectMultiple(this)"></select></div>
+                <div class="assignment-personnel-column"><span class="assignment-personnel-title">MUHAFAZA</span><select id="sel-m" multiple size="13" onchange="app.selectMultiple(this)"></select></div>
+                <div class="assignment-personnel-column"><span class="assignment-personnel-title">KİM</span><select id="sel-k" multiple size="13" onchange="app.selectMultiple(this)"></select></div>
             </div>
             <div id="selected-list" style="margin:6px 0 4px; padding:7px 10px; border:1px dashed var(--border); border-radius:8px; min-height:28px;"></div>
             <div style="margin:2px 0 4px;">
@@ -516,10 +610,9 @@
                         </label>
                     </div>
 
-                    <div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">
-                        <label style="font-size:10px; color:var(--warning)">+ Manuel Tutar Ekle:</label>
+                    <div style="margin-top:4px; padding-top:4px; border-top:1px dashed var(--border);">
                         <div class="manual-save-row">
-                            <input type="number" id="manual-tutar" min="0" step="0.01" placeholder="Tutar (TL)">
+                            <input type="number" id="manual-tutar" min="0" step="0.01" placeholder="Manuel Tutar Ekle (TL)">
                             <select id="manual-tip"><option value="Yolluk">Yolluk</option><option value="Mesai">Mesai</option></select>
                             <button type="button" class="btn btn-primary" onclick="app.saveTask()">GÖREVİ KAYDET VE HAVALE ET&nbsp; ↵ ENTER</button>
                         </div>
@@ -2172,7 +2265,9 @@ updatePersonel(i, alan, yeniDeger) {
                 document.getElementById('sel-g').innerHTML = opt('Gümrük');
                 document.getElementById('sel-m').innerHTML = opt('Muhafaza');
                 document.getElementById('sel-k').innerHTML = opt('KİM');
-                document.getElementById('task-types').innerHTML = this.db.yolluklar.map((y,i)=>`<option value="${i}">${y.ad} (${y.tip} - ${y.tutar} TL)</option>`).join('');
+                const taskTypesSelect = document.getElementById('task-types');
+                taskTypesSelect.innerHTML = this.db.yolluklar.map((y,i)=>`<option value="${i}">${y.ad} (${y.tip} - ${y.tutar} TL)</option>`).join('');
+                taskTypesSelect.size = Math.max(1, Math.min(13, this.db.yolluklar.length));
                 
                 const allP = aktifPersoneller.map(p => `<option value="${p.ad}">${p.ad}</option>`).join('');
                 document.getElementById('ps-personel-select').innerHTML = allP;
