@@ -2632,7 +2632,22 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                            (!this.taskFilter.bitis || recordDate <= this.taskFilter.bitis);
                 });
             }
-            filtered.reverse();
+            // Görevleri dizideki geçici eklenme sırasına göre değil, referans
+            // tarihine ve referanstaki sayısal görev sırasına göre göster.
+            // Örnek: .../57-CIHAZ, .../56-CIHAZ, .../55-CIHAZ
+            const refSirasi = task => {
+                const match = String(task && task.ref || '').match(/^GM-(\d{4}-\d{2}-\d{2})\/(\d+)(?:-|$)/);
+                return match
+                    ? { tarih: match[1], sira: Number(match[2]) || 0 }
+                    : { tarih: '', sira: 0 };
+            };
+            filtered.sort((a, b) => {
+                const aRef = refSirasi(a);
+                const bRef = refSirasi(b);
+                if (aRef.tarih !== bRef.tarih) return bRef.tarih.localeCompare(aRef.tarih);
+                if (aRef.sira !== bRef.sira) return bRef.sira - aRef.sira;
+                return String(b.createdAt || b.updatedAt || '').localeCompare(String(a.createdAt || a.updatedAt || ''));
+            });
             this.lastRenderedTasks = filtered.slice();
 
             document.getElementById('main-list').innerHTML = filtered.map(l => {
