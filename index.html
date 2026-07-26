@@ -400,7 +400,10 @@
                 <input id="backup-restore-input" type="file" accept=".json,application/json" class="hidden" onchange="app.restoreBackup(this.files[0]); this.value=''">
                 <button id="btn-uyari-sifirla" class="btn hidden" style="margin-left:10px; background:#8e44ad; color:#fff; font-size:10px; padding:4px 10px;" onclick="app.acTümUyarilari()">🔔 KAPATILAN UYARI SİSTEMİNİ AÇ</button>
             </div>
-            <div id="sync-status" style="font-size:10px; color:var(--accent); display:flex; align-items:center;">Veriler Güncel</div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
+                <div id="sync-status" style="font-size:10px; color:var(--accent); display:flex; align-items:center;">Veriler Güncel</div>
+                <div id="pending-sync-warning" class="hidden" style="font-size:10px; color:var(--warning); font-weight:bold;"></div>
+            </div>
         </div>
 
         <!-- Stats Section -->
@@ -626,6 +629,7 @@
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:15px;">
                 <h3 style="border:none; padding:0; margin:0;">İşlem Takip Listesi</h3>
                 <div>
+                    <button id="btn-pending-tasks" class="btn btn-warning hidden" onclick="app.showPendingTasks()" style="margin-right:8px;">⏳ ONAY BEKLEYENLER</button>
                     <button id="btn-bulk-approve" class="btn btn-warning hidden" onclick="app.bulkApproveTasks()" style="margin-right:8px;">✅ TOPLU GÖREV ONAYLA</button>
                     <button class="btn btn-primary" onclick="app.exportTaskListExcel()">LİSTEYİ EXCEL AKTAR</button>
                     <button class="btn btn-success" onclick="app.importEbysDekontExcel()" style="margin-left:8px;">
@@ -636,7 +640,7 @@
             
             <div class="task-filter">
                 <input type="text" id="search-text" placeholder="Arama (Ad, Ref, Evrak No)" onkeyup="app.taskFilter.arama = this.value; app.render()">
-                <select id="durum-filter" onchange="app.taskFilter.durum = this.value; app.render()">
+                <select id="durum-filter" onchange="app.taskFilter.onayBekleyen = false; app.taskFilter.durum = this.value; app.render()">
                     <option value="">Tüm Durumlar</option>
                     <option>Taslak</option><option>Şef Onayında</option><option>Müdür Yrd. Onayında</option><option>Onaylandı</option><option>Reddedildi</option><option>Silme Talebinde</option>
                 </select>
@@ -671,6 +675,7 @@
         CLOUD_TOKEN: 'KayseriGumruk2026_GizliAnahtar!123',
         DB_KEY: 'gumruk_final_v60',
         PENDING_KEY: 'gumruk_pending_sync_v1',
+        PENDING_TASKS_KEY: 'gumruk_pending_task_versions_v1',
         writeInFlight: false,
         pullInFlight: false,
         writeTimer: null,
@@ -706,7 +711,7 @@
         selectedPs: [],
         seciliAy: null,
         gosterimMod: 'yolluk',
-        taskFilter: {arama: '', durum: '', baslangic: '', bitis: ''},
+        taskFilter: {arama: '', durum: '', baslangic: '', bitis: '', onayBekleyen: false},
         leaveFilter: {arama: '', tur: '', baslangic: '', bitis: '', mode: 'today'},
         keepSelectedAfterSave: true,
         unvanlar: ["Gümrük Memuru", "Gümrük Muayene Memuru", "Gümrük Muhafaza Memuru", "Gümrük Şefi", "Kısım Amiri", "Bölge Amiri", "Gümrük Müdür Yardımcısı", "Gümrük Müdürü", "KİM Müdürü", "Diğer"],
@@ -1078,12 +1083,13 @@ hardBackup() {
             if (!target) return;
             const online = navigator.onLine;
             const pending = localStorage.getItem(this.PENDING_KEY) === '1';
+            const pendingTaskCount = this.getPendingTaskCount();
             const activeOperation = this.writeInFlight ? 'Buluta yazılıyor' : (this.pullInFlight ? 'Buluttan alınıyor' : 'Bekleyen ağ işlemi yok');
             const syncText = document.getElementById('sync-status')?.innerText || 'Durum bilgisi yok';
             const cards = [
                 ['İnternet bağlantısı', online ? 'Bağlı ✔' : 'Bağlantı yok', online ? 'health-ok' : 'health-bad'],
                 ['Senkronizasyon', syncText, pending ? 'health-warn' : 'health-ok'],
-                ['Bekleyen gönderi', pending ? 'Gönderilmeyi bekliyor' : 'Yok ✔', pending ? 'health-warn' : 'health-ok'],
+                ['Gönderim bekleyen kayıt', pendingTaskCount > 0 ? `${pendingTaskCount} kayıt` : (pending ? 'Kayıt dışı değişiklik bekliyor' : '0 ✔'), pending ? 'health-warn' : 'health-ok'],
                 ['Aktif işlem', activeOperation, (this.writeInFlight || this.pullInFlight) ? 'health-warn' : 'health-ok'],
                 ['Son bulut gönderimi', this.formatHealthTime('gumruk_last_cloud_write_at'), ''],
                 ['Son bulut kontrolü', this.formatHealthTime('gumruk_last_cloud_read_at'), ''],
@@ -1291,6 +1297,7 @@ hardBackup() {
         quickDateFilter(type) {
             const now = new Date();
             let startStr = '', endStr = '';
+            this.taskFilter.onayBekleyen = false;
 
             // Tarihi YYYY-MM-DD formatına çeviren küçük yardımcı
             const formatDate = (d) => {
@@ -1330,8 +1337,27 @@ hardBackup() {
             this.quickDateFilter('today');
         },
 
+        showPendingTasks() {
+            if (this.taskFilter.onayBekleyen) {
+                this.clearAllFilters();
+                return;
+            }
+            this.taskFilter = {
+                arama: '',
+                durum: '',
+                baslangic: '',
+                bitis: '',
+                onayBekleyen: true
+            };
+            document.getElementById('search-text').value = '';
+            document.getElementById('durum-filter').value = '';
+            document.getElementById('tarih-baslangic').value = '';
+            document.getElementById('tarih-bitis').value = '';
+            this.render();
+        },
+
         clearAllFilters() {
-            this.taskFilter = {arama: '', durum: '', baslangic: '', bitis: ''};
+            this.taskFilter = {arama: '', durum: '', baslangic: '', bitis: '', onayBekleyen: false};
             document.getElementById('search-text').value = '';
             document.getElementById('durum-filter').value = '';
             document.getElementById('tarih-baslangic').value = '';
@@ -1832,6 +1858,7 @@ updatePersonel(i, alan, yeniDeger) {
             const l = this.db.kayitlar.find(x => x.ref === ref);
             if (!l) return alert("Yazdırılacak görev kaydı bulunamadı.");
             const area = document.getElementById('print-area');
+            const yazdirmaRef = String(l.ref || '').replace(/-[A-Za-z0-9]+$/, '');
             const m = Number(l.mTotal ?? l.toplamMesai ?? 0) || 0;
             const y = Number(l.yTotal ?? l.toplamYolluk ?? 0) || 0;
             const total = m + y;
@@ -1843,7 +1870,7 @@ updatePersonel(i, alan, yeniDeger) {
 
             area.innerHTML = `
                 <h1>GÖREV VE TAHAKKUK FORMU</h1>
-                <h2>REF: ${l.ref}</h2>
+                <h2>REF: ${yazdirmaRef}</h2>
                 <div class="line"><strong>GÖREVLİLER:</strong></div>
                 ${l.personeller.map((p, index) => {
                     const d = this.db.personeller.find(x => x.ad === p);
@@ -1963,6 +1990,7 @@ updatePersonel(i, alan, yeniDeger) {
             const previous = this.lastPersistedDb || {};
             const oldById = new Map((previous.kayitlar || []).map(t => [String(t.id || ''), t]));
             const now = new Date().toISOString();
+            const changedVersions = {};
             this.normalizeDb(this.db).kayitlar.forEach(task => {
                 const old = oldById.get(String(task.id));
                 const clean = value => {
@@ -1970,8 +1998,69 @@ updatePersonel(i, alan, yeniDeger) {
                     delete copy.updatedAt;
                     return JSON.stringify(copy);
                 };
-                if (!old || clean(old) !== clean(task)) task.updatedAt = now;
+                if (!old || clean(old) !== clean(task)) {
+                    task.updatedAt = now;
+                    changedVersions['task:' + String(task.id)] = task.updatedAt;
+                }
             });
+            const oldDeleted = new Map((previous.deletedTaskIds || []).map(value => {
+                const item = typeof value === 'string' ? { id:value, deletedAt:'' } : value;
+                return [String(item && item.id || ''), String(item && item.deletedAt || '')];
+            }));
+            (this.db.deletedTaskIds || []).forEach(value => {
+                const item = typeof value === 'string' ? { id:value, deletedAt:now } : value;
+                if (!item || !item.id) return;
+                const version = String(item.deletedAt || now);
+                if (oldDeleted.get(String(item.id)) !== version) changedVersions['delete:' + String(item.id)] = version;
+            });
+            return changedVersions;
+        },
+
+        readPendingTaskVersions() {
+            try {
+                const value = JSON.parse(localStorage.getItem(this.PENDING_TASKS_KEY) || '{}');
+                return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+            } catch (_) {
+                return {};
+            }
+        },
+
+        markPendingTaskVersions(changedVersions) {
+            const pending = this.readPendingTaskVersions();
+            Object.assign(pending, changedVersions || {});
+            localStorage.setItem(this.PENDING_TASKS_KEY, JSON.stringify(pending));
+        },
+
+        clearSyncedTaskVersions(snapshot) {
+            const pending = this.readPendingTaskVersions();
+            const sentVersions = {};
+            (snapshot.kayitlar || []).forEach(task => {
+                if (task && task.id) sentVersions['task:' + String(task.id)] = String(task.updatedAt || task.createdAt || '');
+            });
+            (snapshot.deletedTaskIds || []).forEach(value => {
+                const item = typeof value === 'string' ? { id:value, deletedAt:'' } : value;
+                if (item && item.id) sentVersions['delete:' + String(item.id)] = String(item.deletedAt || '');
+            });
+            Object.keys(pending).forEach(key => {
+                if (sentVersions[key] && String(pending[key]) === sentVersions[key]) delete pending[key];
+            });
+            if (Object.keys(pending).length) localStorage.setItem(this.PENDING_TASKS_KEY, JSON.stringify(pending));
+            else localStorage.removeItem(this.PENDING_TASKS_KEY);
+        },
+
+        getPendingTaskCount() {
+            return Object.keys(this.readPendingTaskVersions()).length;
+        },
+
+        updatePendingSyncWarning() {
+            const warning = document.getElementById('pending-sync-warning');
+            if (!warning) return;
+            const pending = localStorage.getItem(this.PENDING_KEY) === '1';
+            const count = this.getPendingTaskCount();
+            warning.classList.toggle('hidden', !pending);
+            warning.innerText = count > 0
+                ? `⚠ ${count} kayıt henüz buluta gönderilmedi`
+                : '⚠ Buluta gönderilmeyi bekleyen değişiklik var';
         },
 
         mergeDatabases(localData, cloudData) {
@@ -2015,11 +2104,13 @@ updatePersonel(i, alan, yeniDeger) {
                 return false;
             }
             this.lastLocalChange = Date.now();
-            this.prepareTaskTimestamps();
+            const changedVersions = this.prepareTaskTimestamps();
+            this.markPendingTaskVersions(changedVersions);
             this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
             this.writeLocalDatabase(this.db);
             localStorage.setItem(this.PENDING_KEY, '1');
             this.render();
+            this.updatePendingSyncWarning();
             this.setSyncStatus('Buluta gönderim bekliyor…');
             this.queueCloudWrite();
         },
@@ -2058,13 +2149,16 @@ updatePersonel(i, alan, yeniDeger) {
                 if (!response.ok || !answer || answer.status !== 'success') throw new Error((answer && answer.message) || 'Sunucu yazmayı onaylamadı');
                 localStorage.setItem('gumruk_last_cloud_write_at', new Date().toISOString());
                 const unchanged = JSON.stringify(snapshot) === JSON.stringify(this.db);
+                this.clearSyncedTaskVersions(snapshot);
                 if (unchanged && !this.writeAgain) localStorage.removeItem(this.PENDING_KEY);
                 else this.writeAgain = true;
+                this.updatePendingSyncWarning();
                 this.setSyncStatus('Buluta yazıldı ✔ (' + new Date().toLocaleTimeString() + ')');
                 if (!this.initialCloudLoadDone) setTimeout(() => this.loadFromCloud({ initial: true }), 0);
             } catch (error) {
                 console.error('Bulut yazma hatası:', error);
                 localStorage.setItem(this.PENDING_KEY, '1');
+                this.updatePendingSyncWarning();
                 this.setSyncStatus('Gönderim bekliyor — bağlantı hatası');
                 this.writeAgain = true;
                 setTimeout(() => this.queueCloudWrite(0), 15000);
@@ -2246,6 +2340,16 @@ updatePersonel(i, alan, yeniDeger) {
                 const canBulkApprove = ['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(this.user.rol);
                 bulkApproveButton.classList.toggle('hidden', !canBulkApprove);
             }
+            const pendingTasksButton = document.getElementById('btn-pending-tasks');
+            if (pendingTasksButton) {
+                const canViewPending = ['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(this.user.rol);
+                pendingTasksButton.classList.toggle('hidden', !canViewPending);
+                pendingTasksButton.style.outline = this.taskFilter.onayBekleyen ? '2px solid #fff' : '';
+                const pendingStatuses = new Set(['Taslak', 'Şef Onayında', 'Müdür Yrd. Onayında']);
+                const pendingApprovalCount = (this.db.kayitlar || []).filter(task => pendingStatuses.has(task.durum)).length;
+                pendingTasksButton.innerText = `⏳ ONAY BEKLEYENLER (${pendingApprovalCount})`;
+            }
+            this.updatePendingSyncWarning();
             const bypassToggle = document.getElementById('bypass-sef');
             if (bypassToggle) bypassToggle.checked = !!this.db.bypassSef;
             
@@ -2612,6 +2716,10 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                 filtered = filtered.filter(k => k.ref.toLowerCase().includes(term) || k.no.toLowerCase().includes(term) || k.personeller.some(p => p.toLowerCase().includes(term)));
             }
             if (this.taskFilter.durum) filtered = filtered.filter(k => k.durum === this.taskFilter.durum);
+            if (this.taskFilter.onayBekleyen) {
+                const pendingStatuses = new Set(['Taslak', 'Şef Onayında', 'Müdür Yrd. Onayında']);
+                filtered = filtered.filter(k => pendingStatuses.has(k.durum));
+            }
             if (this.taskFilter.baslangic || this.taskFilter.bitis) {
                 filtered = filtered.filter(k => {
                     let recordDate = k.tarih; 
@@ -2640,6 +2748,22 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                 return match
                     ? { tarih: match[1], sira: Number(match[2]) || 0 }
                     : { tarih: '', sira: 0 };
+            };
+            const refGroupCounts = new Map();
+            (this.db.kayitlar || []).forEach(task => {
+                const parsed = refSirasi(task);
+                if (!parsed.tarih || !parsed.sira) return;
+                const key = parsed.tarih + '/' + parsed.sira;
+                refGroupCounts.set(key, (refGroupCounts.get(key) || 0) + 1);
+            });
+            const formatReference = task => {
+                const ref = String(task && task.ref || '');
+                const match = ref.match(/^(GM-\d{4}-\d{2}-\d{2}\/)(\d+)(.*)$/);
+                if (!match) return ref;
+                const key = match[1].slice(3, -1) + '/' + Number(match[2]);
+                return refGroupCounts.get(key) > 1
+                    ? `${match[1]}<span style="color:var(--danger); font-weight:900;" title="Aynı sıra numarasını kullanan başka bir görev var">${match[2]}</span>${match[3]}`
+                    : ref;
             };
             filtered.sort((a, b) => {
                 const aRef = refSirasi(a);
@@ -2680,7 +2804,7 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                 if(!yardirHtml) yardirHtml = "0.00 TL";
 
                 return `<tr>
-                    <td><b>${l.ref}</b></td><td>${l.no}</td>
+                    <td><b>${formatReference(l)}</b></td><td>${l.no}</td>
                     <td>${l.personeller.map(p=>`<span class="tag">${p}</span>`).join('')}</td>
                     <td>${yardirHtml}</td>
                     <td style="color:var(--warning); font-weight:bold">${l.durum}</td>
