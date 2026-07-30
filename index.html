@@ -42,7 +42,8 @@
       #admin-section.personnel-service-view > .admin-management-grid { display:grid !important; grid-template-columns:1fr !important; }
       #admin-section.personnel-service-view > .admin-management-grid > * { display:none !important; }
       #admin-section.personnel-service-view #personnel-management-card { display:block !important; }
-      .personnel-excel-actions { display:flex; flex-wrap:wrap; gap:8px; margin:9px 0; }
+      .personnel-excel-actions { display:flex; flex-wrap:wrap; gap:8px; margin:9px 0; align-items:center; }
+      .personnel-search-input { width:230px; min-width:190px; margin:0; padding:9px 11px; border-color:var(--accent); }
       .admin-menu-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-top:18px; }
       .admin-menu-tile { min-height:78px; padding:14px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.06); color:var(--text); cursor:pointer; font-weight:bold; text-align:left; transition:.2s; }
       .admin-menu-tile:hover { transform:translateY(-2px); border-color:var(--accent); box-shadow:var(--accent-glow); }
@@ -526,6 +527,8 @@
                     </div>
                     <button class="btn btn-primary" style="width:100%" onclick="app.addPersonel()">YENİ PERSONEL EKLE</button>
                     <div class="personnel-excel-actions">
+                        <input id="personnel-search-input" class="personnel-search-input" type="search" placeholder="🔎 Personel ara (ad veya sicil)" oninput="app.setPersonnelSearch(this.value)">
+                        <button id="btn-archived-personnel" class="btn btn-warning" onclick="app.toggleArchivedPersonnel()">🗃️ ARŞİVDEKİ PERSONELLER</button>
                         <button class="btn btn-success" onclick="app.choosePersonnelExcelFile()">📥 EXCEL'DEN PERSONEL İÇE AKTAR</button>
                         <button class="btn btn-primary" onclick="app.exportPersonnelExcel()">📤 PERSONEL LİSTESİNİ EXCEL'E AKTAR</button>
                         <input id="personnel-excel-input" type="file" accept=".xlsx,.xls" class="hidden" onchange="app.importPersonnelExcel(this.files[0]); this.value=''">
@@ -713,6 +716,7 @@
         gosterimMod: 'yolluk',
         taskFilter: {arama: '', durum: '', baslangic: '', bitis: '', onayBekleyen: false},
         leaveFilter: {arama: '', tur: '', baslangic: '', bitis: '', mode: 'today'},
+        personnelManagementFilter: {query: '', archived: false},
         keepSelectedAfterSave: true,
         unvanlar: ["Gümrük Memuru", "Gümrük Muayene Memuru", "Gümrük Muhafaza Memuru", "Gümrük Şefi", "Kısım Amiri", "Bölge Amiri", "Gümrük Müdür Yardımcısı", "Gümrük Müdürü", "KİM Müdürü", "Diğer"],
 addLog(tip, detay, ref = "-") {
@@ -1421,6 +1425,78 @@ updatePersonel(i, alan, yeniDeger) {
 
         canManagePersonnel() {
             return !!this.user && ['Admin', 'Personel Servisi'].includes(this.user.rol);
+        },
+
+        setPersonnelSearch(value) {
+            this.personnelManagementFilter.query = String(value || '');
+            this.renderPersonnelManagement();
+        },
+
+        toggleArchivedPersonnel() {
+            this.personnelManagementFilter.archived = !this.personnelManagementFilter.archived;
+            this.renderPersonnelManagement();
+        },
+
+        renderPersonnelManagement() {
+            const body = document.getElementById('p-manage-body');
+            if (!body) return;
+
+            const state = this.personnelManagementFilter || {query:'', archived:false};
+            const query = String(state.query || '').trim().toLocaleLowerCase('tr-TR');
+            const archived = !!state.archived;
+            const archiveCount = (this.db.personeller || []).filter(p => p.aktif !== true).length;
+            const filtered = (this.db.personeller || [])
+                .map((personel, originalIndex) => ({personel, originalIndex}))
+                .filter(item => archived ? item.personel.aktif !== true : item.personel.aktif === true)
+                .filter(item => {
+                    if (!query) return true;
+                    const p = item.personel;
+                    return [p.ad, p.sicil, p.birim, p.unvan]
+                        .some(value => String(value || '').toLocaleLowerCase('tr-TR').includes(query));
+                });
+
+            const searchInput = document.getElementById('personnel-search-input');
+            if (searchInput && searchInput.value !== state.query) searchInput.value = state.query;
+
+            const archiveButton = document.getElementById('btn-archived-personnel');
+            if (archiveButton) {
+                archiveButton.innerText = archived
+                    ? `↩ AKTİF PERSONELLERE DÖN (${(this.db.personeller || []).filter(p => p.aktif === true).length})`
+                    : `🗃️ ARŞİVDEKİ PERSONELLER (${archiveCount})`;
+                archiveButton.style.background = archived ? 'var(--accent)' : '';
+                archiveButton.style.color = archived ? '#000' : '';
+            }
+
+            body.innerHTML = filtered.length ? filtered.map(({personel:p, originalIndex:i}) => `
+                <tr ${!p.aktif ? 'class="pasif"' : ''}>
+                    <td><input value="${p.sicil}" onchange="app.updatePersonel(${i}, 'sicil', this.value)"></td>
+                    <td><input value="${p.ad}" onchange="app.updatePersonel(${i}, 'ad', this.value)"></td>
+                    <td>
+                        <select onchange="app.updatePersonel(${i}, 'birim', this.value)">
+                            <option value="Gümrük" ${p.birim==='Gümrük'?'selected':''}>Gümrük</option>
+                            <option value="Muhafaza" ${p.birim==='Muhafaza'?'selected':''}>Muhafaza</option>
+                            <option value="KİM" ${p.birim==='KİM'?'selected':''}>KİM</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select onchange="app.updatePersonel(${i}, 'unvan', this.value)">
+                            ${this.unvanlar.map(u=>`<option ${p.unvan==u?'selected':''}>${u}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td>
+                        <select onchange="app.updatePersonel(${i}, 'aktif', this.value)">
+                            <option value="1" ${p.aktif?'selected':''}>Aktif</option>
+                            <option value="0" ${!p.aktif?'selected':''}>Pasif (Donduruldu)</option>
+                        </select>
+                    </td>
+                    <td><button class="btn btn-danger" style="font-size:9px;" onclick="app.deletePersonel(${i})">X</button></td>
+                </tr>
+            `).join('') : `
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:24px; color:var(--muted);">
+                        ${archived ? 'Arşivde aramaya uygun pasif personel bulunamadı.' : 'Aramaya uygun aktif personel bulunamadı.'}
+                    </td>
+                </tr>`;
         },
 
         exportPersonnelExcel() {
@@ -2692,33 +2768,7 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
             document.getElementById('hakedis-tbody').innerHTML = tbodyHTML || `<tr><td colspan="12" style="text-align:center; padding:40px; color:#666;">Bu ay için onaylanmış hakediş kaydı bulunmuyor.</td></tr>`;
 
             // ====================== DİĞER RENDER KISIMLARI ======================
-            if (document.getElementById('p-manage-body')) {
-                document.getElementById('p-manage-body').innerHTML = this.db.personeller.map((p,i) => `
-                    <tr ${!p.aktif ? 'class="pasif"' : ''}>
-                        <td><input value="${p.sicil}" onchange="app.updatePersonel(${i}, 'sicil', this.value)"></td>
-                        <td><input value="${p.ad}" onchange="app.updatePersonel(${i}, 'ad', this.value)"></td>
-                        <td>
-                            <select onchange="app.updatePersonel(${i}, 'birim', this.value)">
-                                <option value="Gümrük" ${p.birim==='Gümrük'?'selected':''}>Gümrük</option>
-                                <option value="Muhafaza" ${p.birim==='Muhafaza'?'selected':''}>Muhafaza</option>
-                                <option value="KİM" ${p.birim==='KİM'?'selected':''}>KİM</option>
-                            </select>
-                        </td>
-                        <td>
-                            <select onchange="app.updatePersonel(${i}, 'unvan', this.value)">
-                                ${this.unvanlar.map(u=>`<option ${p.unvan==u?'selected':''}>${u}</option>`).join('')}
-                            </select>
-                        </td>
-                        <td>
-                            <select onchange="app.updatePersonel(${i}, 'aktif', this.value)">
-                                <option value="1" ${p.aktif?'selected':''}>Aktif</option>
-                                <option value="0" ${!p.aktif?'selected':''}>Pasif (Donduruldu)</option>
-                            </select>
-                        </td>
-                        <td><button class="btn btn-danger" style="font-size:9px;" onclick="app.deletePersonel(${i})">X</button></td>
-                    </tr>
-                `).join('');
-            }
+            this.renderPersonnelManagement();
 
             if (document.getElementById('acc-list-body')) {
                 document.getElementById('acc-list-body').innerHTML = this.db.accounts.map((a, i) => `<tr><td><input value="${a.user}" onchange="app.db.accounts[${i}].user = this.value; app.save();"></td><td><input type="password" value="${a.pass}" onchange="app.db.accounts[${i}].pass = this.value; app.save();"></td><td><b>${a.rol}</b></td><td><button class="btn btn-danger" onclick="app.deleteAccount(${i})">SİL</button></td></tr>`).join('');
