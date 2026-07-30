@@ -186,7 +186,7 @@
       }
       .blink-alert { animation: flashAlert 1.2s infinite; color: #fff !important; font-weight: bold; border: 2px solid #fff; }
     /* SİSTEM AÇILIŞ (SPLASH) EKRANI CSS */
-      #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; padding:32px; background: var(--bg); z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align:center; transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out; }
+      #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; padding:32px; background: var(--bg); z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align:center; transition: opacity 0.25s ease-in-out, visibility 0.25s ease-in-out; }
       .splash-logo { height: 190px; max-width:min(420px,78vw); object-fit:contain; border-radius: 20px; box-shadow: 0 0 38px rgba(0, 246, 210, 0.48); margin-bottom: 34px; animation: pulseLogo 1.5s infinite alternate; }
       @keyframes pulseLogo { 0% { transform: scale(0.95); opacity: 0.8; } 100% { transform: scale(1.05); opacity: 1; } }
       .splash-text { color: var(--accent); font-size: clamp(19px,2vw,25px); line-height:1.35; font-weight: bold; letter-spacing: 2.5px; animation: blinkText 1.2s infinite alternate; }
@@ -1895,6 +1895,13 @@ updatePersonel(i, alan, yeniDeger) {
             return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
         },
 
+        formatTrAmount(value) {
+            return (Number(value) || 0).toLocaleString('tr-TR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        },
+
         mevcutAylar() {
             let aylar = [...new Set(this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih).map(k => k.tarih))];
             
@@ -2295,12 +2302,22 @@ updatePersonel(i, alan, yeniDeger) {
                 this.db = this.normalizeDb(this.db);
             }
             const pending = localStorage.getItem(this.PENDING_KEY) === '1';
-            if (!pending) await this.loadFromCloud({ initial: true });
+            // Yerel veriyi ve kayıtlı oturumu bekletmeden göster.
             this.checkSession();
+            this.hideSplash();
+            // Bulut kontrolü ekran açıldıktan sonra arka planda devam eder.
+            if (!this.user && !pending) this.loadFromCloud({ initial: true });
             if (pending) {
                 this.setSyncStatus('Bekleyen kayıt yeniden gönderiliyor…');
                 this.queueCloudWrite(0);
             }
+        },
+
+        hideSplash() {
+            const splash = document.getElementById('splash-screen');
+            if (!splash || splash.style.display === 'none') return;
+            splash.classList.add('fade-out');
+            setTimeout(() => { splash.style.display = 'none'; }, 250);
         },
 
         setupTaskEnterShortcut() {
@@ -2538,7 +2555,7 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                     
                     // SADECE VE SADECE geçmişten bir para geldiyse (Örn: Mayıs ayındaysak) tek satır olarak yaz
                     if(islenenAy === hedefAy && buAyDevirdenOdenenToplam > 0) {
-                        buAyDevirDetayiGecici.push(`<br><span style="font-size:10px; color:#00f6d2; font-weight:bold;">   +${buAyDevirdenOdenenToplam.toFixed(2)} ₺</span>`);
+                        buAyDevirDetayiGecici.push(`<br><span style="font-size:10px; color:#00f6d2; font-weight:bold;">   +${this.formatTrAmount(buAyDevirdenOdenenToplam)} ₺</span>`);
                     }
                     
                     devredenYollukHavuzu = yeniDevirHavuzu; // Havuzu güncelle
@@ -2602,8 +2619,8 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
 
             if(document.getElementById('month-totals')) {
                 document.getElementById('month-totals').innerHTML = 
-                    `<span style="color:var(--warning)">TOPLAM YOLLUK: ${ayinToplamYollugu.toFixed(2)} TL</span> | ` + 
-                    `<span style="color:var(--accent)">TOPLAM MESAİ: ${ayinToplamMesaisi.toFixed(2)} TL</span>`;
+                    `<span style="color:var(--warning)">TOPLAM YOLLUK: ${this.formatTrAmount(ayinToplamYollugu)} TL</span> | ` + 
+                    `<span style="color:var(--accent)">TOPLAM MESAİ: ${this.formatTrAmount(ayinToplamMesaisi)} TL</span>`;
             }
 
             const sortType = document.getElementById('sort-filtre') ? document.getElementById('sort-filtre').value : 'yolluk-az';
@@ -2664,7 +2681,7 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                             <td class="sicil-cell">${p.sicil || '-'}</td>
                             <td>${p.ad}</td>
                             <td>${p.unvan}</td>
-                            <td class="tutar-cell" style="color:${color}; line-height: 1.4;">${value.toFixed(2)} TL ${ekDetay}</td>`;
+                            <td class="tutar-cell" style="color:${color}; line-height: 1.4;">${this.formatTrAmount(value)} TL ${ekDetay}</td>`;
                     } else {
                         tbodyHTML += `<td colspan="4" style="background:rgba(255,255,255,0.03);"></td>`;
                     }
@@ -2826,11 +2843,17 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                 "Sicil": p.sicil, 
                 "Ad Soyad": p.ad, 
                 "Unvan": p.unvan,
-                "Ödenecek Yolluk (Limitli)": p.yolluk.toFixed(2), 
-                "Ödenecek Mesai": p.mesai.toFixed(2), 
-                "Genel Toplam (Ödenecek)": p.toplam.toFixed(2)
+                "Ödenecek Yolluk (Limitli)": Number(p.yolluk.toFixed(2)), 
+                "Ödenecek Mesai": Number(p.mesai.toFixed(2)), 
+                "Genel Toplam (Ödenecek)": Number(p.toplam.toFixed(2))
             }));
-            const ws = XLSX.utils.json_to_sheet(excelData); 
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            ['E', 'F', 'G'].forEach(column => {
+                for (let row = 2; row <= excelData.length + 1; row++) {
+                    const cell = ws[column + row];
+                    if (cell) cell.z = '#,##0.00';
+                }
+            });
             const wb = XLSX.utils.book_new(); 
             XLSX.utils.book_append_sheet(wb, ws, "Limitli_Odenecek"); 
             this.addLog("Excel İşlemi", "Ödenecek Limitli Hakediş listesi Excel olarak dışa aktarıldı.");
@@ -2881,11 +2904,17 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                 "Sicil": p.sicil, 
                 "Ad Soyad": p.ad, 
                 "Unvan": p.unvan,
-                "Ham Yolluk Kazancı (Limitsiz)": p.yolluk.toFixed(2), 
-                "Ham Mesai Kazancı": p.mesai.toFixed(2), 
-                "Genel Ham Toplam": p.toplam.toFixed(2)
+                "Ham Yolluk Kazancı (Limitsiz)": Number(p.yolluk.toFixed(2)), 
+                "Ham Mesai Kazancı": Number(p.mesai.toFixed(2)), 
+                "Genel Ham Toplam": Number(p.toplam.toFixed(2))
             }));
-            const ws = XLSX.utils.json_to_sheet(excelData); 
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            ['E', 'F', 'G'].forEach(column => {
+                for (let row = 2; row <= excelData.length + 1; row++) {
+                    const cell = ws[column + row];
+                    if (cell) cell.z = '#,##0.00';
+                }
+            });
             const wb = XLSX.utils.book_new(); 
             XLSX.utils.book_append_sheet(wb, ws, "Ham_Limitsiz"); 
             this.addLog("Excel İşlemi", "Ham Limitsiz Hakediş listesi Excel olarak dışa aktarıldı.");
@@ -3258,16 +3287,8 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
     // SİSTEM BAŞLATICI
     app.initialize();
     
-    // PERDEYİ KALDIRMA MOTORU (Giriş/Çıkış Hatalarını Önleyen Versiyon)
-    setTimeout(() => {
-        const splash = document.getElementById('splash-screen');
-        if(splash) {
-            splash.classList.add('fade-out'); 
-            setTimeout(() => { 
-                splash.style.display = 'none'; 
-            }, 800); 
-        }
-    }, 2000); // 2 saniye ideal süredir
+    // Güvenlik ağı: yerel veritabanı beklenmedik biçimde gecikse de perde açık kalmasın.
+    setTimeout(() => app.hideSplash(), 1500);
   </script>
   <!-- SİSTEM SAĞLIK MODAL -->
 <div id="system-health-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,.93); z-index:10030; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(10px);">
