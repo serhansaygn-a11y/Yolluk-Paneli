@@ -53,6 +53,9 @@
       .health-card-value { color:var(--text); font-size:15px; font-weight:bold; line-height:1.35; }
       .health-ok { color:var(--success); } .health-warn { color:var(--warning); } .health-bad { color:var(--danger); }
       .maintenance-banner { margin-bottom:14px; padding:13px 16px; border:2px solid var(--warning); border-radius:10px; background:rgba(241,196,15,.14); color:var(--warning); font-weight:bold; text-align:center; box-shadow:0 0 16px rgba(241,196,15,.22); }
+      .simulation-banner { margin-bottom:14px; padding:12px 16px; border:2px solid #9b59b6; border-radius:10px; background:rgba(155,89,182,.16); color:#f0d9ff; font-weight:bold; box-shadow:0 0 18px rgba(155,89,182,.25); }
+      .simulation-banner-row { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+      #admin-simulator-tile { border-left:3px solid #9b59b6; }
       .assignment-personnel-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
       .assignment-personnel-column { overflow:hidden; border:1px solid rgba(0,246,210,.38); border-radius:9px; background:rgba(0,246,210,.035); }
       .assignment-personnel-title { display:block; padding:9px 10px; border-bottom:2px solid var(--accent); background:rgba(0,246,210,.13); color:var(--accent); font-size:14px; font-weight:900; text-align:center; letter-spacing:.5px; }
@@ -297,21 +300,18 @@
           box-shadow:0 14px 28px rgba(0,0,0,.34),0 0 20px rgba(0,246,210,.08);
         }
         .admin-menu-tile:hover::after { right:12px; color:var(--accent); }
-        .admin-menu-tile:last-child {
-          grid-column:1/-1;
-          min-height:68px;
+        #admin-missing-receipts-tile {
           border-top-color:var(--danger);
           background:linear-gradient(90deg,rgba(255,71,87,.13),#111518 58%);
           color:#fff;
         }
-        .admin-menu-tile:last-child::after { color:var(--danger); }
+        #admin-missing-receipts-tile::after { color:var(--danger); }
         #admin-sef-toggle-tile { border-left:3px solid var(--success); }
         #admin-maintenance-toggle-tile { border-left:3px solid var(--warning); }
         @media(max-width:1050px) { .admin-menu-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
         @media(max-width:620px) {
           #admin-management-modal > div { padding:16px!important; }
           .admin-menu-grid { grid-template-columns:1fr; }
-          .admin-menu-tile:last-child { grid-column:auto; }
         }
       }
       /* Yalnız Hakediş tablosu satırlarını kompaktlaştıran deneme */
@@ -332,7 +332,51 @@
           overflow-y:auto;
         }
       }
-    </style>
+/* Compact dynamic limit settings */
+#admin-limit-card.limit-compact { padding:14px 18px !important; }
+#admin-limit-card.limit-compact > h3 { margin:0 0 8px !important; padding-bottom:7px !important; }
+.limit-main-row { gap:8px !important; margin-top:6px !important; }
+.limit-main-row input, .limit-main-row button { margin:0 !important; }
+.limit-special-box { margin-top:10px !important; padding:10px 12px !important; }
+.limit-special-box > div:first-child { margin-bottom:6px !important; }
+.limit-special-box > div:nth-child(2) { margin-bottom:7px !important; padding:6px 9px !important; }
+.limit-special-row + div { margin-top:6px !important; line-height:1.25; }
+.limit-special-title { margin-bottom:6px !important; }
+.limit-special-info { margin-bottom:7px !important; padding:6px 9px !important; }
+.limit-special-row { display:grid !important; grid-template-columns:175px 190px 150px minmax(230px,1fr) 140px auto; gap:7px !important; align-items:center !important; }
+.limit-special-row > input, .limit-special-row > select, .limit-special-row > button { width:100% !important; min-width:0 !important; margin:0 !important; }
+.limit-special-help { margin-top:6px !important; line-height:1.25; }
+#special-limit-list { margin-top:6px !important; }
+.limit-bottom-row { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); }
+.limit-bottom-row #gecmis-limitler { flex:1; min-width:300px; margin:0 !important; padding:0 !important; border:0 !important; }
+.limit-trash-actions { display:flex; flex-wrap:wrap; gap:7px; margin:0 !important; padding:0 !important; border:0 !important; }
+.limit-trash-actions .btn { white-space:nowrap; }
+/* Hakediş filtrelerini geniş ekranda tek ve kompakt satırda tut */
+#stats-section { padding:14px 18px; }
+#stats-section > div:first-child { padding-bottom:7px !important; margin-bottom:9px !important; }
+.hakedis-filter-compact {
+    flex-wrap:nowrap !important;
+    justify-content:center !important;
+    gap:9px !important;
+    padding:10px 12px !important;
+    margin-bottom:9px !important;
+}
+.hakedis-filter-compact label { margin-left:6px !important; margin-right:2px !important; white-space:nowrap; font-size:13px; font-weight:600; }
+.hakedis-filter-compact input,
+.hakedis-filter-compact select { height:41px; padding:7px 10px; font-size:13px; }
+.hakedis-filter-compact #ay-filtre { width:140px !important; }
+.hakedis-filter-compact #hakedis-date-start,
+.hakedis-filter-compact #hakedis-date-end { width:120px !important; }
+.hakedis-filter-compact #sort-filtre { width:175px !important; }
+.hakedis-filter-compact #gosterim-filtre { width:130px !important; }
+.hakedis-filter-compact .btn { padding:8px 11px; font-size:9px; white-space:nowrap; }
+.hakedis-filter-compact #month-totals { margin-left:5px !important; padding:7px 11px !important; font-size:11px !important; white-space:nowrap; }
+@media (max-width:1350px) {
+    .hakedis-filter-compact { flex-wrap:wrap !important; }
+}
+@media (max-width:1250px) { .limit-special-row { grid-template-columns:repeat(3,minmax(0,1fr)); } .limit-bottom-row { flex-direction:column; } }
+@media (max-width:700px) { #admin-limit-card.limit-compact { padding:11px !important; } .limit-special-row { grid-template-columns:1fr; } .limit-main-row > * { width:100% !important; } .limit-bottom-row #gecmis-limitler { min-width:0; width:100%; } }
+</style>
 </head>
 <body>
   
@@ -381,6 +425,15 @@
 
       <div id="panel-content" class="hidden">
         <div id="maintenance-banner" class="maintenance-banner hidden"></div>
+        <div id="simulation-banner" class="simulation-banner hidden">
+            <div class="simulation-banner-row">
+                <span>🧪 SİMÜLASYON AÇIK — Bu ekrandaki değişiklikler henüz buluta gönderilmiyor.</span>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn btn-success" onclick="app.commitSimulation()">☁️ UYGUN — BULUTA GÖNDER</button>
+                    <button class="btn btn-danger" onclick="app.cancelSimulation()">🗑️ İPTAL ET — DENEMELERİ SİL</button>
+                </div>
+            </div>
+        </div>
         <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
             <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
                 <button class="btn btn-warning" onclick="app.changePassword()">🔑 ŞİFRE DEĞİŞTİR</button>
@@ -412,12 +465,14 @@
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:15px;">
                 <h3 style="border:none; padding:0; margin:0;">📊 Personel Hakediş & Adalet Tablosu</h3>
                 <div>
+                    <button id="btn-transfer-details" class="btn btn-success hidden" onclick="app.toggleTransferDetails()">🔎 DEVİR AÇIKLAMALARINI GÖSTER</button>
+                    <button id="btn-hakedis-date-filter" class="btn" style="background:#34495e;color:#fff;" onclick="app.openHakedisDateFilter()">📅 TARİH FİLTRESİ</button>
                     <button class="btn btn-primary" onclick="app.exportLimitliExcel()">EXCEL AKTAR (LİMİTLİ / ÖDENECEK)</button>
                     <button class="btn btn-warning" onclick="app.exportLimitsizExcel()" style="margin-left:5px;">EXCEL AKTAR (LİMİTSİZ / HAM KAZANÇ)</button>
                 </div>
             </div>
 
-            <div class="filter-area">
+            <div class="filter-area hakedis-filter-compact">
                 <label style="color:var(--accent); margin-right:5px;">Ay:</label>
                 <select id="ay-filtre" onchange="app.seciliAy = this.value; app.render()" style="width:140px;"></select>
                 
@@ -493,20 +548,58 @@
 
         <!-- Admin Section -->
         <div id="admin-section" class="hidden">
-            <div id="admin-limit-card" class="card-section" style="grid-column: span 2; border: 1px solid var(--warning);">
+            <div id="admin-limit-card" class="card-section limit-compact" style="grid-column: span 2; border: 1px solid var(--warning);">
     <h3 style="border-bottom:1px solid var(--warning); padding-bottom:8px; color:var(--warning)">⚙️ Dinamik Yolluk Sınırı Ayarı (Tarihe Duyarlı)</h3>
-    <div style="display:flex; gap:10px; margin-top:10px; align-items:center; flex-wrap:wrap;">
+    <div class="limit-main-row" style="display:flex; gap:10px; margin-top:10px; align-items:center; flex-wrap:wrap;">
         <label style="font-size:12px;">Hangi Aydan İtibaren Geçerli?:</label>
-        <input type="month" id="sys-limit-ay" style="width:140px; text-align:center;">
+        <input type="month" id="sys-limit-ay" style="width:175px; text-align:center; cursor:pointer;" title="İstediğiniz ay ve yılı seçin" onclick="if(this.showPicker) this.showPicker()">
         
         <label style="font-size:12px;">Yasal Limit (TL):</label>
         <input type="number" id="sys-yolluk-limit" style="width:120px; text-align:center;">
         
         <button class="btn btn-warning" onclick="app.updateYollukLimit()">SİSTEME KAYDET</button>
+        <button id="btn-unused-limit-carry" class="btn" style="background:#34495e; color:#fff;" onclick="app.toggleUnusedLimitCarry()">🔁 LİMİT ÜSTÜ TUTARI SONRAKİ AYA DEVRET — KAPALI</button>
     </div>
-    <div id="gecmis-limitler" style="margin-top:12px; font-size:11px; padding-top:10px; border-top:1px dashed var(--border);">
+    <div class="limit-cutoff-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:rgba(0,0,0,.2);">
+        <label style="font-size:11px; color:var(--warning); font-weight:bold;">📅 Ödeme Kesim Tarihi:</label>
+        <input type="date" id="sys-hakedis-kesim-tarihi" style="width:175px; margin:0; cursor:pointer;" title="Bu tarih ve sonrasındaki görevler takip eden ayın hakedişine yansır" onclick="if(this.showPicker) this.showPicker()">
+        <button class="btn btn-warning" onclick="app.saveHakedisCutoff()">KESİM TARİHİNİ KAYDET</button>
+        <span style="font-size:10px; color:var(--muted);">Seçilen tarih dâhil, bu tarih ve sonrasındaki görevler takip eden ayın hakedişine aktarılır.</span>
+    </div>
+    <div class="limit-special-box" style="margin-top:14px; padding:12px; border:1px solid var(--border); border-radius:9px; background:rgba(0,0,0,.2);">
+        <div style="color:var(--accent); font-size:12px; font-weight:bold; margin-bottom:9px;">Birim + Ünvan Bazlı Özel Limit (İsteğe Bağlı)</div>
+        <div style="margin-bottom:9px; padding:8px 10px; border:1px solid var(--accent); border-radius:7px; color:var(--accent); font-size:10px;">
+            Belirlediğiniz birim ve ünvan limitleri buluta kaydedilir ve bütün kullanıcılar için geçerli olur.
+        </div>
+        <div class="limit-special-row" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <input type="month" id="sys-special-limit-ay" style="width:175px; text-align:center; margin:0; cursor:pointer;" title="Özel limit için istediğiniz ay ve yılı seçin" onclick="if(this.showPicker) this.showPicker()">
+            <select id="sys-special-limit-scope" style="min-width:190px; margin:0;">
+                <option value="month">Yalnızca seçilen ay</option>
+                <option value="from">Seçilen aydan itibaren</option>
+            </select>
+            <select id="sys-special-limit-birim" style="min-width:150px; margin:0;">
+                <option value="">Birim Seçin</option>
+                <option value="Gümrük">Gümrük</option>
+                <option value="Muhafaza">Muhafaza</option>
+                <option value="KİM">KİM</option>
+            </select>
+            <select id="sys-special-limit-unvan" style="min-width:260px; margin:0;"></select>
+            <input type="number" id="sys-special-limit-tutar" min="0" step="0.01" placeholder="Özel limit (TL)" style="width:150px; text-align:center; margin:0;">
+            <button class="btn btn-primary" onclick="app.updateSpecialYollukLimit()">ÖZEL LİMİTİ KAYDET</button>
+        </div>
+        <div style="color:var(--muted); font-size:10px; margin-top:8px;">“Yalnızca seçilen ay” geçmiş ve sonraki ayları etkilemez. Özel limit bulunmayan birim + ünvanlarda ilgili ayın genel yasal limiti uygulanır.</div>
+        <div id="special-limit-list" class="hidden" style="margin-top:10px; font-size:11px;"></div>
+    </div>
+    <div class="limit-bottom-row"><div id="gecmis-limitler" class="hidden" style="margin-top:12px; font-size:11px; padding-top:10px; border-top:1px dashed var(--border);">
         <!-- Kayıtlı limitler buraya otomatik gelecek -->
     </div>
+    <div class="limit-trash-actions" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; padding-top:10px; border-top:1px dashed var(--border);">
+        <button id="btn-saved-limit-settings" class="btn" style="background:#34495e;color:#fff;" onclick="app.toggleSavedLimitSettings()">📋 KAYITLI AYARLARI GÖSTER</button>
+        <button class="btn btn-warning" onclick="app.openLimitTrash('general')">♻️ SİLİNEN GENEL LİMİTLER</button>
+        <button class="btn btn-primary" onclick="app.openLimitTrash('special')">♻️ SİLİNEN ÜNVAN LİMİTLERİ</button>
+        <button class="btn btn-success" onclick="app.openLimitTrash('cutoff')">♻️ SİLİNEN KESİM TARİHLERİ</button>
+    </div>
+</div>
 </div>
             <div id="admin-management-grid" class="admin-management-grid" style="display:grid; grid-template-columns:1fr; gap:15px;">
                 <div id="personnel-management-card" class="card-section">
@@ -684,8 +777,70 @@
         writeTimer: null,
         writeAgain: false,
         initialCloudLoadDone: false,
+        simulationMode: false,
+        simulationSnapshot: null,
         cloudCursor: localStorage.getItem('gumruk_cloud_cursor_v1') || '',
         cloudRevision: Number(localStorage.getItem('gumruk_cloud_revision_v1') || 0),
+
+        getAccrualMonthForDate(dateValue) {
+            const date = String(dateValue || '').slice(0, 10);
+            const sourceMonth = date.slice(0, 7);
+            if (!/^20\d{2}-\d{2}-\d{2}$/.test(date)) return sourceMonth || this.mevcutAy();
+            const rule = this.db.hakedisKesimTarihleri?.[sourceMonth];
+            const cutoff = typeof rule === 'string' ? rule : String(rule?.date || '');
+            // Kesim tarihi dahil: Örneğin 31.07 seçildiyse 31 Temmuz görevleri
+            // Ağustos hakedişine aktarılır.
+            if (cutoff && date >= cutoff) return this.nextMonthValue(sourceMonth);
+            return sourceMonth;
+        },
+
+        getAccrualMonth(task) {
+            return this.getAccrualMonthForDate(this.getTaskDate(task)) || String(task?.tarih || '').slice(0, 7);
+        },
+
+        saveHakedisCutoff() {
+            if (!this.user || this.user.rol !== 'Admin') return alert('Ödeme kesim tarihlerini yalnızca Admin değiştirebilir.');
+            const date = document.getElementById('sys-hakedis-kesim-tarihi')?.value || '';
+            if (!date) return alert('Lütfen ödeme kesim tarihini seçin.');
+            const month = date.slice(0, 7);
+            if (!this.db.hakedisKesimTarihleri || typeof this.db.hakedisKesimTarihleri !== 'object') this.db.hakedisKesimTarihleri = {};
+            const existing = this.db.hakedisKesimTarihleri[month];
+            if (existing && !confirm(`${month} dönemi için kayıtlı kesim tarihi değiştirilecek. Devam edilsin mi?`)) return;
+            this.db.hakedisKesimTarihleri[month] = {date, targetMonth:this.nextMonthValue(month)};
+            this.addLog('Hakediş Ayarı', `${date} ödeme kesim tarihi kaydedildi; bu tarih ve sonrasındaki görevler ${this.nextMonthValue(month)} hakedişine aktarılacak.`);
+            this.save();
+            this.render();
+            alert(`${date} kesim tarihi kaydedildi.\nBu tarih ve sonrasındaki görevler ${this.nextMonthValue(month)} hakedişinde hesaplanacak.`);
+        },
+
+        deleteHakedisCutoff(month) {
+            if (!this.user || this.user.rol !== 'Admin') return alert('Ödeme kesim tarihlerini yalnızca Admin silebilir.');
+            const value = this.db.hakedisKesimTarihleri?.[month];
+            if (!value) return;
+            if (!confirm(`${month} dönemi ödeme kesim tarihi silinenler kutusuna taşınacak. Devam edilsin mi?`)) return;
+            if (!this.db.limitTrash) this.db.limitTrash = {general:[], special:[], cutoff:[]};
+            if (!Array.isArray(this.db.limitTrash.cutoff)) this.db.limitTrash.cutoff = [];
+            this.db.limitTrash.cutoff.push({month, value:JSON.parse(JSON.stringify(value)), deletedAt:new Date().toISOString(), deletedBy:this.user.user});
+            delete this.db.hakedisKesimTarihleri[month];
+            this.addLog('Hakediş Ayarı', `${month} ödeme kesim tarihi silinenler kutusuna taşındı.`);
+            this.save();
+            this.render();
+        },
+
+        restoreDeletedCutoff(index) {
+            const items = Array.isArray(this.db.limitTrash?.cutoff) ? this.db.limitTrash.cutoff : [];
+            const selected = items[index];
+            if (!selected) return alert('Silinen kesim tarihi bulunamadı.');
+            if (!this.db.hakedisKesimTarihleri || typeof this.db.hakedisKesimTarihleri !== 'object') this.db.hakedisKesimTarihleri = {};
+            if (this.db.hakedisKesimTarihleri[selected.month] && !confirm('Bu ay için aktif kesim tarihi var. Silinen kayıtla değiştirilsin mi?')) return;
+            this.db.hakedisKesimTarihleri[selected.month] = JSON.parse(JSON.stringify(selected.value));
+            this.db.limitTrash.cutoff.splice(index, 1);
+            this.addLog('Hakediş Ayarı', `${selected.month} ödeme kesim tarihi geri getirildi.`);
+            this.save();
+            this.renderLimitTrash();
+            this.render();
+        },
+
         updateYollukLimit() {
             const val = parseFloat(document.getElementById('sys-yolluk-limit').value);
             const ay = document.getElementById('sys-limit-ay').value;
@@ -705,20 +860,395 @@
                 alert(`${ay} ayından itibaren geçerli olacak yolluk sınırı ${val} TL olarak kaydedildi!\n\nMerak etmeyin, geçmiş aylar bu değişiklikten KESİNLİKLE etkilenmeyecek.`);
             }
         },
+
+        readTestSpecialLimits() {
+            const limits = this.db.birimUnvanLimitleri;
+            return limits && typeof limits === 'object' && !Array.isArray(limits) ? limits : {};
+        },
+
+        writeTestSpecialLimits(limits) {
+            this.db.birimUnvanLimitleri = limits || {};
+            return this.save() !== false;
+        },
+
+        readUnusedLimitCarrySetting() {
+            const value = this.db.artanLimitDevri || {};
+            return {
+                enabled:value.enabled === true,
+                startMonth:String(value.startMonth || '')
+            };
+        },
+
+        toggleUnusedLimitCarry() {
+            const current = this.readUnusedLimitCarrySetting();
+            if (current.enabled) {
+                this.db.artanLimitDevri = {enabled:false, startMonth:''};
+                this.save();
+                alert('Limit üstü tutar devri kapatıldı. Her ay yeniden bağımsız hesaplanacak.');
+                return;
+            }
+            const startMonth = document.getElementById('sys-limit-ay')?.value || this.mevcutAy();
+            const approved = confirm(
+                `${startMonth} ayından itibaren kişinin limitini AŞAN hakediş tutarı takip eden aya aktarılacak. ` +
+                'Geçmiş aylar etkilenmeyecek.\n\nAçmak istiyor musunuz?'
+            );
+            if (!approved) return;
+            this.db.artanLimitDevri = {enabled:true, startMonth};
+            this.save();
+            alert(`Limit üstü tutar devri ${startMonth} ayından başlayacak şekilde açıldı.`);
+        },
+
+        nextMonthValue(ay) {
+            const [year, month] = String(ay || '').split('-').map(Number);
+            if (!year || !month) return '';
+            const date = new Date(year, month, 1);
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        },
+
+        getGeneralYollukLimit(ay) {
+            let limit = 50600;
+            if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
+                const aylar = Object.keys(this.db.yollukSiniri).filter(key => key <= ay).sort();
+                if (aylar.length) limit = Number(this.db.yollukSiniri[aylar[aylar.length - 1]]) || limit;
+            } else if (this.db.yollukSiniri) {
+                limit = Number(this.db.yollukSiniri) || limit;
+            }
+            return limit;
+        },
+
+        getSpecialLimitKey(birim, unvan) {
+            return `${String(birim || '').trim()}|||${String(unvan || '').trim()}`;
+        },
+
+        getYollukLimitForPerson(ay, birim, unvan) {
+            const generalLimit = this.getGeneralYollukLimit(ay);
+            const limits = this.readTestSpecialLimits();
+            const ruleKey = this.getSpecialLimitKey(birim, unvan);
+            if (!birim || !unvan) return generalLimit;
+            const applicable = Object.keys(limits).filter(limitAy => {
+                if (!limits[limitAy] || limits[limitAy][ruleKey] === undefined) return false;
+                const raw = limits[limitAy][ruleKey];
+                const scope = raw && typeof raw === 'object' ? raw.scope : 'from';
+                return scope === 'month' ? limitAy === ay : limitAy <= ay;
+            }).sort();
+            if (!applicable.length) return generalLimit;
+            const raw = limits[applicable[applicable.length - 1]][ruleKey];
+            const value = Number(raw && typeof raw === 'object' ? raw.value : raw);
+            return value > 0 ? value : generalLimit;
+        },
+
+        getEffectiveYollukLimitForPerson(ay, personName, birim, unvan) {
+            const baseLimit = this.getYollukLimitForPerson(ay, birim, unvan);
+            return baseLimit;
+        },
+
+        getPersonSnapshotForMonth(personName, ay, fallbackPerson = {}) {
+            const currentPerson = this.db.personeller.find(item => item.ad === personName) || fallbackPerson || {};
+            const history = Array.isArray(currentPerson.personelGecmisi)
+                ? currentPerson.personelGecmisi
+                    .filter(item => item && String(item.from || '') <= ay)
+                    .sort((a, b) => String(a.from || '').localeCompare(String(b.from || '')))
+                : [];
+            if (history.length) {
+                const item = history[history.length - 1];
+                return {
+                    ...currentPerson,
+                    sicil:item.sicil || currentPerson.sicil,
+                    birim:item.birim || currentPerson.birim,
+                    unvan:item.unvan || currentPerson.unvan
+                };
+            }
+            const records = (this.db.kayitlar || [])
+                .filter(task => task.tarih <= ay && Array.isArray(task.pDetay) && task.pDetay.some(item => item.ad === personName))
+                .sort((a, b) => String(a.tarih || '').localeCompare(String(b.tarih || '')) ||
+                    String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+            if (records.length) {
+                return records[records.length - 1].pDetay.find(item => item.ad === personName) || currentPerson;
+            }
+            // Eski kayıtlarda personel geçmişi bulunmuyorsa hedef aydan sonraki
+            // en yakın görev görüntüsü geçmiş ünvanı kurtarmak için kullanılır.
+            const nextRecord = (this.db.kayitlar || [])
+                .filter(task => task.tarih > ay && Array.isArray(task.pDetay) && task.pDetay.some(item => item.ad === personName))
+                .sort((a, b) => String(a.tarih || '').localeCompare(String(b.tarih || '')) ||
+                    String(a.createdAt || '').localeCompare(String(b.createdAt || '')))[0];
+            return nextRecord
+                ? (nextRecord.pDetay.find(item => item.ad === personName) || currentPerson)
+                : currentPerson;
+        },
+
+        getTaskPersonAmount(task, personName, type = 'yolluk') {
+            const detail = Array.isArray(task.paylasimDetay)
+                ? task.paylasimDetay.find(item => item.ad === personName)
+                : null;
+            if (detail && Number.isFinite(Number(detail[type]))) return Number(detail[type]);
+            const total = type === 'mesai'
+                ? Number(task.mTotal ?? task.toplamMesai ?? 0)
+                : Number(task.yTotal ?? task.toplamYolluk ?? 0);
+            return total / (Number(task.personelSayisi) || (task.personeller || []).length || 1);
+        },
+
+        getMonthlyPersonYolluk(personName, ay) {
+            return (this.db.kayitlar || [])
+                .filter(task => this.getAccrualMonth(task) === ay && Array.isArray(task.personeller) &&
+                    task.personeller.includes(personName) &&
+                    task.durum !== 'Reddedildi' && task.durum !== 'Silme Talebinde')
+                .reduce((sum, task) => sum + this.getTaskPersonAmount(task, personName, 'yolluk'), 0);
+        },
+
+        distributeTaskAmounts(ay, personNames, totalYolluk, totalMesai, usedOverrides = {}) {
+            const people = personNames.map(name => {
+                const person = this.db.personeller.find(item => item.ad === name) || {};
+                const used = Object.prototype.hasOwnProperty.call(usedOverrides, name)
+                    ? Number(usedOverrides[name]) || 0
+                    : this.getMonthlyPersonYolluk(name, ay);
+                const limit = this.getEffectiveYollukLimitForPerson(
+                    ay, name, person.birim || '', person.unvan || ''
+                );
+                return {name, person, used, limit, remaining:Math.max(0, limit - used), yolluk:0};
+            });
+
+            const total = Math.max(0, Number(totalYolluk) || 0);
+            const equalShare = total / (people.length || 1);
+            let leftover = total;
+
+            people.forEach(item => {
+                const amount = Math.min(equalShare, item.remaining);
+                item.yolluk = amount;
+                item.remaining -= amount;
+                leftover -= amount;
+            });
+
+            // Eşit paydan artan tutarı, seçilen personel sırasındaki ilk müsait kişiye aktar.
+            for (const item of people) {
+                if (leftover <= 0.0001) break;
+                const extra = Math.min(leftover, item.remaining);
+                item.yolluk += extra;
+                item.remaining -= extra;
+                leftover -= extra;
+            }
+
+            const mesaiShare = (Number(totalMesai) || 0) / (people.length || 1);
+            return {
+                paylasimDetay: people.map(item => ({
+                    ad:item.name,
+                    yolluk:Number(item.yolluk.toFixed(4)),
+                    mesai:Number(mesaiShare.toFixed(4))
+                })),
+                leftover:Number(Math.max(0, leftover).toFixed(4)),
+                people
+            };
+        },
+
+        updateSpecialYollukLimit() {
+            const ay = document.getElementById('sys-special-limit-ay').value;
+            const scope = document.getElementById('sys-special-limit-scope').value;
+            const birim = document.getElementById('sys-special-limit-birim').value;
+            const unvan = document.getElementById('sys-special-limit-unvan').value;
+            const value = Number(document.getElementById('sys-special-limit-tutar').value);
+            if (!ay) return alert('Lütfen başlangıç ayını seçin!');
+            if (!birim) return alert('Lütfen bir birim seçin!');
+            if (!unvan) return alert('Lütfen bir ünvan seçin!');
+            if (!(value > 0)) return alert('Lütfen geçerli bir özel limit girin!');
+
+            const overLimitPeople = (this.db.personeller || [])
+                .filter(p => p.birim === birim && p.unvan === unvan)
+                .map(p => ({ad:p.ad, used:this.getMonthlyPersonYolluk(p.ad, ay)}))
+                .filter(item => item.used > value + 0.005);
+            if (overLimitPeople.length) {
+                return alert(
+                    `Bu limit kaydedilemez.\n\n${ay} ayında aşağıdaki personeller şimdiden belirlediğiniz limitin üzerinde:\n\n` +
+                    overLimitPeople.map(item => `- ${item.ad}: ${this.formatTrAmount(item.used)} TL`).join('\n') +
+                    '\n\nGeçmiş hakedişleri bozmamak için limiti mevcut kazanımdan yüksek belirleyin veya sonraki aydan başlatın.'
+                );
+            }
+
+            const limits = this.readTestSpecialLimits();
+            if (!limits[ay]) limits[ay] = {};
+            limits[ay][this.getSpecialLimitKey(birim, unvan)] = {value, scope};
+            if (!this.writeTestSpecialLimits(limits)) return;
+            document.getElementById('sys-special-limit-tutar').value = '';
+            this.render();
+            const periodText = scope === 'month' ? `yalnızca ${ay} ayı için` : `${ay} ayından itibaren`;
+            alert(`${birim} / ${unvan} için ${periodText} ${this.formatTrAmount(value)} TL özel limit kaydedildi.`);
+        },
+
+        deleteSpecialYollukLimit(ay, ruleKey) {
+            const limits = this.readTestSpecialLimits();
+            if (!limits?.[ay]) return;
+            if (!confirm('Bu birim + ünvan limiti silinenler kutusuna taşınacak. Daha sonra geri getirebilirsiniz. Devam edilsin mi?')) return;
+            if (!this.db.limitTrash) this.db.limitTrash = {general:[], special:[]};
+            if (!Array.isArray(this.db.limitTrash.special)) this.db.limitTrash.special = [];
+            this.db.limitTrash.special.push({
+                ay,
+                ruleKey,
+                value:JSON.parse(JSON.stringify(limits[ay][ruleKey])),
+                deletedAt:new Date().toISOString(),
+                deletedBy:this.user ? this.user.user : 'Sistem'
+            });
+            if (this.db.limitTrash.special.length > 200) this.db.limitTrash.special.shift();
+            delete limits[ay][ruleKey];
+            if (!Object.keys(limits[ay]).length) delete limits[ay];
+            if (this.writeTestSpecialLimits(limits)) this.render();
+        },
+
+        deleteGeneralYollukLimit(ay) {
+            if (!this.user || this.user.rol !== 'Admin') return alert('Genel limitleri yalnızca Admin silebilir.');
+            if (!this.db.yollukSiniri || typeof this.db.yollukSiniri !== 'object' || this.db.yollukSiniri[ay] === undefined) return;
+            if (!confirm(`${ay} dönemine ait genel limit silinenler kutusuna taşınacak. Daha sonra geri getirebilirsiniz. Devam edilsin mi?`)) return;
+            if (!this.db.limitTrash) this.db.limitTrash = {general:[], special:[]};
+            if (!Array.isArray(this.db.limitTrash.general)) this.db.limitTrash.general = [];
+            this.db.limitTrash.general.push({
+                ay,
+                value:this.db.yollukSiniri[ay],
+                deletedAt:new Date().toISOString(),
+                deletedBy:this.user ? this.user.user : 'Sistem'
+            });
+            if (this.db.limitTrash.general.length > 200) this.db.limitTrash.general.shift();
+            delete this.db.yollukSiniri[ay];
+            this.addLog('Limit Güvenliği', `${ay} genel limiti silinenler kutusuna taşındı.`);
+            this.save();
+        },
+
+        openLimitTrash(type) {
+            if (!this.user || this.user.rol !== 'Admin') return alert('Silinen limitleri yalnızca Admin görüntüleyebilir.');
+            this.limitTrashView = ['special', 'cutoff'].includes(type) ? type : 'general';
+            this.renderLimitTrash();
+            document.getElementById('limit-trash-modal').classList.remove('hidden');
+        },
+
+        closeLimitTrash() {
+            document.getElementById('limit-trash-modal').classList.add('hidden');
+        },
+
+        renderLimitTrash() {
+            const type = ['special', 'cutoff'].includes(this.limitTrashView) ? this.limitTrashView : 'general';
+            const items = Array.isArray(this.db.limitTrash?.[type]) ? this.db.limitTrash[type] : [];
+            const title = document.getElementById('limit-trash-title');
+            const target = document.getElementById('limit-trash-content');
+            if (!title || !target) return;
+            title.innerText = type === 'general' ? '♻️ Silinen Genel Limitler' : type === 'special' ? '♻️ Silinen Ünvan Limitleri' : '♻️ Silinen Ödeme Kesim Tarihleri';
+            if (!items.length) {
+                target.innerHTML = '<div style="padding:35px; text-align:center; color:var(--muted);">Silinen limit bulunmuyor.</div>';
+                return;
+            }
+            target.innerHTML = items.map((item, index) => ({item, index})).reverse().map(({item, index}) => {
+                const deletedTime = item.deletedAt ? new Date(item.deletedAt).toLocaleString('tr-TR') : 'Tarih bilinmiyor';
+                if (type === 'general') {
+                    return `<div class="health-card" style="display:flex; justify-content:space-between; align-items:center; gap:14px; margin-bottom:10px;">
+                        <div><b style="color:var(--warning);">${item.ay}</b> · <b>${this.formatTrAmount(item.value)} TL</b><br>
+                        <small style="color:var(--muted);">Silen: ${item.deletedBy || 'Bilinmiyor'} · ${deletedTime}</small></div>
+                        <button class="btn btn-success" onclick="app.restoreDeletedGeneralLimit(${index})">♻️ GERİ GETİR</button>
+                    </div>`;
+                }
+                if (type === 'cutoff') {
+                    const cutoff = typeof item.value === 'string' ? item.value : item.value?.date;
+                    const targetMonth = typeof item.value === 'object' ? item.value?.targetMonth : this.nextMonthValue(item.month);
+                    return `<div class="health-card" style="display:flex; justify-content:space-between; align-items:center; gap:14px; margin-bottom:10px;">
+                        <div><b style="color:var(--success);">${cutoff || '-'}</b> · Sonraki görevler: <b>${targetMonth || '-'}</b><br>
+                        <small style="color:var(--muted);">Silen: ${item.deletedBy || 'Bilinmiyor'} · ${deletedTime}</small></div>
+                        <button class="btn btn-success" onclick="app.restoreDeletedCutoff(${index})">♻️ GERİ GETİR</button>
+                    </div>`;
+                }
+                const [birim, unvan] = String(item.ruleKey || '').split('|||');
+                const value = item.value && typeof item.value === 'object' ? item.value.value : item.value;
+                const scope = item.value && typeof item.value === 'object' && item.value.scope === 'month' ? 'Yalnız seçilen ay' : 'Bu ay ve sonrası';
+                return `<div class="health-card" style="display:flex; justify-content:space-between; align-items:center; gap:14px; margin-bottom:10px;">
+                    <div><b style="color:var(--accent);">${item.ay}</b> · ${birim || '-'} / ${unvan || '-'} · <b>${this.formatTrAmount(value)} TL</b><br>
+                    <small style="color:var(--muted);">${scope} · Silen: ${item.deletedBy || 'Bilinmiyor'} · ${deletedTime}</small></div>
+                    <button class="btn btn-success" onclick="app.restoreDeletedSpecialLimit(${index})">♻️ GERİ GETİR</button>
+                </div>`;
+            }).join('');
+        },
+
+        restoreDeletedGeneralLimit(index) {
+            const items = Array.isArray(this.db.limitTrash?.general) ? this.db.limitTrash.general : [];
+            const selected = items[index];
+            if (!selected) return alert('Silinen genel limit bulunamadı.');
+            if (typeof this.db.yollukSiniri !== 'object' || this.db.yollukSiniri === null) this.db.yollukSiniri = {};
+            if (this.db.yollukSiniri[selected.ay] !== undefined && !confirm(`${selected.ay} için aktif bir limit zaten var. Silinen değerle değiştirilsin mi?`)) return;
+            this.db.yollukSiniri[selected.ay] = selected.value;
+            this.db.limitTrash.general.splice(index, 1);
+            this.addLog('Limit Güvenliği', `${selected.ay} genel limiti silinenler kutusundan geri getirildi.`);
+            this.save();
+            this.renderLimitTrash();
+            alert('Genel limit geri getirildi.');
+        },
+
+        restoreDeletedSpecialLimit(index) {
+            const items = Array.isArray(this.db.limitTrash?.special) ? this.db.limitTrash.special : [];
+            const selected = items[index];
+            if (!selected) return alert('Silinen birim + ünvan limiti bulunamadı.');
+            const limits = this.readTestSpecialLimits();
+            if (!limits[selected.ay]) limits[selected.ay] = {};
+            if (limits[selected.ay][selected.ruleKey] !== undefined && !confirm('Bu ay ve birim + ünvan için aktif bir limit zaten var. Silinen değerle değiştirilsin mi?')) return;
+            limits[selected.ay][selected.ruleKey] = JSON.parse(JSON.stringify(selected.value));
+            this.db.limitTrash.special.splice(index, 1);
+            this.addLog('Limit Güvenliği', `${selected.ay} birim + ünvan limiti silinenler kutusundan geri getirildi.`);
+            if (this.writeTestSpecialLimits(limits)) {
+                this.render();
+                this.renderLimitTrash();
+                alert('Birim + ünvan limiti geri getirildi.');
+            }
+        },
         db: {
             accounts: [], // ŞİFRELER GİZLENDİ! Sistem açılışta güncel şifreleri Google Bulut'tan indirecek.
-            personeller: [], yolluklar: [], kayitlar: [], izinler: [], 
+            personeller: [], yolluklar: [], kayitlar: [], izinler: [],
+            birimUnvanLimitleri: {},
+            artanLimitDevri: {enabled:false, startMonth:''},
+            hakedisKesimTarihleri: {},
+            limitTrash: {general:[], special:[], cutoff:[]},
             bypassSef: false
         },
         user: null,
         selectedPs: [],
         seciliAy: null,
         gosterimMod: 'yolluk',
+        showTransferDetails: false,
+        showSavedLimitSettings: false,
+        hakedisDateFilter: {start:'', end:''},
         taskFilter: {arama: '', durum: '', baslangic: '', bitis: '', onayBekleyen: false},
         leaveFilter: {arama: '', tur: '', baslangic: '', bitis: '', mode: 'today'},
         personnelManagementFilter: {query: '', archived: false},
+        showHiddenReceiptMonths: false,
         keepSelectedAfterSave: true,
         unvanlar: ["Gümrük Memuru", "Gümrük Muayene Memuru", "Gümrük Muhafaza Memuru", "Gümrük Şefi", "Kısım Amiri", "Bölge Amiri", "Gümrük Müdür Yardımcısı", "Gümrük Müdürü", "KİM Müdürü", "Diğer"],
+        toggleTransferDetails() {
+            this.showTransferDetails = !this.showTransferDetails;
+            this.render();
+        },
+        toggleSavedLimitSettings() {
+            this.showSavedLimitSettings = !this.showSavedLimitSettings;
+            this.render();
+        },
+        openHakedisDateFilter() {
+            const start = document.getElementById('hakedis-date-start');
+            const end = document.getElementById('hakedis-date-end');
+            if (start) start.value = this.hakedisDateFilter.start;
+            if (end) end.value = this.hakedisDateFilter.end;
+            document.getElementById('btn-clear-hakedis-date')?.classList.toggle('hidden', !(this.hakedisDateFilter.start && this.hakedisDateFilter.end));
+            document.getElementById('hakedis-date-filter-modal')?.classList.remove('hidden');
+        },
+        closeHakedisDateFilter() {
+            document.getElementById('hakedis-date-filter-modal')?.classList.add('hidden');
+        },
+        applyHakedisDateFilter() {
+            const start = document.getElementById('hakedis-date-start')?.value || '';
+            const end = document.getElementById('hakedis-date-end')?.value || '';
+            if (!start || !end) return alert('Başlangıç ve bitiş tarihlerini birlikte seçin.');
+            if (start > end) return alert('Başlangıç tarihi bitiş tarihinden sonra olamaz.');
+            this.hakedisDateFilter = {start, end};
+            this.closeHakedisDateFilter();
+            this.render();
+        },
+        clearHakedisDateFilter() {
+            this.hakedisDateFilter = {start:'', end:''};
+            const start = document.getElementById('hakedis-date-start');
+            const end = document.getElementById('hakedis-date-end');
+            if (start) start.value = '';
+            if (end) end.value = '';
+            this.closeHakedisDateFilter();
+            this.render();
+        },
 addLog(tip, detay, ref = "-") {
             if (!this.db.logs) this.db.logs = [];
             const d = new Date();
@@ -893,39 +1423,49 @@ hardBackup() {
                 if (adminSayac) adminSayac.innerText = '0';
                 // Sadece admine "Tekrar Aç" butonunu göster
                 if (adminAcmaButonu && this.user.rol === 'Admin') adminAcmaButonu.classList.remove('hidden');
-                return;
+                if (this.user.rol !== 'Admin') return;
             } else {
                 if (adminAcmaButonu) adminAcmaButonu.classList.add('hidden');
             }
 
             // 3. Onaylanmış ama dekontu girilmemiş görevleri bul (GİZLENEN AYLARI HARİÇ TUT)
-            const eksikler = this.db.kayitlar.filter(k => 
+            const tumEksikler = this.db.kayitlar.filter(k =>
                 k.durum === "Onaylandı" && 
-                (!k.dekont || k.dekont.trim() === "") &&
-                !this.db.uyariAyarlari.kapaliAylar.includes(k.tarih) // Adminin gizlediği ayları es geçer
+                (!k.dekont || k.dekont.trim() === "")
             );
-            
-            if (eksikler.length > 0 && btn) {
-                if (this.user.rol === 'Admin') btn.classList.add('hidden');
-                else btn.classList.remove('hidden');
-                sayac.innerText = eksikler.length;
+            const eksikler = this.db.uyariAyarlari.tamamenKapali
+                ? []
+                : tumEksikler.filter(k => !this.db.uyariAyarlari.kapaliAylar.includes(k.tarih));
+
+            if (eksikler.length > 0) {
+                if (btn) {
+                    if (this.user.rol === 'Admin') btn.classList.add('hidden');
+                    else btn.classList.remove('hidden');
+                }
+                if (sayac) sayac.innerText = eksikler.length;
                 if (adminSayac) adminSayac.innerText = eksikler.length;
                 
                 const today = new Date().toISOString().slice(0,10);
                 const okunduMu = localStorage.getItem(`dekont_uyari_okundu_${this.user.user}_${today}`);
                 
                 if (!okunduMu && this.user.rol !== 'Admin') {
-                    btn.classList.add('blink-alert'); 
+                    if (btn) btn.classList.add('blink-alert'); 
                 } else {
-                    btn.classList.remove('blink-alert'); 
+                    if (btn) btn.classList.remove('blink-alert'); 
                 }
                 
-                let ayGruplari = {};
-                eksikler.forEach(k => {
-                    ayGruplari[k.tarih] = (ayGruplari[k.tarih] || 0) + 1;
-                });
-                
-                let listeHtml = "<ul style='margin:0; padding-left:20px;'>";
+            } else {
+                if (btn) btn.classList.add('hidden');
+                if (sayac) sayac.innerText = '0';
+                if (adminSayac) adminSayac.innerText = '0';
+            }
+
+            const ayGruplari = {};
+            eksikler.forEach(k => { ayGruplari[k.tarih] = (ayGruplari[k.tarih] || 0) + 1; });
+            let listeHtml = eksikler.length
+                ? "<div style='font-weight:bold;color:var(--danger);margin-bottom:9px;'>AKTİF EKSİK DEKONT AYLARI</div><ul style='margin:0; padding-left:20px;'>"
+                : `<div style="padding:15px; text-align:center; color:var(--success);">Aktif eksik dekont uyarısı bulunmuyor.</div>`;
+            if (eksikler.length) {
                 for (let ay in ayGruplari) {
                     listeHtml += `<li style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">
                         <span><b>${ay}</b> ayına ait dekontu girilmemiş <b style="color:var(--warning); font-size:15px;">${ayGruplari[ay]} adet</b> görev var.</span>
@@ -933,29 +1473,29 @@ hardBackup() {
                     </li>`;
                 }
                 listeHtml += "</ul>";
-                
-                // 4. ADMIN KONTROL PANELİ (Sadece Admine Görünür)
-                if (this.user.rol === 'Admin') {
-                    listeHtml += `<div style="margin-top:15px; padding-top:10px; border-top:1px dashed var(--danger); font-size:11px;">`;
-                    
-                    // Eğer daha önce gizlenmiş aylar varsa onları listele ve geri alma şansı ver
-                    if (this.db.uyariAyarlari.kapaliAylar.length > 0) {
-                        listeHtml += `<div style="margin-bottom:10px; color:var(--warning)"><b>Gizlenen Aylar:</b> ` + 
-                            this.db.uyariAyarlari.kapaliAylar.map(a => `<span class="tag" style="background:rgba(255,255,255,0.1); border:1px solid #fff; color:#fff;">${a} <b style="cursor:pointer; color:#ff4757; margin-left:5px;" onclick="app.gosterAyUyari('${a}')" title="Geri Getir">✖</b></span>`).join('') + 
-                            `</div>`;
-                    }
-                    
-                    listeHtml += `<button class="btn btn-warning" style="width:100%; margin-top:5px;" onclick="app.kapatTümUyarilari()">🛑 EKSİK DEKONT UYARI SİSTEMİNİ TAMAMEN KAPAT</button>`;
-                    listeHtml += `</div>`;
-                }
-
-                const listeDiv = document.getElementById('uyari-liste');
-                if(listeDiv) listeDiv.innerHTML = listeHtml;
-                
-            } else if (btn) {
-                btn.classList.add('hidden'); // Kriterlere uyan eksik kalmadıysa gizle
-                if (adminSayac) adminSayac.innerText = '0';
             }
+
+            // Gizlenen aylar Admin için Eksik Dekontlar penceresinde her zaman görünür.
+            if (this.user.rol === 'Admin') {
+                const hiddenMonths = [...this.db.uyariAyarlari.kapaliAylar].sort().reverse();
+                listeHtml += `<div style="margin-top:15px; padding-top:12px; border-top:1px dashed var(--warning);">
+                    <button class="btn btn-warning" style="width:100%; margin-bottom:9px;" onclick="app.toggleHiddenReceiptMonths()">🙈 GİZLENEN AYLAR (${hiddenMonths.length}) ${this.showHiddenReceiptMonths ? '▲' : '▼'}</button>`;
+                if (this.showHiddenReceiptMonths && hiddenMonths.length) {
+                    listeHtml += hiddenMonths.map(ay => {
+                        const count = tumEksikler.filter(k => k.tarih === ay).length;
+                        return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px;margin-bottom:7px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.04);">
+                            <span><b>${ay}</b> · ${count} eksik dekont kaydı gizleniyor</span>
+                            <button class="btn btn-success" style="font-size:9px;padding:5px 9px;" onclick="app.gosterAyUyari('${ay}')">♻️ YENİDEN GÖSTER</button>
+                        </div>`;
+                    }).join('');
+                } else if (this.showHiddenReceiptMonths) {
+                    listeHtml += `<div style="color:var(--muted);padding:10px;">Gizlenen ay bulunmuyor.</div>`;
+                }
+                listeHtml += `<button class="btn btn-warning" style="width:100%; margin-top:8px;" onclick="app.kapatTümUyarilari()">🛑 EKSİK DEKONT UYARI SİSTEMİNİ TAMAMEN KAPAT</button></div>`;
+            }
+
+            const listeDiv = document.getElementById('uyari-liste');
+            if (listeDiv) listeDiv.innerHTML = listeHtml;
         },
 
         gizleAyUyari(ay) {
@@ -970,6 +1510,11 @@ hardBackup() {
             this.db.uyariAyarlari.kapaliAylar = this.db.uyariAyarlari.kapaliAylar.filter(a => a !== ay);
             this.save();
             this.checkDekontUyarilari(); // Listeyi anında yenile
+        },
+
+        toggleHiddenReceiptMonths() {
+            this.showHiddenReceiptMonths = !this.showHiddenReceiptMonths;
+            this.checkDekontUyarilari();
         },
 
         kapatTümUyarilari() {
@@ -990,6 +1535,7 @@ hardBackup() {
         },
 
         showUyariModal() {
+            this.showHiddenReceiptMonths = false;
             if (!this.isMaintenanceBlocked(false)) {
                 this.addLog("Modül Erişimi", "Eksik Dekontlar uyarı modalı incelendi.");
                 this.save();
@@ -1036,6 +1582,72 @@ hardBackup() {
                     ? '🛑 Bakım Modunu Kapat<br><small style="color:#ff6b6b">Sistem şu anda bakımda</small>'
                     : '🧰 Bakım Modunu Aç<br><small style="color:var(--muted)">Kullanıcı işlemlerini geçici olarak durdur</small>';
             }
+            const simulatorTile = document.getElementById('admin-simulator-tile');
+            if (simulatorTile) {
+                simulatorTile.innerHTML = this.simulationMode
+                    ? '🧪 Simülatör Açık<br><small style="color:#d7a8ff">Yönetmek için tıklayın</small>'
+                    : '🧪 Deneme Simülatörü<br><small style="color:var(--muted)">Buluta göndermeden görev ve tutar denemesi yap</small>';
+            }
+        },
+
+        updateSimulationUI() {
+            const banner = document.getElementById('simulation-banner');
+            if (banner) banner.classList.toggle('hidden', !this.simulationMode);
+            this.updateAdminMenuState();
+            if (this.simulationMode) {
+                this.setSyncStatus('🧪 SİMÜLASYON — değişiklikler buluta gönderilmiyor');
+            }
+        },
+
+        toggleSimulation() {
+            if (!this.user || this.user.rol !== 'Admin') return alert('Deneme simülatörünü yalnızca Admin kullanabilir.');
+            if (this.simulationMode) {
+                this.closeAdminManagement();
+                this.updateSimulationUI();
+                return;
+            }
+            if (this.writeInFlight || this.pullInFlight || localStorage.getItem(this.PENDING_KEY) === '1') {
+                return alert('Simülatörü açmadan önce bekleyen bulut işlemlerinin tamamlanmasını bekleyin.');
+            }
+            if (!confirm(
+                'Deneme simülatörü açılacak.\n\n' +
+                'Yapacağınız görev, tutar ve ayar değişiklikleri siz onaylayana kadar buluta gönderilmeyecek. ' +
+                'İptal ederseniz bütün denemeler silinecek.\n\nDevam edilsin mi?'
+            )) return;
+            this.simulationSnapshot = JSON.parse(JSON.stringify(this.db));
+            this.simulationMode = true;
+            this.closeAdminManagement();
+            this.render();
+            this.updateSimulationUI();
+        },
+
+        commitSimulation() {
+            if (!this.user || this.user.rol !== 'Admin' || !this.simulationMode) return;
+            if (!confirm('Simülasyonda yaptığınız bütün değişiklikler buluta gönderilecek. Onaylıyor musunuz?')) return;
+            const originalSnapshot = this.simulationSnapshot;
+            this.simulationMode = false;
+            this.simulationSnapshot = null;
+            if (originalSnapshot) this.lastPersistedDb = JSON.parse(JSON.stringify(originalSnapshot));
+            this.addLog('Deneme Simülatörü', 'Simülasyonda hazırlanan değişiklikler admin tarafından buluta gönderildi.');
+            this.save();
+            this.updateSimulationUI();
+            alert('Simülasyon değişiklikleri gönderim kuyruğuna alındı.');
+        },
+
+        cancelSimulation() {
+            if (!this.user || this.user.rol !== 'Admin' || !this.simulationMode) return;
+            if (!confirm('Simülasyonda yaptığınız bütün değişiklikler silinecek ve başlangıçtaki veriler geri getirilecek. Devam edilsin mi?')) return;
+            if (this.simulationSnapshot) {
+                this.db = this.normalizeDb(JSON.parse(JSON.stringify(this.simulationSnapshot)));
+                this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
+            }
+            this.simulationMode = false;
+            this.simulationSnapshot = null;
+            this.selectedPs = [];
+            this.render();
+            this.updateSimulationUI();
+            this.setSyncStatus('Simülasyon iptal edildi — bulut verisi değiştirilmedi');
+            alert('Denemeler silindi. Bulut verisinde hiçbir değişiklik yapılmadı.');
         },
 
         isMaintenanceBlocked(showWarning = true) {
@@ -1055,7 +1667,7 @@ hardBackup() {
                     ? '🧰 BAKIM MODU AÇIK — Diğer kullanıcıların veri değiştirmesi engelleniyor.'
                     : '🧰 Patron sistem bakımı yapıyor. Verileri görüntüleyebilirsiniz ancak işlem yapamazsınız.';
             }
-            this.updateAdminMenuState();
+            this.updateSimulationUI();
         },
 
         toggleMaintenanceMode() {
@@ -1102,6 +1714,7 @@ hardBackup() {
                 ['Bulut sürümü', String(this.cloudRevision || 0), ''],
                 ['Otomatik kontrol', 'Her 10 saniyede bir', 'health-ok'],
                 ['Bakım modu', this.db.maintenanceMode?.enabled ? 'Açık — işlemler kısıtlı' : 'Kapalı ✔', this.db.maintenanceMode?.enabled ? 'health-warn' : 'health-ok'],
+                ['Deneme simülatörü', this.simulationMode ? 'Açık — buluta yazma durduruldu' : 'Kapalı ✔', this.simulationMode ? 'health-warn' : 'health-ok'],
                 ['Görev kayıtları', String((this.db.kayitlar || []).length), ''],
                 ['Personel kayıtları', String((this.db.personeller || []).length), ''],
                 ['İzin / rapor kayıtları', String((this.db.izinler || []).length), ''],
@@ -1389,10 +2002,55 @@ hardBackup() {
             });
             this.render();
         },
-updatePersonel(i, alan, yeniDeger) {
+        recordPersonnelHistoryChange(person, yeniBirim, yeniUnvan, effectiveMonth) {
+            if (!person || !effectiveMonth) return;
+            if (!Array.isArray(person.personelGecmisi)) person.personelGecmisi = [];
+            if (!person.personelGecmisi.length) {
+                person.personelGecmisi.push({
+                    from:'0000-00',
+                    sicil:person.sicil,
+                    birim:person.birim,
+                    unvan:person.unvan
+                });
+            }
+            const newEntry = {
+                from:effectiveMonth,
+                sicil:person.sicil,
+                birim:yeniBirim,
+                unvan:yeniUnvan
+            };
+            const existingIndex = person.personelGecmisi.findIndex(item => item.from === effectiveMonth);
+            if (existingIndex >= 0) person.personelGecmisi[existingIndex] = newEntry;
+            else person.personelGecmisi.push(newEntry);
+            person.personelGecmisi.sort((a, b) => String(a.from).localeCompare(String(b.from)));
+        },
+
+        updatePersonel(i, alan, yeniDeger) {
             if (!this.canManagePersonnel()) return alert('Personel düzenleme yetkiniz bulunmamaktadır.');
             const p = this.db.personeller[i];
             let eskiDeger = p[alan];
+            if ((alan === 'birim' || alan === 'unvan') && eskiDeger !== yeniDeger) {
+                const effectiveMonth = prompt(
+                    `${p.ad} için ${alan === 'unvan' ? 'ünvan' : 'birim'} değişikliği hangi aydan itibaren geçerli olacak?\n\n` +
+                    'YYYY-AA biçiminde girin. Önceki ayların bilgileri korunacaktır.',
+                    this.mevcutAy()
+                );
+                if (effectiveMonth === null) {
+                    this.render();
+                    return;
+                }
+                if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(effectiveMonth.trim())) {
+                    this.render();
+                    return alert('Geçerli ayı YYYY-AA biçiminde girin. Örnek: 2026-08');
+                }
+                const monthSnapshot = this.getPersonSnapshotForMonth(p.ad, effectiveMonth.trim(), p);
+                this.recordPersonnelHistoryChange(
+                    p,
+                    alan === 'birim' ? yeniDeger : (monthSnapshot.birim || p.birim),
+                    alan === 'unvan' ? yeniDeger : (monthSnapshot.unvan || p.unvan),
+                    effectiveMonth.trim()
+                );
+            }
             p[alan] = (alan === 'aktif') ? (yeniDeger === '1') : yeniDeger;
             this.addLog("Personel İşlemi", `${p.ad} isimli personelin "${alan}" bilgisi güncellendi. (Yeni Değer: ${p[alan]})`);
             this.save();
@@ -1532,6 +2190,14 @@ updatePersonel(i, alan, yeniDeger) {
             if (!this.canManagePersonnel()) return alert('Personel içe aktarma yetkiniz bulunmamaktadır.');
             if (!file) return;
             if (typeof XLSX === 'undefined') return alert('Excel bileşeni yüklenemedi. İnternet bağlantınızı kontrol edin.');
+            const importEffectiveMonth = prompt(
+                'Excel dosyasındaki mevcut personel birim/ünvan değişiklikleri hangi aydan itibaren geçerli olacak?\n\nYYYY-AA biçiminde girin.',
+                this.mevcutAy()
+            );
+            if (importEffectiveMonth === null) return;
+            if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(importEffectiveMonth.trim())) {
+                return alert('Geçerli ayı YYYY-AA biçiminde girin. Örnek: 2026-08');
+            }
             const reader = new FileReader();
             reader.onload = event => {
                 try {
@@ -1553,6 +2219,9 @@ updatePersonel(i, alan, yeniDeger) {
                         if (!sicil || !ad || !birim || !unvan) { skipped++; continue; }
                         const existing = (this.db.personeller || []).find(p => String(p.sicil || '').trim().toLocaleLowerCase('tr-TR') === sicil.toLocaleLowerCase('tr-TR'));
                         if (existing) {
+                            if (existing.birim !== birim || existing.unvan !== unvan) {
+                                this.recordPersonnelHistoryChange(existing, birim, unvan, importEffectiveMonth.trim());
+                            }
                             existing.ad = ad;
                             existing.birim = birim;
                             existing.unvan = unvan;
@@ -1761,6 +2430,7 @@ updatePersonel(i, alan, yeniDeger) {
 
             const now = new Date();
             const ayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            const hakedisAyStr = this.getAccrualMonthForDate(`${ayStr}-${String(now.getDate()).padStart(2,'0')}`);
 
             // --- 🛑 YENİ: İSTEĞE BAĞLI KOTA KORUMA KONTROLÜ 🛑 ---
             const siniriZorla = document.getElementById('strict-limit-check').checked;
@@ -1773,24 +2443,35 @@ updatePersonel(i, alan, yeniDeger) {
                 gecerliLimit = parseFloat(this.db.yollukSiniri);
             }
 
-            const kisiBasiYeniYolluk = (toplamYolluk / personelSayisi) * repeatCount; 
+            const plannedShares = [];
+            const simulatedUsed = {};
+            this.selectedPs.forEach(name => {
+                simulatedUsed[name] = this.getMonthlyPersonYolluk(name, hakedisAyStr);
+            });
 
-            if (siniriZorla && kisiBasiYeniYolluk > 0) {
-                let asanPersoneller = [];
-                for (let p of this.selectedPs) {
-                    let kisininBuAykiYollugu = 0;
-                    this.db.kayitlar.filter(k => k.tarih === ayStr && k.personeller.includes(p) && k.durum !== "Reddedildi" && k.durum !== "Silme Talebinde").forEach(k => {
-                        kisininBuAykiYollugu += (k.yTotal || k.toplamYolluk) / k.personelSayisi;
-                    });
-                    
-                    if (kisininBuAykiYollugu + kisiBasiYeniYolluk > gecerliLimit) {
-                        asanPersoneller.push(`- ${p} (Bu görevle ${(kisininBuAykiYollugu + kisiBasiYeniYolluk).toFixed(2)} TL'ye çıkıyor)`);
+            for (let repeatIndex = 0; repeatIndex < repeatCount; repeatIndex++) {
+                if (siniriZorla && toplamYolluk > 0) {
+                    const distribution = this.distributeTaskAmounts(
+                        hakedisAyStr, this.selectedPs, toplamYolluk, toplamMesai, simulatedUsed
+                    );
+                    if (distribution.leftover > 0.005) {
+                        const details = distribution.people.map(item =>
+                            `- ${item.name} / ${item.person.birim || 'Birim belirtilmedi'} / ${item.person.unvan || 'Ünvan belirtilmedi'}: ` +
+                            `${this.formatTrAmount(item.used)} / ${this.formatTrAmount(item.limit)} TL`
+                        ).join('\n');
+                        alert(`🛑 TOPLAM KALAN LİMİT YETERSİZ!\n\nGörevin ${this.formatTrAmount(distribution.leftover)} TL kısmını alabilecek personel bulunmuyor.\n\n${details}\n\nGörev kaydedilmedi.`);
+                        return;
                     }
-                }
-                
-                if (asanPersoneller.length > 0) {
-                    alert(`🛑 KOTA AŞIMI ENGELLENDİ! 🛑\n\n"Sınırı Zorla" butonu aktif olduğu için bu işlem durduruldu. Aşağıdaki personeller yasal sınırı (${gecerliLimit} TL) aşıyor:\n\n${asanPersoneller.join('\n')}\n\nEğer bu tutarın DEVRETMESİNİ istiyorsanız, kırmızı "Kota Sınırını Zorla" kutucuğunun işaretini kaldırıp tekrar kaydedin.`);
-                    return; 
+                    plannedShares.push(distribution.paylasimDetay);
+                    distribution.paylasimDetay.forEach(item => {
+                        simulatedUsed[item.ad] = (simulatedUsed[item.ad] || 0) + item.yolluk;
+                    });
+                } else {
+                    plannedShares.push(this.selectedPs.map(name => ({
+                        ad:name,
+                        yolluk:Number((toplamYolluk / personelSayisi).toFixed(4)),
+                        mesai:Number((toplamMesai / personelSayisi).toFixed(4))
+                    })));
                 }
             }
             // --- 🛑 KOTA KORUMA BİTİŞİ 🛑 ---
@@ -1818,6 +2499,8 @@ updatePersonel(i, alan, yeniDeger) {
                     no: document.getElementById('task-no').value || "Belirtilmedi",
                     personeller: [...this.selectedPs],
                     pDetay: snapshotDetay,
+                    paylasimDetay: plannedShares[i],
+                    limitKontrolu: siniriZorla,
                     personelSayisi: personelSayisi,
                     toplamMesai: toplamMesai,
                     toplamYolluk: toplamYolluk,
@@ -1979,7 +2662,7 @@ updatePersonel(i, alan, yeniDeger) {
         },
 
         mevcutAylar() {
-            let aylar = [...new Set(this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih).map(k => k.tarih))];
+            let aylar = [...new Set(this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih).map(k => this.getAccrualMonth(k)))];
             
             // İçinde bulunduğumuz ayı listeye mutlaka ekle
             const guncelAy = this.mevcutAy();
@@ -2019,6 +2702,25 @@ updatePersonel(i, alan, yeniDeger) {
             const db = data && typeof data === 'object' && !Array.isArray(data) ? data : {};
             db.kayitlar = Array.isArray(db.kayitlar) ? db.kayitlar : [];
             db.deletedTaskIds = Array.isArray(db.deletedTaskIds) ? db.deletedTaskIds : [];
+            db.birimUnvanLimitleri = db.birimUnvanLimitleri &&
+                typeof db.birimUnvanLimitleri === 'object' &&
+                !Array.isArray(db.birimUnvanLimitleri)
+                ? db.birimUnvanLimitleri
+                : {};
+            db.artanLimitDevri = db.artanLimitDevri &&
+                typeof db.artanLimitDevri === 'object' &&
+                !Array.isArray(db.artanLimitDevri)
+                ? db.artanLimitDevri
+                : {enabled:false, startMonth:''};
+            db.hakedisKesimTarihleri = db.hakedisKesimTarihleri && typeof db.hakedisKesimTarihleri === 'object' && !Array.isArray(db.hakedisKesimTarihleri)
+                ? db.hakedisKesimTarihleri
+                : {};
+            db.limitTrash = db.limitTrash && typeof db.limitTrash === 'object' && !Array.isArray(db.limitTrash)
+                ? db.limitTrash
+                : {general:[], special:[]};
+            db.limitTrash.general = Array.isArray(db.limitTrash.general) ? db.limitTrash.general : [];
+            db.limitTrash.special = Array.isArray(db.limitTrash.special) ? db.limitTrash.special : [];
+            db.limitTrash.cutoff = Array.isArray(db.limitTrash.cutoff) ? db.limitTrash.cutoff : [];
             const now = new Date().toISOString();
             db.kayitlar.forEach(task => {
                 if (!task.id) task.id = task.ref ? 'legacy:' + String(task.ref) : this.uuid();
@@ -2186,6 +2888,12 @@ updatePersonel(i, alan, yeniDeger) {
                 this.render();
                 return false;
             }
+            if (this.simulationMode) {
+                this.lastLocalChange = Date.now();
+                this.render();
+                this.updateSimulationUI();
+                return true;
+            }
             this.lastLocalChange = Date.now();
             const changedVersions = this.prepareTaskTimestamps();
             this.markPendingTaskVersions(changedVersions);
@@ -2199,11 +2907,13 @@ updatePersonel(i, alan, yeniDeger) {
         },
 
         queueCloudWrite(delay = 700) {
+            if (this.simulationMode) return;
             if (this.writeTimer) clearTimeout(this.writeTimer);
             this.writeTimer = setTimeout(() => this.flushCloudWrite(), delay);
         },
 
         async flushCloudWrite() {
+            if (this.simulationMode) return;
             if (this.writeInFlight) {
                 this.writeAgain = true;
                 return;
@@ -2252,6 +2962,10 @@ updatePersonel(i, alan, yeniDeger) {
         },
 
         async loadFromCloud(options = {}) {
+            if (this.simulationMode) {
+                if (options.manual === true) alert('Simülasyon açıkken buluttan veri alınmaz. Önce simülasyonu uygulayın veya iptal edin.');
+                return;
+            }
             const manual = options.manual === true;
             if (!manual && this.initialCloudLoadDone) return;
             if (this.writeInFlight || localStorage.getItem(this.PENDING_KEY) === '1') {
@@ -2296,6 +3010,7 @@ updatePersonel(i, alan, yeniDeger) {
         },
 
         async loadMaintenanceStatus() {
+            if (this.simulationMode) return;
             if (!this.initialCloudLoadDone || !this.user || this.writeInFlight || this.maintenanceCheckInFlight) return;
             if (localStorage.getItem(this.PENDING_KEY) === '1') return;
             this.maintenanceCheckInFlight = true;
@@ -2324,6 +3039,7 @@ updatePersonel(i, alan, yeniDeger) {
         },
 
         async loadChangesFromCloud() {
+            if (this.simulationMode) return;
             if (!this.initialCloudLoadDone || !this.user || this.pullInFlight || this.writeInFlight) return;
             if (localStorage.getItem(this.PENDING_KEY) === '1') return;
             this.pullInFlight = true;
@@ -2362,6 +3078,11 @@ updatePersonel(i, alan, yeniDeger) {
 
         async initialize() {
             this.setupTaskEnterShortcut();
+            window.addEventListener('beforeunload', event => {
+                if (!this.simulationMode) return;
+                event.preventDefault();
+                event.returnValue = '';
+            });
             try {
                 let stored = await this.readLocalDatabase();
                 if (!stored) {
@@ -2451,6 +3172,29 @@ updatePersonel(i, alan, yeniDeger) {
             if(document.getElementById('gosterim-filtre')) {
                 document.getElementById('gosterim-filtre').value = this.gosterimMod;
             }
+            const hakedisDateStart = document.getElementById('hakedis-date-start');
+            const hakedisDateEnd = document.getElementById('hakedis-date-end');
+            const clearHakedisDateButton = document.getElementById('btn-clear-hakedis-date');
+            if (hakedisDateStart && hakedisDateStart.value !== this.hakedisDateFilter.start) hakedisDateStart.value = this.hakedisDateFilter.start;
+            if (hakedisDateEnd && hakedisDateEnd.value !== this.hakedisDateFilter.end) hakedisDateEnd.value = this.hakedisDateFilter.end;
+            if (clearHakedisDateButton) clearHakedisDateButton.classList.toggle('hidden', !(this.hakedisDateFilter.start && this.hakedisDateFilter.end));
+            const hakedisDateFilterButton = document.getElementById('btn-hakedis-date-filter');
+            if (hakedisDateFilterButton) {
+                const active = this.hakedisDateFilter.start && this.hakedisDateFilter.end;
+                hakedisDateFilterButton.innerText = active
+                    ? `📅 ${this.hakedisDateFilter.start} — ${this.hakedisDateFilter.end}`
+                    : '📅 TARİH FİLTRESİ';
+                hakedisDateFilterButton.style.background = active ? 'var(--success)' : '#34495e';
+            }
+            const transferDetailsButton = document.getElementById('btn-transfer-details');
+            if (transferDetailsButton) {
+                const canViewTransferDetails = !!this.user && this.user.rol !== 'Gümrük Memuru';
+                const hasCutoffOrCarry = Object.keys(this.db.hakedisKesimTarihleri || {}).length > 0 || this.readUnusedLimitCarrySetting().enabled;
+                transferDetailsButton.classList.toggle('hidden', !canViewTransferDetails || !hasCutoffOrCarry);
+                transferDetailsButton.innerText = this.showTransferDetails
+                    ? '🙈 DEVİR AÇIKLAMALARINI GİZLE'
+                    : '🔎 DEVİR AÇIKLAMALARINI GÖSTER';
+            }
 
             const aktifPersoneller = this.db.personeller.filter(p => p.aktif === true);
 
@@ -2520,7 +3264,7 @@ updatePersonel(i, alan, yeniDeger) {
                     if(aylar.length > 0) guncel = this.db.yollukSiniri[aylar[aylar.length - 1]];
                     
                     document.getElementById('gecmis-limitler').innerHTML = "<span style='color:var(--accent)'>Tarihe Göre Kayıtlı Limitler:</span><br>" + 
-                        aylar.map(a => `<span class="tag" style="margin-top:5px;">${a} Ayı ve Sonrası: <b>${this.db.yollukSiniri[a]} TL</b> <b style="cursor:pointer; color:red; margin-left:8px;" onclick="delete app.db.yollukSiniri['${a}']; app.save()" title="Bu limiti sil">✖</b></span>`).join('');
+                        aylar.map(a => `<span class="tag" style="margin-top:5px;">${a} Ayı ve Sonrası: <b>${this.db.yollukSiniri[a]} TL</b> <b style="cursor:pointer; color:red; margin-left:8px;" onclick="app.deleteGeneralYollukLimit('${a}')" title="Bu limiti silinenler kutusuna taşı">✖</b></span>`).join('');
                 } else if (this.db.yollukSiniri) {
                     guncel = parseFloat(this.db.yollukSiniri);
                 }
@@ -2529,15 +3273,82 @@ updatePersonel(i, alan, yeniDeger) {
                 if (!document.getElementById('sys-limit-ay').value) document.getElementById('sys-limit-ay').value = this.mevcutAy();
             }
 
+            const cutoffInput = document.getElementById('sys-hakedis-kesim-tarihi');
+            if (cutoffInput && !cutoffInput.value) cutoffInput.value = `${this.mevcutAy()}-${String(new Date().getDate()).padStart(2, '0')}`;
+            const limitHistory = document.getElementById('gecmis-limitler');
+            if (limitHistory) {
+                const cutoffEntries = Object.keys(this.db.hakedisKesimTarihleri || {}).sort().map(month => {
+                    const raw = this.db.hakedisKesimTarihleri[month];
+                    const date = typeof raw === 'string' ? raw : raw.date;
+                    return `<span class="tag" style="margin-top:5px; border-color:var(--success);">📅 ${date} sonrası → <b>${this.nextMonthValue(month)}</b> hakedişi <b style="cursor:pointer;color:red;margin-left:8px;" onclick="app.deleteHakedisCutoff('${month}')" title="Kesim tarihini silinenler kutusuna taşı">✖</b></span>`;
+                }).join('');
+                if (cutoffEntries) limitHistory.innerHTML += `<br><span style="color:var(--success)">Kayıtlı Ödeme Kesim Tarihleri:</span><br>${cutoffEntries}`;
+            }
+            const savedSettingsButton = document.getElementById('btn-saved-limit-settings');
+            const specialSettingsList = document.getElementById('special-limit-list');
+            if (limitHistory) limitHistory.classList.toggle('hidden', !this.showSavedLimitSettings);
+            if (specialSettingsList) specialSettingsList.classList.toggle('hidden', !this.showSavedLimitSettings);
+            if (savedSettingsButton) {
+                savedSettingsButton.innerText = this.showSavedLimitSettings
+                    ? '🙈 KAYITLI AYARLARI GİZLE'
+                    : '📋 KAYITLI AYARLARI GÖSTER';
+            }
+
+            const carryButton = document.getElementById('btn-unused-limit-carry');
+            if (carryButton) {
+                const carrySetting = this.readUnusedLimitCarrySetting();
+                carryButton.innerText = carrySetting.enabled
+                    ? `🔁 LİMİT ÜSTÜ TUTAR DEVRİ — AÇIK (${carrySetting.startMonth} sonrası)`
+                    : '🔁 LİMİT ÜSTÜ TUTARI SONRAKİ AYA DEVRET — KAPALI';
+                carryButton.style.background = carrySetting.enabled ? 'var(--success)' : '#34495e';
+                carryButton.style.color = '#fff';
+            }
+
+            const specialTitleSelect = document.getElementById('sys-special-limit-unvan');
+            if (specialTitleSelect) {
+                const specialMonthInput = document.getElementById('sys-special-limit-ay');
+                if (specialMonthInput && !specialMonthInput.value) specialMonthInput.value = this.mevcutAy();
+                const selectedTitle = specialTitleSelect.value;
+                specialTitleSelect.innerHTML = '<option value="">Ünvan Seçin</option>' +
+                    this.unvanlar.map(unvan => `<option value="${unvan}">${unvan}</option>`).join('');
+                if (this.unvanlar.includes(selectedTitle)) specialTitleSelect.value = selectedTitle;
+
+                const entries = [];
+                const specialLimits = this.readTestSpecialLimits();
+                Object.keys(specialLimits).sort().forEach(ay => {
+                    Object.keys(specialLimits[ay] || {}).sort((a,b) => a.localeCompare(b, 'tr')).forEach(ruleKey => {
+                        const [birim, unvan] = ruleKey.split('|||');
+                        const raw = specialLimits[ay][ruleKey];
+                        entries.push({
+                            ay, birim, unvan, ruleKey,
+                            limit:Number(raw && typeof raw === 'object' ? raw.value : raw) || 0,
+                            scope:raw && typeof raw === 'object' ? raw.scope : 'from'
+                        });
+                    });
+                });
+                const target = document.getElementById('special-limit-list');
+                if (target) {
+                    target.innerHTML = entries.length
+                        ? '<span style="color:var(--accent)">Bu tarayıcıdaki deneme özel limitleri:</span><br>' +
+                          entries.map(item =>
+                            `<span class="tag" style="margin-top:5px;">${item.scope === 'month' ? item.ay + ' ayı' : item.ay + ' ve sonrası'} · ${item.birim} / ${item.unvan}: ` +
+                            `<b>${this.formatTrAmount(item.limit)} TL</b> ` +
+                            `<b style="cursor:pointer;color:red;margin-left:8px;" onclick="app.deleteSpecialYollukLimit('${item.ay}','${item.ruleKey}')" title="Özel limiti sil">✖</b></span>`
+                          ).join('')
+                        : '<span style="color:var(--muted)">Henüz birim + ünvan özel limiti girilmedi.</span>';
+                }
+            }
+
             // 1. Tüm onaylı kayıtları ESKİDEN YENİYE sırala (Kronolojik devir hesaplaması için şart)
             const onayliKayitlar = this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih).sort((a,b) => {
-                if(a.tarih !== b.tarih) return a.tarih.localeCompare(b.tarih);
+                const aAy = this.getAccrualMonth(a), bAy = this.getAccrualMonth(b);
+                if(aAy !== bAy) return aAy.localeCompare(bAy);
                 return a.ref.localeCompare(b.ref); 
             });
 
             // ZAMAN TÜNELİ DÜZELTMESİ: Ayları dışarıda, görev olsun olmasın sırayla takvime diziyoruz ki devreden limitler atlanmasın.
             let tumAylar = [];
-            let ilkKayitAyi = onayliKayitlar.length > 0 ? onayliKayitlar[0].tarih : hedefAy;
+            let ilkKayitAyi = onayliKayitlar.length > 0 ? this.getAccrualMonth(onayliKayitlar[0]) : hedefAy;
             if (ilkKayitAyi && hedefAy) {
                 let [y, m] = ilkKayitAyi.split('-').map(Number);
                 let [hy, hm] = hedefAy.split('-').map(Number);
@@ -2555,7 +3366,7 @@ updatePersonel(i, alan, yeniDeger) {
             } else { tumAylar.push(hedefAy); }
             
            // --- 1. HAYALET PERSONEL TESPİTİ (Ekranda Göstermek İçin) ---
-            const ayinGorevliIsimleri = [...new Set(onayliKayitlar.filter(k => k.tarih === hedefAy).flatMap(k => k.personeller))];
+            const ayinGorevliIsimleri = [...new Set(onayliKayitlar.filter(k => this.getAccrualMonth(k) === hedefAy).flatMap(k => k.personeller))];
             let hesaplamaListesi = [...this.db.personeller];
             
             ayinGorevliIsimleri.forEach(isim => {
@@ -2564,110 +3375,78 @@ updatePersonel(i, alan, yeniDeger) {
                 }
             });
 
-            const hakedisVerisi = hesaplamaListesi.map(p => {
+            let hakedisVerisi = hesaplamaListesi.map(p => {
                 let m = 0; 
-                let devredenYollukHavuzu = []; 
                 
-                // KOD AMELİYATI B: Hedef aya kadar olan en son görevi bulup, o anki eski birimini tespit etme
-                let gecmisBirim = p.birim;
-                let gecmisUnvan = p.unvan;
-                let gecmisSicil = p.sicil;
-                
-                const gecmisGorevler = onayliKayitlar.filter(k => k.tarih <= hedefAy && k.pDetay && k.pDetay.some(x => x.ad === p.ad));
-                if (gecmisGorevler.length > 0) {
-                    const sonGorev = gecmisGorevler[gecmisGorevler.length - 1]; 
-                    const snapshot = sonGorev.pDetay.find(x => x.ad === p.ad);
-                    if (snapshot) {
-                        gecmisBirim = snapshot.birim || p.birim;
-                        gecmisUnvan = snapshot.unvan || p.unvan;
-                        gecmisSicil = snapshot.sicil || p.sicil;
-                    }
-                }
+                // Hedef ayın personel bilgisi görev görüntüsü veya kayıtlı personel geçmişinden alınır.
+                const hedefAyPersoneli = this.getPersonSnapshotForMonth(p.ad, hedefAy, p);
+                const gecmisBirim = hedefAyPersoneli.birim || p.birim;
+                const gecmisUnvan = hedefAyPersoneli.unvan || p.unvan;
+                const gecmisSicil = hedefAyPersoneli.sicil || p.sicil;
                 
                 let hedefAyYollukHakedis = 0;
                 let hedefAyDevirDetaylari = []; 
+                let devredenLimitUstuTutar = 0;
+                const limitUstuDevirAyari = this.readUnusedLimitCarrySetting();
 
               tumAylar.forEach(islenenAy => {
                     if (islenenAy > hedefAy) return; 
-
-                    // --- TARİHE DUYARLI LİMİT KONTROLÜ (HAYAT KURTARAN KISIM) ---
-                    let yollukLimit = Infinity; 
-
-if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
-    if (this.db.yollukSiniri[islenenAy] !== undefined) {
-        // Eğer o ay için özel bir sınır girilmişse onu uygula
-        yollukLimit = parseFloat(this.db.yollukSiniri[islenenAy]);
-    }
-} else if (this.db.yollukSiniri) {
-    yollukLimit = parseFloat(this.db.yollukSiniri); 
-}
-                    // -------------------------------------------------------------
                     
-                    let buAyKullanilanYollukLimiti = 0;
                     let buAyKazanilanYolluk = 0;
+                    let buAyKotaKontrolluYolluk = 0;
+                    let buAySerbestYolluk = 0;
                     let buAyDevirDetayiGecici = [];
+                    const kesimdenGelen = {};
 
-                    // --- 1. AŞAMA: ÖNCEKİ AYLARDAN DEVREDENLERİ ÖDE (Kotadan düşerek) ---
-                    let yeniDevirHavuzu = [];
-                    let buAyDevirdenOdenenToplam = 0; 
-                    
-                    devredenYollukHavuzu.forEach(eskiDevir => {
-                        if (buAyKullanilanYollukLimiti < yollukLimit) {
-                            let odenebilecek = Math.min(eskiDevir.tutar, yollukLimit - buAyKullanilanYollukLimiti);
-                            buAyKullanilanYollukLimiti += odenebilecek;
-                            buAyKazanilanYolluk += odenebilecek;
-                            
-                            // Referansları tek tek eklemek yerine genel toplama ekliyoruz
-                            if(islenenAy === hedefAy) {
-                                buAyDevirdenOdenenToplam += odenebilecek;
-                            }
-
-                            let artan = eskiDevir.tutar - odenebilecek;
-                            if (artan > 0) yeniDevirHavuzu.push({ ref: eskiDevir.ref, tutar: artan, ay: eskiDevir.ay });
-                        } else {
-                            yeniDevirHavuzu.push(eskiDevir);
-                        }
-                    });
-                    
-                    // SADECE VE SADECE geçmişten bir para geldiyse (Örn: Mayıs ayındaysak) tek satır olarak yaz
-                    if(islenenAy === hedefAy && buAyDevirdenOdenenToplam > 0) {
-                        buAyDevirDetayiGecici.push(`<br><span style="font-size:10px; color:#00f6d2; font-weight:bold;">   +${this.formatTrAmount(buAyDevirdenOdenenToplam)} ₺</span>`);
-                    }
-                    
-                    devredenYollukHavuzu = yeniDevirHavuzu; // Havuzu güncelle
-
-    // --- 2. AŞAMA: BU AYIN KENDİ GÖREVLERİNİ HESAPLA ---
+                    // Geçmiş kayıtlar yeniden limite sokulmaz. Limit denetimi yalnızca
+                    // yeni görev kaydedilirken yapılır ve kişi payı görevde saklanır.
                     let buAyPersonelinGoreviVarMi = false;
 
-                    onayliKayitlar.filter(k => k.tarih === islenenAy && k.personeller.includes(p.ad)).forEach(k => {
+                    onayliKayitlar.filter(k => this.getAccrualMonth(k) === islenenAy && k.personeller.includes(p.ad)).forEach(k => {
                         buAyPersonelinGoreviVarMi = true; // Bu ay en az 1 görevi var
                         
                         // Mesai kotadan bağımsız her ay eklenir (Eğer bakılan aydaysak)
-                        let kisiBasiMesai = (k.mTotal || k.toplamMesai) / k.personelSayisi;
+                        let kisiBasiMesai = this.getTaskPersonAmount(k, p.ad, 'mesai');
                         if (islenenAy === hedefAy) m += kisiBasiMesai;
 
-                        // Yolluk hesaplaması ve Kotaya Takılması Durumu
-                        let kisiBasiYolluk = (k.yTotal || k.toplamYolluk) / k.personelSayisi;
+                        // Görevde kayıtlı gerçek kişi payını aynen kullan.
+                        let kisiBasiYolluk = this.getTaskPersonAmount(k, p.ad, 'yolluk');
                         if (kisiBasiYolluk > 0) {
-                            if (buAyKullanilanYollukLimiti < yollukLimit) {
-                                let odenebilecek = Math.min(kisiBasiYolluk, yollukLimit - buAyKullanilanYollukLimiti);
-                                buAyKullanilanYollukLimiti += odenebilecek;
-                                buAyKazanilanYolluk += odenebilecek;
-
-                                let artan = kisiBasiYolluk - odenebilecek;
-                                // MİLAT: Yalnızca Nisan ve sonrasında devir havuza eklenebilir
-                                if (artan > 0 && islenenAy >= "2026-04") devredenYollukHavuzu.push({ ref: k.ref, tutar: artan, ay: islenenAy });
-                            } else {
-                                // Limit tamamen dolu, paranın hepsi direkt diğer aya devredecek (Sadece Nisan ve sonrası)
-                                if (islenenAy >= "2026-04") devredenYollukHavuzu.push({ ref: k.ref, tutar: kisiBasiYolluk, ay: islenenAy });
-                            }
+                            buAyKazanilanYolluk += kisiBasiYolluk;
+                            if (k.limitKontrolu === true) buAyKotaKontrolluYolluk += kisiBasiYolluk;
+                            else buAySerbestYolluk += kisiBasiYolluk;
+                        }
+                        const gercekAy = String(this.getTaskDate(k) || k.tarih || '').slice(0, 7);
+                        if (gercekAy && gercekAy !== islenenAy && kisiBasiYolluk > 0) {
+                            kesimdenGelen[gercekAy] = (kesimdenGelen[gercekAy] || 0) + kisiBasiYolluk;
                         }
                     });
 
-                    // GÜVENLİK SÜBABI: Hesaplanan ay Nisan 2026'dan önceyse (örn: Mart, Şubat), 
-                    // devir havuzunu tamamen boşalt. Böylece Nisan ayına hiçbir devir yansımaz, tertemiz başlanır.
+                    Object.keys(kesimdenGelen).sort().forEach(sourceMonth => {
+                        buAyDevirDetayiGecici.push(`<div style="color:var(--danger);font-size:10px;font-weight:bold;">↪ ${sourceMonth} kesiminden gelen: ${this.formatTrAmount(kesimdenGelen[sourceMonth])} TL</div>`);
+                    });
+
+                    if (limitUstuDevirAyari.enabled && limitUstuDevirAyari.startMonth && islenenAy >= limitUstuDevirAyari.startMonth) {
+                        const oncekiAydanGelen = devredenLimitUstuTutar;
+                        const ayPersoneli = this.getPersonSnapshotForMonth(p.ad, islenenAy, p);
+                        const ayLimiti = this.getYollukLimitForPerson(islenenAy, ayPersoneli.birim || p.birim, ayPersoneli.unvan || p.unvan);
+                        const kotaToplami = buAyKotaKontrolluYolluk + oncekiAydanGelen;
+                        const buAyOdenecekKotaTutari = Math.min(kotaToplami, ayLimiti);
+                        devredenLimitUstuTutar = Math.max(0, kotaToplami - ayLimiti);
+                        // Kota zorlaması kapalı kaydedilen tutar olduğu ayda kalır;
+                        // limit üstü devir hesabına alınmaz.
+                        buAyKazanilanYolluk = buAySerbestYolluk + buAyOdenecekKotaTutari;
+                        if (oncekiAydanGelen > 0 && islenenAy === hedefAy) {
+                            buAyDevirDetayiGecici.unshift(`<div style="color:var(--accent);font-size:10px;font-weight:bold;">↻ Önceki aydan devreden: ${this.formatTrAmount(oncekiAydanGelen)} TL</div>`);
+                        }
+                        if (devredenLimitUstuTutar > 0 && islenenAy === hedefAy) {
+                            buAyDevirDetayiGecici.push(`<div style="color:#b388ff;font-size:10px;font-weight:bold;">→ Sonraki aya devredecek: ${this.formatTrAmount(devredenLimitUstuTutar)} TL</div>`);
+                        }
+                    } else {
+                        devredenLimitUstuTutar = 0;
+                    }
+
                     if (islenenAy < "2026-04") {
-                        devredenYollukHavuzu = [];
                         buAyDevirDetayiGecici = [];
                     }
 
@@ -2693,9 +3472,50 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                 };
             }).filter(p => p.aktif === true || p.toplam > 0 || p.detayHTML !== '');
 
+            // Günlük tarih aralığı raporu, görevlerin gerçek tarihini esas alır.
+            // Ödeme kesim tarihi ve ay devri bu özel rapordaki kayıt tarihini değiştirmez.
+            const rangeStart = this.hakedisDateFilter.start;
+            const rangeEnd = this.hakedisDateFilter.end;
+            if (rangeStart && rangeEnd) {
+                const rangeTasks = this.db.kayitlar.filter(task => {
+                    if (task.durum !== 'Onaylandı') return false;
+                    const date = this.getTaskDate(task);
+                    return date && date >= rangeStart && date <= rangeEnd;
+                });
+                const rangeNames = [...new Set(rangeTasks.flatMap(task => task.personeller || []))];
+                const rangePeople = [...this.db.personeller];
+                rangeNames.forEach(name => {
+                    if (!rangePeople.some(person => person.ad === name)) {
+                        rangePeople.push({ad:name, birim:'Bilinmiyor', unvan:'Silinmiş Kayıt', sicil:'---', aktif:false});
+                    }
+                });
+                const endMonth = rangeEnd.slice(0, 7);
+                hakedisVerisi = rangePeople.map(person => {
+                    const snapshot = this.getPersonSnapshotForMonth(person.ad, endMonth, person);
+                    let yolluk = 0, mesai = 0;
+                    rangeTasks.forEach(task => {
+                        if (!(task.personeller || []).includes(person.ad)) return;
+                        yolluk += this.getTaskPersonAmount(task, person.ad, 'yolluk');
+                        mesai += this.getTaskPersonAmount(task, person.ad, 'mesai');
+                    });
+                    return {
+                        ...person,
+                        birim:snapshot.birim || person.birim,
+                        unvan:snapshot.unvan || person.unvan,
+                        sicil:snapshot.sicil || person.sicil,
+                        yolluk, mesai, toplam:yolluk + mesai, detayHTML:''
+                    };
+                }).filter(person => person.aktif === true || person.toplam > 0);
+                ayinToplamYollugu = hakedisVerisi.reduce((sum, person) => sum + person.yolluk, 0);
+                ayinToplamMesaisi = hakedisVerisi.reduce((sum, person) => sum + person.mesai, 0);
+            }
+
             if(document.getElementById('month-totals')) {
+                const periodLabel = this.hakedisDateFilter.start && this.hakedisDateFilter.end
+                    ? `<span style="color:var(--success)">${this.hakedisDateFilter.start} — ${this.hakedisDateFilter.end}</span> | `
+                    : '';
                 document.getElementById('month-totals').innerHTML = 
-                    `<span style="color:var(--warning)">TOPLAM YOLLUK: ${this.formatTrAmount(ayinToplamYollugu)} TL</span> | ` + 
+                    periodLabel + `<span style="color:var(--warning)">TOPLAM YOLLUK: ${this.formatTrAmount(ayinToplamYollugu)} TL</span> | ` + 
                     `<span style="color:var(--accent)">TOPLAM MESAİ: ${this.formatTrAmount(ayinToplamMesaisi)} TL</span>`;
             }
 
@@ -2751,7 +3571,7 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                     const p = list[r];
                     if (p) {
                         const value = mode === 'yolluk' ? p.yolluk : mode === 'mesai' ? p.mesai : p.toplam;
-                        let ekDetay = (mode === 'yolluk' || mode === 'toplam') ? (p.detayHTML || '') : '';
+                        let ekDetay = this.showTransferDetails && (mode === 'yolluk' || mode === 'toplam') ? (p.detayHTML || '') : '';
                         
                         tbodyHTML += `
                             <td class="sicil-cell">${p.sicil || '-'}</td>
@@ -2908,14 +3728,17 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
             XLSX.utils.book_append_sheet(wb, ws, "Limitli_Odenecek"); 
             this.addLog("Excel İşlemi", "Ödenecek Limitli Hakediş listesi Excel olarak dışa aktarıldı.");
             this.save();
-            XLSX.writeFile(wb, `Hakedis_Limitli_Odenecek_${hedefAy}.xlsx`);
+            const filePeriod = this.hakedisDateFilter.start && this.hakedisDateFilter.end
+                ? `${this.hakedisDateFilter.start}_${this.hakedisDateFilter.end}`
+                : hedefAy;
+            XLSX.writeFile(wb, `Hakedis_Limitli_Odenecek_${filePeriod}.xlsx`);
         },
 
         exportLimitsizExcel() {
             const hedefAy = this.seciliAy || this.mevcutAy();
             
             // --- 2. HAYALET PERSONEL TESPİTİ (Excel İçin) ---
-            const ayinGorevliIsimleri = [...new Set(this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih === hedefAy).flatMap(k => k.personeller))];
+            const ayinGorevliIsimleri = [...new Set(this.db.kayitlar.filter(k => k.durum === "Onaylandı" && this.getAccrualMonth(k) === hedefAy).flatMap(k => k.personeller))];
             let hesaplamaListesi = [...this.db.personeller];
             ayinGorevliIsimleri.forEach(isim => {
                 if (!hesaplamaListesi.some(p => p.ad === isim)) {
@@ -2923,23 +3746,27 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                 }
             });
 
-            const hakedisVerisi = hesaplamaListesi.map(p => {
+            let hakedisVerisi = hesaplamaListesi.map(p => {
                 let m = 0, y = 0;
                 let gecmisBirim = p.birim, gecmisUnvan = p.unvan, gecmisSicil = p.sicil;
-                const gecmisGorevler = this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih <= hedefAy && k.pDetay && k.pDetay.some(x => x.ad === p.ad)).sort((a,b)=> a.tarih.localeCompare(b.tarih));
+                const gecmisGorevler = this.db.kayitlar.filter(k => k.durum === "Onaylandı" && this.getAccrualMonth(k) <= hedefAy && k.pDetay && k.pDetay.some(x => x.ad === p.ad)).sort((a,b)=> this.getAccrualMonth(a).localeCompare(this.getAccrualMonth(b)));
                 if (gecmisGorevler.length > 0) {
                     const snap = gecmisGorevler[gecmisGorevler.length - 1].pDetay.find(x => x.ad === p.ad);
                     if (snap) { gecmisBirim = snap.birim || p.birim; gecmisUnvan = snap.unvan || p.unvan; gecmisSicil = snap.sicil || p.sicil; }
                 }
 
-                this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih === hedefAy).forEach(k => {
+                this.db.kayitlar.filter(k => k.durum === "Onaylandı" && this.getAccrualMonth(k) === hedefAy).forEach(k => {
                     if (k.personeller.includes(p.ad)) {
-                        m += (k.mTotal || k.toplamMesai) / k.personelSayisi;
-                        y += (k.yTotal || k.toplamYolluk) / k.personelSayisi;
+                        m += this.getTaskPersonAmount(k, p.ad, 'mesai');
+                        y += this.getTaskPersonAmount(k, p.ad, 'yolluk');
                     }
                 });
                 return { ...p, birim: gecmisBirim, unvan: gecmisUnvan, sicil: gecmisSicil, mesai: m, yolluk: y, toplam: m + y };
             }).filter(p => p.aktif === true || p.toplam > 0);
+
+            if (this.hakedisDateFilter.start && this.hakedisDateFilter.end && Array.isArray(this.sonHesaplananHakedis)) {
+                hakedisVerisi = this.sonHesaplananHakedis.map(person => ({...person}));
+            }
 
             const sortType = document.getElementById('sort-filtre') ? document.getElementById('sort-filtre').value : 'yolluk-az';
             hakedisVerisi.sort((a, b) => {
@@ -2969,7 +3796,10 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
             XLSX.utils.book_append_sheet(wb, ws, "Ham_Limitsiz"); 
             this.addLog("Excel İşlemi", "Ham Limitsiz Hakediş listesi Excel olarak dışa aktarıldı.");
             this.save();
-            XLSX.writeFile(wb, `Hakedis_Ham_Limitsiz_${hedefAy}.xlsx`);
+            const filePeriod = this.hakedisDateFilter.start && this.hakedisDateFilter.end
+                ? `${this.hakedisDateFilter.start}_${this.hakedisDateFilter.end}`
+                : hedefAy;
+            XLSX.writeFile(wb, `Hakedis_Ham_Limitsiz_${filePeriod}.xlsx`);
         },
 
         exportTaskListExcel() {
@@ -3184,7 +4014,7 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                 let gorevSayisi = 0;
                 
                 filtreliGorevler.filter(k => k.personeller.includes(p.ad)).forEach(k => {
-                    toplamYolluk += (k.yTotal || k.toplamYolluk) / k.personelSayisi;
+                    toplamYolluk += this.getTaskPersonAmount(k, p.ad, 'yolluk');
                     gorevSayisi++;
                 });
 
@@ -3279,7 +4109,7 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
             const baslikAlani = document.getElementById('kisi-detay-baslik-alani');
             
             let toplamY = 0;
-            gorevler.forEach(k => toplamY += (k.yTotal || k.toplamYolluk) / k.personelSayisi);
+            gorevler.forEach(k => toplamY += this.getTaskPersonAmount(k, ad, 'yolluk'));
 
             let donemEtiketi = period.baslangic || period.bitis
                 ? `${period.baslangic || 'Başlangıç'} — ${period.bitis || 'Bugün'}`
@@ -3305,7 +4135,7 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                                 <td>${k.ref}</td>
                                 <td>${k.dekont || '-'}</td>
                                 <td>${k.personeller.join(', ')}</td>
-                                <td>${((k.yTotal || k.toplamYolluk) / k.personelSayisi).toFixed(2)} TL</td>
+                                <td>${this.getTaskPersonAmount(k, ad, 'yolluk').toFixed(2)} TL</td>
                             </tr>
                         `).join('') || '<tr><td colspan="5" style="text-align:center; padding:25px; color:var(--muted);">Seçilen dönemde onaylı görev bulunamadı.</td></tr>'}
                     </tbody>
@@ -3322,7 +4152,7 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
                 "Referans No": k.ref,
                 "Dekont No": k.dekont || '',
                 "Görevdeki Diğer Personeller": k.personeller.join(", "),
-                "Kişi Başı Yolluk": ((k.yTotal || k.toplamYolluk) / k.personelSayisi).toFixed(2),
+                "Kişiye Dağıtılan Yolluk": this.getTaskPersonAmount(k, ad, 'yolluk').toFixed(2),
                 "Durum": k.durum
             }));
             const ws = XLSX.utils.json_to_sheet(data);
@@ -3359,6 +4189,23 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
 </div>
 
   <!-- ADMIN SİSTEM YÖNETİMİ MODAL -->
+<div id="hakedis-date-filter-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,.78); z-index:10025; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(7px);">
+    <div style="background:#0d1117; width:92%; max-width:520px; border:1px solid var(--accent); border-radius:14px; padding:18px; box-shadow:var(--accent-glow);">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:13px;">
+            <div><h3 style="margin:0;color:var(--accent);">📅 Hakediş Tarih Filtresi</h3><small style="color:var(--muted);">Gerçek görev tarihine göre günlük rapor oluşturur.</small></div>
+            <button class="btn btn-danger" onclick="app.closeHakedisDateFilter()">KAPAT [X]</button>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <label style="font-size:11px;color:var(--accent);">Başlangıç Tarihi<input type="date" id="hakedis-date-start" style="width:100%;margin-top:5px;"></label>
+            <label style="font-size:11px;color:var(--accent);">Bitiş Tarihi<input type="date" id="hakedis-date-end" style="width:100%;margin-top:5px;"></label>
+        </div>
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px;">
+            <button id="btn-clear-hakedis-date" class="btn btn-danger hidden" onclick="app.clearHakedisDateFilter()">AYLIK GÖRÜNÜME DÖN</button>
+            <button class="btn btn-primary" onclick="app.applyHakedisDateFilter()">TARİH ARALIĞINI UYGULA</button>
+        </div>
+    </div>
+</div>
+
 <div id="admin-management-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:10020; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(10px);">
     <div style="background:#0d1117; width:94%; max-width:1050px; max-height:90vh; overflow-y:auto; border:1px solid var(--accent); border-radius:16px; padding:24px;">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; border-bottom:1px solid var(--border); padding-bottom:14px;">
@@ -3378,11 +4225,25 @@ if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
             <button class="admin-menu-tile" onclick="app.chooseBackupRestore()">♻️ Yedeği Geri Yükle</button>
             <button class="admin-menu-tile" onclick="app.closeAdminManagement(); app.openAnalizMerkezi()">🔍 Personel Analiz Merkezi</button>
             <button class="admin-menu-tile" onclick="app.closeAdminManagement(); app.openLogMerkezi()">📜 Sistem Log Merkezi</button>
-            <button class="admin-menu-tile" onclick="app.closeAdminManagement(); app.showUyariModal()">🔔 Eksik Dekontlar <span style="color:var(--danger)">(<span id="admin-uyari-sayi">0</span>)</span></button>
+            <button id="admin-simulator-tile" class="admin-menu-tile" onclick="app.toggleSimulation()">🧪 Deneme Simülatörü<br><small style="color:var(--muted)">Buluta göndermeden görev ve tutar denemesi yap</small></button>
+            <button id="admin-missing-receipts-tile" class="admin-menu-tile" onclick="app.closeAdminManagement(); app.showUyariModal()">🔔 Eksik Dekontlar <span style="color:var(--danger)">(<span id="admin-uyari-sayi">0</span>)</span></button>
         </div>
     </div>
 </div>
 <button id="admin-module-return" class="btn btn-success hidden" style="position:fixed; right:24px; bottom:24px; z-index:10010; padding:12px 18px; box-shadow:var(--accent-glow);" onclick="app.returnToAdminManagement()">🛠️ YÖNETİM MENÜSÜNE DÖN</button>
+
+<div id="limit-trash-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:10030; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(9px);">
+    <div style="background:#0d1117; width:92%; max-width:900px; max-height:86vh; overflow-y:auto; border:1px solid var(--accent); border-radius:15px; padding:22px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:15px;">
+            <div>
+                <h2 id="limit-trash-title" style="color:var(--accent); margin:0;">♻️ Silinen Limitler</h2>
+                <div style="color:var(--muted); font-size:11px; margin-top:5px;">Geri getirmek istediğiniz kaydın yanındaki düğmeye basın.</div>
+            </div>
+            <button class="btn btn-danger" onclick="app.closeLimitTrash()">KAPAT [X]</button>
+        </div>
+        <div id="limit-trash-content"></div>
+    </div></div>
+</div>
 
   <!-- PERSONEL ANALİZ MODAL -->
 <div id="analiz-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(10px);">
