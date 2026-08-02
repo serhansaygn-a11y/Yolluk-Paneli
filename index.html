@@ -782,6 +782,10 @@
         cloudCursor: localStorage.getItem('gumruk_cloud_cursor_v1') || '',
         cloudRevision: Number(localStorage.getItem('gumruk_cloud_revision_v1') || 0),
 
+        markSystemSettingsUpdated() {
+            this.db.systemSettingsUpdatedAt = new Date().toISOString();
+        },
+
         getAccrualMonthForDate(dateValue) {
             const date = String(dateValue || '').slice(0, 10);
             const sourceMonth = date.slice(0, 7);
@@ -807,6 +811,7 @@
             const existing = this.db.hakedisKesimTarihleri[month];
             if (existing && !confirm(`${month} dönemi için kayıtlı kesim tarihi değiştirilecek. Devam edilsin mi?`)) return;
             this.db.hakedisKesimTarihleri[month] = {date, targetMonth:this.nextMonthValue(month)};
+            this.markSystemSettingsUpdated();
             this.addLog('Hakediş Ayarı', `${date} ödeme kesim tarihi kaydedildi; bu tarih ve sonrasındaki görevler ${this.nextMonthValue(month)} hakedişine aktarılacak.`);
             this.save();
             this.render();
@@ -822,6 +827,7 @@
             if (!Array.isArray(this.db.limitTrash.cutoff)) this.db.limitTrash.cutoff = [];
             this.db.limitTrash.cutoff.push({month, value:JSON.parse(JSON.stringify(value)), deletedAt:new Date().toISOString(), deletedBy:this.user.user});
             delete this.db.hakedisKesimTarihleri[month];
+            this.markSystemSettingsUpdated();
             this.addLog('Hakediş Ayarı', `${month} ödeme kesim tarihi silinenler kutusuna taşındı.`);
             this.save();
             this.render();
@@ -835,6 +841,7 @@
             if (this.db.hakedisKesimTarihleri[selected.month] && !confirm('Bu ay için aktif kesim tarihi var. Silinen kayıtla değiştirilsin mi?')) return;
             this.db.hakedisKesimTarihleri[selected.month] = JSON.parse(JSON.stringify(selected.value));
             this.db.limitTrash.cutoff.splice(index, 1);
+            this.markSystemSettingsUpdated();
             this.addLog('Hakediş Ayarı', `${selected.month} ödeme kesim tarihi geri getirildi.`);
             this.save();
             this.renderLimitTrash();
@@ -856,6 +863,7 @@
                 }
                 
                 this.db.yollukSiniri[ay] = val;
+                this.markSystemSettingsUpdated();
                 this.save();
                 alert(`${ay} ayından itibaren geçerli olacak yolluk sınırı ${val} TL olarak kaydedildi!\n\nMerak etmeyin, geçmiş aylar bu değişiklikten KESİNLİKLE etkilenmeyecek.`);
             }
@@ -883,6 +891,7 @@
             const current = this.readUnusedLimitCarrySetting();
             if (current.enabled) {
                 this.db.artanLimitDevri = {enabled:false, startMonth:''};
+                this.markSystemSettingsUpdated();
                 this.save();
                 alert('Limit üstü tutar devri kapatıldı. Her ay yeniden bağımsız hesaplanacak.');
                 return;
@@ -894,6 +903,7 @@
             );
             if (!approved) return;
             this.db.artanLimitDevri = {enabled:true, startMonth};
+            this.markSystemSettingsUpdated();
             this.save();
             alert(`Limit üstü tutar devri ${startMonth} ayından başlayacak şekilde açıldı.`);
         },
@@ -1065,6 +1075,7 @@
             const limits = this.readTestSpecialLimits();
             if (!limits[ay]) limits[ay] = {};
             limits[ay][this.getSpecialLimitKey(birim, unvan)] = {value, scope};
+            this.markSystemSettingsUpdated();
             if (!this.writeTestSpecialLimits(limits)) return;
             document.getElementById('sys-special-limit-tutar').value = '';
             this.render();
@@ -1088,6 +1099,7 @@
             if (this.db.limitTrash.special.length > 200) this.db.limitTrash.special.shift();
             delete limits[ay][ruleKey];
             if (!Object.keys(limits[ay]).length) delete limits[ay];
+            this.markSystemSettingsUpdated();
             if (this.writeTestSpecialLimits(limits)) this.render();
         },
 
@@ -1105,6 +1117,7 @@
             });
             if (this.db.limitTrash.general.length > 200) this.db.limitTrash.general.shift();
             delete this.db.yollukSiniri[ay];
+            this.markSystemSettingsUpdated();
             this.addLog('Limit Güvenliği', `${ay} genel limiti silinenler kutusuna taşındı.`);
             this.save();
         },
@@ -1168,6 +1181,7 @@
             if (this.db.yollukSiniri[selected.ay] !== undefined && !confirm(`${selected.ay} için aktif bir limit zaten var. Silinen değerle değiştirilsin mi?`)) return;
             this.db.yollukSiniri[selected.ay] = selected.value;
             this.db.limitTrash.general.splice(index, 1);
+            this.markSystemSettingsUpdated();
             this.addLog('Limit Güvenliği', `${selected.ay} genel limiti silinenler kutusundan geri getirildi.`);
             this.save();
             this.renderLimitTrash();
@@ -1183,6 +1197,7 @@
             if (limits[selected.ay][selected.ruleKey] !== undefined && !confirm('Bu ay ve birim + ünvan için aktif bir limit zaten var. Silinen değerle değiştirilsin mi?')) return;
             limits[selected.ay][selected.ruleKey] = JSON.parse(JSON.stringify(selected.value));
             this.db.limitTrash.special.splice(index, 1);
+            this.markSystemSettingsUpdated();
             this.addLog('Limit Güvenliği', `${selected.ay} birim + ünvan limiti silinenler kutusundan geri getirildi.`);
             if (this.writeTestSpecialLimits(limits)) {
                 this.render();
@@ -2017,7 +2032,8 @@ hardBackup() {
                 from:effectiveMonth,
                 sicil:person.sicil,
                 birim:yeniBirim,
-                unvan:yeniUnvan
+                unvan:yeniUnvan,
+                updatedAt:new Date().toISOString()
             };
             const existingIndex = person.personelGecmisi.findIndex(item => item.from === effectiveMonth);
             if (existingIndex >= 0) person.personelGecmisi[existingIndex] = newEntry;
@@ -2052,6 +2068,7 @@ hardBackup() {
                 );
             }
             p[alan] = (alan === 'aktif') ? (yeniDeger === '1') : yeniDeger;
+            p.updatedAt = new Date().toISOString();
             this.addLog("Personel İşlemi", `${p.ad} isimli personelin "${alan}" bilgisi güncellendi. (Yeni Değer: ${p[alan]})`);
             this.save();
         },
@@ -2072,7 +2089,8 @@ hardBackup() {
             const birim = document.getElementById('p-birim').value;
             const unvan = document.getElementById('p-unvan').value;
             if(sicil && ad && birim && unvan) {
-                this.db.personeller.push({sicil, ad, birim, unvan, aktif: true});
+                const now = new Date().toISOString();
+                this.db.personeller.push({id:this.uuid(), sicil, ad, birim, unvan, aktif:true, createdAt:now, updatedAt:now, personelGecmisi:[]});
                 this.sortPersoneller();
                 this.addLog("Personel İşlemi", `Yeni personel sisteme kaydedildi: ${ad} (${unvan})`);
                 this.save();
@@ -2228,7 +2246,7 @@ hardBackup() {
                             existing.updatedAt = now;
                             updated++;
                         } else {
-                            this.db.personeller.push({ sicil, ad, birim, unvan, aktif:true, createdAt:now, updatedAt:now });
+                            this.db.personeller.push({ id:this.uuid(), sicil, ad, birim, unvan, aktif:true, createdAt:now, updatedAt:now, personelGecmisi:[] });
                             added++;
                         }
                     }
@@ -2854,6 +2872,50 @@ hardBackup() {
             // Personel, hesaplar ve sistem ayarlarında bulut güncel kaynak olsun.
             // Görevler aşağıda ayrıca UUID üzerinden iki yönlü birleştirilir.
             const result = Object.assign({}, local, cloud);
+
+            // Sistem ayarlarında eski/boş bir cihaz paketinin yeni ayarları
+            // silmesini engelle. En son ayar değişiklik zamanı esas alınır.
+            const localSettingsTime = Date.parse(local.systemSettingsUpdatedAt || '') || 0;
+            const cloudSettingsTime = Date.parse(cloud.systemSettingsUpdatedAt || '') || 0;
+            const settingsFields = ['yollukSiniri', 'birimUnvanLimitleri', 'artanLimitDevri', 'hakedisKesimTarihleri', 'limitTrash'];
+            if (localSettingsTime !== cloudSettingsTime) {
+                const settingsSource = localSettingsTime > cloudSettingsTime ? local : cloud;
+                settingsFields.forEach(field => {
+                    if (settingsSource[field] !== undefined) result[field] = JSON.parse(JSON.stringify(settingsSource[field]));
+                });
+                result.systemSettingsUpdatedAt = settingsSource.systemSettingsUpdatedAt;
+            } else {
+                result.yollukSiniri = Object.assign({}, cloud.yollukSiniri || {}, local.yollukSiniri || {});
+                result.hakedisKesimTarihleri = Object.assign({}, cloud.hakedisKesimTarihleri || {}, local.hakedisKesimTarihleri || {});
+                result.birimUnvanLimitleri = Object.assign({}, cloud.birimUnvanLimitleri || {});
+                Object.keys(local.birimUnvanLimitleri || {}).forEach(month => {
+                    result.birimUnvanLimitleri[month] = Object.assign({}, result.birimUnvanLimitleri[month] || {}, local.birimUnvanLimitleri[month] || {});
+                });
+            }
+
+            // Personelleri sicil/kimlik üzerinden ve güncellenme zamanına göre
+            // birleştir; ünvan geçmişini iki cihaz arasında kaybetme.
+            const personnel = new Map();
+            const personnelKey = person => String(person?.id || person?.sicil || person?.ad || '');
+            [...(cloud.personeller || []), ...(local.personeller || [])].forEach(person => {
+                const key = personnelKey(person);
+                if (!key) return;
+                const current = personnel.get(key);
+                const personTime = Date.parse(person.updatedAt || '') || 0;
+                const currentTime = Date.parse(current?.updatedAt || '') || 0;
+                let selected = !current || personTime > currentTime ? person : current;
+                const history = new Map();
+                [...(current?.personelGecmisi || []), ...(person?.personelGecmisi || [])].forEach(item => {
+                    if (!item?.from) return;
+                    const old = history.get(item.from);
+                    const itemTime = Date.parse(item.updatedAt || '') || 0;
+                    const oldTime = Date.parse(old?.updatedAt || '') || 0;
+                    if (!old || itemTime >= oldTime) history.set(item.from, item);
+                });
+                selected = Object.assign({}, selected, {personelGecmisi:Array.from(history.values()).sort((a,b) => String(a.from).localeCompare(String(b.from)))});
+                personnel.set(key, selected);
+            });
+            result.personeller = Array.from(personnel.values());
             const tombstones = new Map();
             [...(cloud.deletedTaskIds || []), ...(local.deletedTaskIds || [])].forEach(item => {
                 const tomb = typeof item === 'string' ? { id: item, deletedAt: '1970-01-01T00:00:00.000Z' } : item;
@@ -3052,7 +3114,12 @@ hardBackup() {
                 if (!response.ok || (delta && delta.status === 'error')) throw new Error((delta && delta.message) || 'Değişiklikler alınamadı');
                 const changedCount = (delta.kayitlar || []).length + (delta.deletedTaskIds || []).length;
                 const maintenanceChanged = delta.maintenanceMode && JSON.stringify(delta.maintenanceMode) !== JSON.stringify(this.db.maintenanceMode || { enabled:false });
-                if (changedCount > 0 || maintenanceChanged) {
+                const settingsChanged = String(delta.systemSettingsUpdatedAt || '') !== String(this.db.systemSettingsUpdatedAt || '') ||
+                    JSON.stringify(delta.hakedisKesimTarihleri || {}) !== JSON.stringify(this.db.hakedisKesimTarihleri || {}) ||
+                    JSON.stringify(delta.birimUnvanLimitleri || {}) !== JSON.stringify(this.db.birimUnvanLimitleri || {});
+                const personnelSignature = list => JSON.stringify((list || []).map(person => [person.id || person.sicil || person.ad, person.updatedAt || '', (person.personelGecmisi || []).length]));
+                const personnelChanged = Array.isArray(delta.personeller) && personnelSignature(delta.personeller) !== personnelSignature(this.db.personeller);
+                if (changedCount > 0 || maintenanceChanged || settingsChanged || personnelChanged) {
                     this.db = this.mergeDatabases(this.db, delta);
                     this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
                     await this.writeLocalDatabase(this.db);
@@ -3064,8 +3131,8 @@ hardBackup() {
                 localStorage.setItem('gumruk_cloud_revision_v1', String(this.cloudRevision));
                 localStorage.setItem('gumruk_last_cloud_read_at', new Date().toISOString());
                 hasMore = delta.hasMore === true;
-                this.setSyncStatus(changedCount > 0 || maintenanceChanged
-                    ? (changedCount + (maintenanceChanged ? ' + bakım durumu' : '') + ' bulut değişikliği alındı ✔')
+                this.setSyncStatus(changedCount > 0 || maintenanceChanged || settingsChanged || personnelChanged
+                    ? (changedCount + (maintenanceChanged ? ' + bakım durumu' : '') + (settingsChanged ? ' + sistem ayarı' : '') + (personnelChanged ? ' + personel' : '') + ' bulut değişikliği alındı ✔')
                     : 'Veriler güncel ✔');
             } catch (error) {
                 console.error('Değişiklik kontrolü hatası:', error);
