@@ -677,7 +677,7 @@
             </div>
             <div id="selected-list" style="margin:6px 0 4px; padding:7px 10px; border:1px dashed var(--border); border-radius:8px; min-height:28px;"></div>
             <div style="margin:2px 0 4px;">
-                <button class="btn btn-danger" style="font-size:10px; padding:5px 10px;" onclick="app.selectedPs=[]; app.render()">TÜM SEÇİLENLERİ TEMİZLE</button>
+                <button class="btn btn-danger" style="font-size:10px; padding:5px 10px;" onclick="app.clearSelectedPersonnel()">TÜM SEÇİLENLERİ TEMİZLE</button>
             </div>
             
             <div class="assignment-lower-grid">
@@ -767,7 +767,7 @@
   <script>
     const app = {
         lastLocalChange: 0,
-        CLOUD_URL: 'https://script.google.com/macros/s/AKfycbw-LjdAw426o9mc3wT8MNBGjKtv04qQL0lfI5nmmz20m2Tn2ggo6ra9QbyZc7c9R38/exec',
+        CLOUD_URL: 'https://script.google.com/macros/s/AKfycbw16QOlPJI-oH_4wF5nzvPURyLT1AGeS1-fQoLi8gwu78qv4MFKaenOtTRbijY2n0XB/exec',
         CLOUD_TOKEN: 'KayseriGumruk2026_GizliAnahtar!123',
         DB_KEY: 'gumruk_final_v60',
         PENDING_KEY: 'gumruk_pending_sync_v1',
@@ -2015,7 +2015,47 @@ hardBackup() {
                     this.selectedPs.push(opt.value);
                 }
             });
-            this.render();
+            this.renderSelectedPersonnelOnly();
+        },
+
+        renderSelectedPersonnelOnly() {
+            const target = document.getElementById('selected-list');
+            if (!target) return;
+            target.innerHTML = '';
+            this.selectedPs.forEach(person => {
+                const tag = document.createElement('span');
+                tag.className = 'tag';
+                tag.appendChild(document.createTextNode(person + ' '));
+                const remove = document.createElement('b');
+                remove.textContent = 'X';
+                remove.style.cursor = 'pointer';
+                remove.style.color = 'red';
+                remove.addEventListener('click', () => this.removeSelectedPersonnel(person));
+                tag.appendChild(remove);
+                target.appendChild(tag);
+            });
+        },
+
+        removeSelectedPersonnel(person) {
+            this.selectedPs = this.selectedPs.filter(value => value !== person);
+            ['sel-g', 'sel-m', 'sel-k'].forEach(id => {
+                const select = document.getElementById(id);
+                if (!select) return;
+                Array.from(select.options).forEach(option => {
+                    if (option.value === person) option.selected = false;
+                });
+            });
+            this.renderSelectedPersonnelOnly();
+        },
+
+        clearSelectedPersonnel() {
+            this.selectedPs = [];
+            ['sel-g', 'sel-m', 'sel-k'].forEach(id => {
+                const select = document.getElementById(id);
+                if (!select) return;
+                Array.from(select.options).forEach(option => { option.selected = false; });
+            });
+            this.renderSelectedPersonnelOnly();
         },
         recordPersonnelHistoryChange(person, yeniBirim, yeniUnvan, effectiveMonth) {
             if (!person || !effectiveMonth) return;
@@ -2586,8 +2626,9 @@ hardBackup() {
                 }
 
                 // 4. Veritabanını kaydet (ve sistemin arayüzünü güncelle)
+                // save() arayüzü zaten bir kez yeniler; ikinci render 10 bin
+                // kaydı gereksiz yere yeniden hesaplayarak silmeyi yavaşlatıyordu.
                 this.save();
-                if(typeof this.render === 'function') this.render();
             }
         },
 
@@ -3040,7 +3081,8 @@ hardBackup() {
             this.pullInFlight = true;
             this.setSyncStatus(manual ? 'Bulut güncelleniyor…' : 'Bulut verisi alınıyor…');
             try {
-                const response = await fetch(this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN), { cache: 'no-store' });
+                const response = await fetch(this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN) +
+                    '&_ts=' + Date.now(), { cache: 'no-store' });
                 const cloudData = await response.json();
                 if (!response.ok || (cloudData && cloudData.status === 'error')) throw new Error((cloudData && cloudData.message) || 'Bulut verisi alınamadı');
                 this.db = this.mergeDatabases(this.db, cloudData);
@@ -3077,7 +3119,8 @@ hardBackup() {
             if (localStorage.getItem(this.PENDING_KEY) === '1') return;
             this.maintenanceCheckInFlight = true;
             try {
-                const response = await fetch(this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN), { cache:'no-store' });
+                const response = await fetch(this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN) +
+                    '&_ts=' + Date.now(), { cache:'no-store' });
                 const fullData = await response.json();
                 if (!response.ok || (fullData && fullData.status === 'error')) throw new Error((fullData && fullData.message) || 'Bakım durumu alınamadı');
                 const remoteMode = fullData.maintenanceMode || { enabled:false };
@@ -3108,7 +3151,8 @@ hardBackup() {
             let hasMore = false;
             try {
                 const url = this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN) +
-                    '&afterRevision=' + encodeURIComponent(String(this.cloudRevision || 0));
+                    '&afterRevision=' + encodeURIComponent(String(this.cloudRevision || 0)) +
+                    '&_ts=' + Date.now();
                 const response = await fetch(url, { cache: 'no-store' });
                 const delta = await response.json();
                 if (!response.ok || (delta && delta.status === 'error')) throw new Error((delta && delta.message) || 'Değişiklikler alınamadı');
@@ -3281,7 +3325,7 @@ hardBackup() {
                 document.getElementById('ps-personel-select').innerHTML = allP;
             }
             if(document.getElementById('selected-list')) {
-                document.getElementById('selected-list').innerHTML = this.selectedPs.map(p => `<span class="tag">${p} <b onclick="app.selectedPs=app.selectedPs.filter(x=>x!=='${p}');app.render()" style="cursor:pointer;color:red">X</b></span>`).join('');
+                this.renderSelectedPersonnelOnly();
             }
 
             if (document.getElementById('ay-filtre')) {
