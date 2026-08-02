@@ -957,7 +957,15 @@
             const history = Array.isArray(currentPerson.personelGecmisi)
                 ? currentPerson.personelGecmisi
                     .filter(item => item && String(item.from || '') <= ay)
-                    .sort((a, b) => String(a.from || '').localeCompare(String(b.from || '')))
+                    .sort((a, b) => {
+                        // "Bu aydan itibaren" kayıtlarında son yapılan düzeltme
+                        // geleceğe de uygulanır. Aynı/zıt tarihli eski bir ileri-ay
+                        // kaydı, daha sonra yapılan geçmiş-ay düzeltmesini ezemez.
+                        const aUpdated = Date.parse(a.updatedAt || '') || 0;
+                        const bUpdated = Date.parse(b.updatedAt || '') || 0;
+                        if (aUpdated !== bUpdated) return aUpdated - bUpdated;
+                        return String(a.from || '').localeCompare(String(b.from || ''));
+                    })
                 : [];
             if (history.length) {
                 const item = history[history.length - 1];
@@ -2068,6 +2076,12 @@ hardBackup() {
                     unvan:person.unvan
                 });
             }
+            // Kullanıcının seçtiği ay "bu aydan itibaren" anlamındadır.
+            // Daha ileri aylar için önceden oluşturulmuş kayıtlar kaldırılır;
+            // aksi halde örneğin temmuz değişikliği ağustosta geri alınmış görünür.
+            person.personelGecmisi = person.personelGecmisi.filter(item =>
+                !item?.from || item.from === '0000-00' || String(item.from) <= effectiveMonth
+            );
             const newEntry = {
                 from:effectiveMonth,
                 sicil:person.sicil,
