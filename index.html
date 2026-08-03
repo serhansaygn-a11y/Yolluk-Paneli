@@ -1873,10 +1873,109 @@ hardBackup() {
             this.render();
         },
 
-        login() {
+        async recoverAccountsForLogin() {
+            if (!document.getElementById('account-recovery-panel')) {
+                const panel = document.createElement('div');
+                panel.id = 'account-recovery-panel';
+                panel.style.cssText = 'max-width:560px;margin:18px auto;padding:16px;border:1px solid #ffcc00;border-radius:12px;background:#111820;color:#fff;text-align:left';
+                panel.innerHTML = `
+                    <div style="color:#ffcc00;font-weight:800;margin-bottom:8px">⚠ KULLANICI HESAPLARI BULUTTA BULUNAMADI</div>
+                    <div style="margin-bottom:10px">Aşağıdaki alandan <b>Kayseri_Gumruk_Hard_Yedek_2026-08-02.json</b> dosyasını seçin.</div>
+                    <input id="account-recovery-file" type="file" accept=".json,application/json" style="display:block;width:100%;margin:10px 0;color:#fff">
+                    <button id="account-recovery-button" type="button" class="btn btn-warning" style="width:100%">🔐 HESAPLARI GERİ YÜKLE VE GİRİŞ YAP</button>
+                    <div id="account-recovery-status" style="margin-top:10px;color:#9fb3c8"></div>`;
+                document.getElementById('login-screen').appendChild(panel);
+                document.getElementById('account-recovery-button').onclick = async () => {
+                    const file = document.getElementById('account-recovery-file').files[0];
+                    const status = document.getElementById('account-recovery-status');
+                    if (!file) { status.textContent = 'Önce JSON yedeğini seçin.'; return; }
+                    const button = document.getElementById('account-recovery-button');
+                    button.disabled = true;
+                    try {
+                        const backup = JSON.parse(await file.text());
+                        const accounts = Array.isArray(backup.accounts) ? backup.accounts.filter(a => a && typeof a.user === 'string' && typeof a.pass === 'string' && typeof a.rol === 'string') : [];
+                        if (!accounts.length) throw new Error('Seçilen yedekte kullanıcı hesabı bulunamadı.');
+                        status.textContent = accounts.length + ' hesap bulundu; buluta gönderiliyor…';
+                        const response = await fetch(this.CLOUD_URL, {method:'POST',cache:'no-cache',headers:{'Content-Type':'text/plain'},body:JSON.stringify({token:this.CLOUD_TOKEN,user:'Hesap Kurtarma',action:'Kullanıcı Hesaplarını Yedekten Geri Yükleme',payload:{accounts,accountsUpdatedAt:new Date().toISOString()}})});
+                        const text = await response.text();
+                        if (!response.ok || /^\s*</.test(text)) throw new Error('Sunucu geçerli yanıt vermedi (HTTP ' + response.status + ').');
+                        const answer = JSON.parse(text);
+                        if (!answer || answer.status !== 'success') throw new Error(answer?.message || 'Sunucu işlemi onaylamadı.');
+                        this.db.accounts = accounts;
+                        await this.writeLocalDatabase(this.db);
+                        this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
+                        status.textContent = '✅ Hesaplar geri yüklendi; giriş yapılıyor…';
+                        panel.remove();
+                        await this.login();
+                    } catch (error) {
+                        console.error('Kullanıcı hesabı kurtarma hatası:', error);
+                        status.textContent = '❌ ' + error.message;
+                    } finally { button.disabled = false; }
+                };
+            }
+            document.getElementById('account-recovery-panel').scrollIntoView({behavior:'smooth',block:'center'});
+            return false;
+            return new Promise(resolve => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json,application/json';
+                input.style.display = 'none';
+                document.body.appendChild(input);
+                input.onchange = async () => {
+                    try {
+                        const file = input.files && input.files[0];
+                        if (!file) return resolve(false);
+                        const backup = JSON.parse(await file.text());
+                        const accounts = Array.isArray(backup.accounts)
+                            ? backup.accounts.filter(a => a && typeof a.user === 'string' && typeof a.pass === 'string' && typeof a.rol === 'string')
+                            : [];
+                        if (!accounts.length) throw new Error('Seçilen yedekte kullanıcı hesabı bulunamadı.');
+                        this.setSyncStatus('Kullanıcı hesapları geri yükleniyor…');
+                        const response = await fetch(this.CLOUD_URL, {
+                            method:'POST', cache:'no-cache', headers:{'Content-Type':'text/plain'},
+                            body:JSON.stringify({
+                                token:this.CLOUD_TOKEN,
+                                user:'Hesap Kurtarma',
+                                action:'Kullanıcı Hesaplarını Yedekten Geri Yükleme',
+                                payload:{accounts, accountsUpdatedAt:new Date().toISOString()}
+                            })
+                        });
+                        const text = await response.text();
+                        if (!response.ok || /^\s*</.test(text)) throw new Error('Sunucu geçerli yanıt vermedi.');
+                        const answer = JSON.parse(text);
+                        if (!answer || answer.status !== 'success') throw new Error(answer?.message || 'Sunucu işlemi onaylamadı.');
+                        this.db.accounts = accounts;
+                        await this.writeLocalDatabase(this.db);
+                        this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
+                        this.setSyncStatus('Kullanıcı hesapları geri yüklendi ✔');
+                        alert(accounts.length + ' kullanıcı hesabı geri yüklendi. Giriş yeniden deneniyor.');
+                        resolve(true);
+                    } catch (error) {
+                        console.error('Kullanıcı hesabı kurtarma hatası:', error);
+                        alert('Hesaplar geri yüklenemedi: ' + error.message);
+                        resolve(false);
+                    } finally {
+                        input.remove();
+                    }
+                };
+                input.oncancel = () => { input.remove(); resolve(false); };
+                alert('Bulutta kullanıcı hesabı bulunamadı. Şimdi Kayseri_Gumruk_Hard_Yedek_2026-08-02.json yedeğini seçin.');
+                input.click();
+            });
+        },
+
+        async login() {
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
-            const acc = this.db.accounts.find(x => x.user === u && x.pass === p);
+            let acc = this.db.accounts.find(x => x.user === u && x.pass === p);
+            if (!acc && (!Array.isArray(this.db.accounts) || this.db.accounts.length === 0)) {
+                if (!this.pullInFlight) await this.loadBootstrapFromCloud();
+                acc = this.db.accounts.find(x => x.user === u && x.pass === p);
+            }
+            if (!acc && (!Array.isArray(this.db.accounts) || this.db.accounts.length === 0)) {
+                alert('Açılış bilgileri henüz indiriliyor. Birkaç saniye bekleyip tekrar giriş yapın.');
+                return;
+            }
             if(acc) {
                 this.user = acc;
                 localStorage.setItem('currentUser', JSON.stringify(this.user));
@@ -3078,6 +3177,148 @@ hardBackup() {
             }
         },
 
+        async fetchCloudJsonWithRetry(url, attempts = 4) {
+            let lastError;
+            for (let attempt = 0; attempt < attempts; attempt++) {
+                try {
+                    const separator = url.includes('?') ? '&' : '?';
+                    const response = await fetch(url + separator + '_retry=' + Date.now() + '_' + attempt, { cache:'no-store' });
+                    const text = await response.text();
+                    if (!response.ok) throw new Error('Bulut HTTP ' + response.status);
+                    if (/^\s*</.test(text)) throw new Error('Bulut JSON yerine geçici HTML yanıtı döndürdü');
+                    return JSON.parse(text);
+                } catch (error) {
+                    lastError = error;
+                    if (attempt + 1 < attempts) {
+                        await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+                    }
+                }
+            }
+            throw lastError || new Error('Bulut yanıtı alınamadı');
+        },
+
+        async fetchFullCloudDatabase() {
+            // Geçmiş arşiv arka planda mevcut tam GET ile indirilir.
+            const fullUrl = this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN) + '&_ts=' + Date.now();
+            const fullDatabase = await this.fetchCloudJsonWithRetry(fullUrl, 10);
+            if (fullDatabase && fullDatabase.status === 'error') throw new Error(fullDatabase.message || 'Bulut verisi alınamadı.');
+            if (!fullDatabase || !Array.isArray(fullDatabase.kayitlar) || !Array.isArray(fullDatabase.personeller)) {
+                throw new Error('Buluttan gelen tam veritabanı eksik veya geçersiz.');
+            }
+            return fullDatabase;
+
+            const snapshotBase = this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN);
+            let snapshotError;
+            // Büyük veriyi 20'şer hücrelik küçük yanıtlarla al. Aktif kullanıcıların
+            // yazması revizyonu değiştirse bile başa sarma; yalnızca birleşen JSON
+            // geçersizse yeni ve temiz bir tur dene.
+            for (let snapshotAttempt = 0; snapshotAttempt < 6; snapshotAttempt++) {
+                try {
+                    const manifest = await this.fetchCloudJsonWithRetry(snapshotBase + '&mode=manifest&_ts=' + Date.now(), 5);
+                    if (!manifest || manifest.status !== 'success') throw new Error(manifest?.message || 'Bulut parça listesi alınamadı.');
+                    const chunkCount = Number(manifest.chunkCount || 0);
+                    if (chunkCount < 1) throw new Error('Bulut veritabanı boş görünüyor.');
+                    const chunks = [];
+                    for (let start = 0; start < chunkCount; start += 20) {
+                        const batch = await this.fetchCloudJsonWithRetry(snapshotBase + '&mode=batch&start=' + start + '&count=20&_ts=' + Date.now(), 5);
+                        if (!batch || batch.status !== 'success') throw new Error(batch?.message || 'Bulut veri parçası alınamadı.');
+                        chunks.push(...(Array.isArray(batch.chunks) ? batch.chunks : []));
+                        this.setSyncStatus(`Bulut verisi alınıyor… ${Math.min(start + 20, chunkCount)}/${chunkCount}`);
+                    }
+                    if (chunks.length !== chunkCount) throw new Error('Bulut parçalarının tamamı alınamadı.');
+                    const parsed = JSON.parse(chunks.join(''));
+                    if (!Array.isArray(parsed.kayitlar) || !Array.isArray(parsed.personeller) || !Array.isArray(parsed.accounts)) {
+                        throw new Error('Bulut veritabanının zorunlu bölümleri eksik.');
+                    }
+                    parsed.serverRevision = Number(manifest.serverRevision || parsed.serverRevision || 0);
+                    parsed.serverCursor = manifest.serverCursor || parsed.serverCursor || new Date().toISOString();
+                    return parsed;
+                } catch (error) {
+                    snapshotError = error;
+                    this.setSyncStatus(`Bulut indirmesi yenileniyor… ${snapshotAttempt + 1}/6`);
+                    await new Promise(resolve => setTimeout(resolve, 750 * (snapshotAttempt + 1)));
+                }
+            }
+            throw snapshotError || new Error('Bulut verisi alınamadı.');
+
+            const base = this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN);
+            // Yazma iki parça arasında gerçekleşirse karışık JSON kullanmamak için
+            // en fazla iki kez temiz bir revizyon yakalamayı dener.
+            for (let attempt = 0; attempt < 2; attempt++) {
+                const manifest = await this.fetchCloudJsonWithRetry(base + '&mode=manifest&_ts=' + Date.now());
+                if (manifest.status !== 'success') {
+                    throw new Error(manifest.message || 'Bulut parça listesi alınamadı');
+                }
+                const chunkCount = Number(manifest.chunkCount || 0);
+                const expectedRevision = Number(manifest.serverRevision || 0);
+                const chunks = [];
+                let revisionChanged = false;
+                for (let start = 0; start < chunkCount; start += 10) {
+                    const batch = await this.fetchCloudJsonWithRetry(base + '&mode=batch&start=' + start + '&count=10&_ts=' + Date.now());
+                    if (batch.status !== 'success') {
+                        throw new Error(batch.message || 'Bulut veri parçası alınamadı');
+                    }
+                    if (Number(batch.serverRevision || 0) !== expectedRevision) {
+                        revisionChanged = true;
+                        break;
+                    }
+                    chunks.push(...(batch.chunks || []));
+                    this.setSyncStatus(`Bulut verisi alınıyor… ${Math.min(start + 10, chunkCount)}/${chunkCount}`);
+                }
+                if (revisionChanged) continue;
+                const parsed = JSON.parse(chunks.join('') || '{}');
+                parsed.serverRevision = expectedRevision;
+                parsed.serverCursor = manifest.serverCursor || new Date().toISOString();
+                return parsed;
+            }
+            throw new Error('Bulut verisi indirilirken sürekli değişti. Lütfen tekrar deneyin.');
+        },
+
+        async loadAccountsFromCloud() {
+            // Apps Script'te ek servis gerektirmez: mevcut tam veri GET yanıtını kullanır.
+            const url = this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN) + '&_ts=' + Date.now();
+            const answer = await this.fetchCloudJsonWithRetry(url, 8);
+            if (answer && answer.status === 'error') throw new Error(answer.message || 'Kullanıcı hesapları alınamadı.');
+            const accounts = Array.isArray(answer && answer.accounts) ? answer.accounts : [];
+            if (!accounts.length) throw new Error('Bulutta kullanıcı hesabı bulunamadı.');
+            this.db.accounts = accounts;
+            await this.writeLocalDatabase(this.db);
+            this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
+            return accounts;
+        },
+
+        async loadBootstrapFromCloud() {
+            if (this.pullInFlight) return false;
+            this.pullInFlight = true;
+            this.setSyncStatus('Açılış bilgileri alınıyor…');
+            try {
+                const url = this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN) + '&mode=bootstrap&_ts=' + Date.now();
+                const bootstrap = await this.fetchCloudJsonWithRetry(url, 6);
+                if (bootstrap && bootstrap.status === 'error') throw new Error(bootstrap.message || 'Açılış bilgileri alınamadı.');
+                if (!bootstrap || !Array.isArray(bootstrap.accounts) || !Array.isArray(bootstrap.personeller)) {
+                    throw new Error('Açılış paketi eksik veya geçersiz.');
+                }
+                this.db = this.mergeDatabases(this.db, bootstrap);
+                this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
+                await this.writeLocalDatabase(this.db);
+                this.cloudRevision = Number(bootstrap.serverRevision || 0);
+                this.cloudCursor = bootstrap.serverCursor || bootstrap.serverUpdatedAt || new Date().toISOString();
+                localStorage.setItem('gumruk_cloud_revision_v1', String(this.cloudRevision));
+                localStorage.setItem('gumruk_cloud_cursor_v1', this.cloudCursor);
+                this.sortPersoneller();
+                this.render();
+                this.setSyncStatus(bootstrap.bootstrap ? ('Açılış hazır ✔ (' + (bootstrap.bootstrapMonth || 'son ay') + ')') : 'Bulut birleştirildi ✔');
+                if (!bootstrap.bootstrap) this.initialCloudLoadDone = true;
+                return true;
+            } catch (error) {
+                console.error('Hızlı açılış hatası:', error);
+                this.setSyncStatus('Açılış bilgileri alınamadı — bağlantı hatası');
+                return false;
+            } finally {
+                this.pullInFlight = false;
+            }
+        },
+
         async loadFromCloud(options = {}) {
             if (this.simulationMode) {
                 if (options.manual === true) alert('Simülasyon açıkken buluttan veri alınmaz. Önce simülasyonu uygulayın veya iptal edin.');
@@ -3095,10 +3336,8 @@ hardBackup() {
             this.pullInFlight = true;
             this.setSyncStatus(manual ? 'Bulut güncelleniyor…' : 'Bulut verisi alınıyor…');
             try {
-                const response = await fetch(this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN) +
-                    '&_ts=' + Date.now(), { cache: 'no-store' });
-                const cloudData = await response.json();
-                if (!response.ok || (cloudData && cloudData.status === 'error')) throw new Error((cloudData && cloudData.message) || 'Bulut verisi alınamadı');
+                const cloudData = await this.fetchFullCloudDatabase();
+                if (cloudData && cloudData.status === 'error') throw new Error(cloudData.message || 'Bulut verisi alınamadı');
                 this.db = this.mergeDatabases(this.db, cloudData);
                 this.lastPersistedDb = JSON.parse(JSON.stringify(this.db));
                 await this.writeLocalDatabase(this.db);
@@ -3133,10 +3372,9 @@ hardBackup() {
             if (localStorage.getItem(this.PENDING_KEY) === '1') return;
             this.maintenanceCheckInFlight = true;
             try {
-                const response = await fetch(this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN) +
-                    '&_ts=' + Date.now(), { cache:'no-store' });
-                const fullData = await response.json();
-                if (!response.ok || (fullData && fullData.status === 'error')) throw new Error((fullData && fullData.message) || 'Bakım durumu alınamadı');
+                const fullData = await this.fetchCloudJsonWithRetry(this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN) +
+                    '&mode=status&_ts=' + Date.now());
+                if (fullData && fullData.status === 'error') throw new Error(fullData.message || 'Bakım durumu alınamadı');
                 const remoteMode = fullData.maintenanceMode || { enabled:false };
                 const localMode = this.db.maintenanceMode || { enabled:false };
                 if (JSON.stringify(remoteMode) !== JSON.stringify(localMode)) {
@@ -3167,9 +3405,8 @@ hardBackup() {
                 const url = this.CLOUD_URL + '?token=' + encodeURIComponent(this.CLOUD_TOKEN) +
                     '&afterRevision=' + encodeURIComponent(String(this.cloudRevision || 0)) +
                     '&_ts=' + Date.now();
-                const response = await fetch(url, { cache: 'no-store' });
-                const delta = await response.json();
-                if (!response.ok || (delta && delta.status === 'error')) throw new Error((delta && delta.message) || 'Değişiklikler alınamadı');
+                const delta = await this.fetchCloudJsonWithRetry(url);
+                if (delta && delta.status === 'error') throw new Error(delta.message || 'Değişiklikler alınamadı');
                 const changedCount = (delta.kayitlar || []).length + (delta.deletedTaskIds || []).length;
                 const maintenanceChanged = delta.maintenanceMode && JSON.stringify(delta.maintenanceMode) !== JSON.stringify(this.db.maintenanceMode || { enabled:false });
                 const settingsChanged = String(delta.systemSettingsUpdatedAt || '') !== String(this.db.systemSettingsUpdatedAt || '') ||
@@ -3224,11 +3461,16 @@ hardBackup() {
                 this.db = this.normalizeDb(this.db);
             }
             const pending = localStorage.getItem(this.PENDING_KEY) === '1';
-            // Yerel veriyi ve kayıtlı oturumu bekletmeden göster.
+            // Temmuz sürümündeki çalışan açılış: yerel veri ve kayıtlı oturum
+            // hemen gösterilir; ilk bulut kontrolü ekran açıldıktan sonra arkada yürür.
             this.checkSession();
             this.hideSplash();
-            // Bulut kontrolü ekran açıldıktan sonra arka planda devam eder.
-            if (!this.user && !pending) this.loadFromCloud({ initial: true });
+            if (!this.user && !pending) {
+                const bootstrapLoaded = await this.loadBootstrapFromCloud();
+                if (bootstrapLoaded && !this.initialCloudLoadDone) {
+                    setTimeout(() => this.loadFromCloud({ initial: true }), 0);
+                }
+            }
             if (pending) {
                 this.setSyncStatus('Bekleyen kayıt yeniden gönderiliyor…');
                 this.queueCloudWrite(0);
