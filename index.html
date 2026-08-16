@@ -63,14 +63,19 @@
       .assignment-lower-grid { display:grid; grid-template-columns:minmax(280px,.72fr) minmax(520px,1.45fr); gap:12px; margin-top:6px; align-items:stretch; }
       .task-fee-panel, .task-control-panel { padding:12px; border:1px solid var(--border); border-radius:10px; background:rgba(0,0,0,.22); }
       .task-fee-panel #task-types { height:auto; min-height:0; max-height:none; margin-bottom:0; overflow-y:auto; }
-      .task-option-grid { display:grid; grid-template-columns:1.5fr .8fr; gap:8px; margin-top:8px; }
-      .task-option-button { display:flex; align-items:center; justify-content:center; gap:7px; min-height:42px; padding:8px 10px; border:1px solid rgba(0,246,210,.42); border-radius:8px; background:rgba(0,246,210,.08); color:var(--accent); font-size:10px; font-weight:bold; cursor:pointer; text-align:center; }
-      .task-option-button input { width:16px; height:16px; margin:0; accent-color:var(--success); }
+      .task-option-grid { display:grid; grid-template-columns:1.5fr .8fr; gap:5px; margin-top:5px; }
+      .task-option-button { display:flex; align-items:center; justify-content:center; gap:6px; min-height:33px; padding:4px 8px; border:1px solid rgba(0,246,210,.42); border-radius:7px; background:rgba(0,246,210,.08); color:var(--accent); font-size:10px; font-weight:bold; cursor:pointer; text-align:center; }
+      .task-option-button input { width:14px; height:14px; margin:0; accent-color:var(--success); }
       .repeat-control { display:flex; align-items:center; justify-content:center; gap:8px; }
-      .repeat-control input { width:74px; height:36px; margin:0; text-align:center; border:1px solid var(--accent); background:rgba(0,246,210,.08) !important; font-weight:900; }
+      .repeat-control input { width:64px; height:29px; padding:4px 7px; margin:0; text-align:center; border:1px solid var(--accent); background:rgba(0,246,210,.08) !important; font-weight:900; }
       .manual-save-row { display:grid; grid-template-columns:minmax(105px,.75fr) 115px minmax(260px,1.45fr); gap:7px; align-items:center; margin-top:2px; }
       .manual-save-row input, .manual-save-row select { margin:0; }
       .manual-save-row button { height:43px; }
+      .pool-task-controls { grid-column:1/-1; display:grid; grid-template-columns:1fr 1.25fr; gap:5px; }
+      .pool-mode-button { min-height:33px; border:1px solid #3498db; background:rgba(52,152,219,.12); color:#7dc8ff; }
+      .pool-mode-button.active { border-color:#9b59b6; background:rgba(155,89,182,.28); color:#f0d9ff; box-shadow:0 0 14px rgba(155,89,182,.28); }
+      .pool-tag { display:inline-block; padding:5px 10px; border:1px solid #9b59b6; border-radius:7px; color:#f0d9ff; background:rgba(155,89,182,.16); font-weight:900; }
+      .pool-total { color:#f0d9ff; }
       @media (max-width:950px) {
         .assignment-personnel-grid, .assignment-lower-grid { grid-template-columns:1fr; }
         .task-option-grid, .manual-save-row { grid-template-columns:1fr; }
@@ -703,6 +708,14 @@
                             </div>
                         </div>
 
+                        <div id="pool-task-controls" class="pool-task-controls hidden">
+                            <button type="button" id="pool-task-toggle" class="task-option-button pool-mode-button" onclick="app.togglePoolTaskMode()">🏛️ MÜDÜRLÜK MODU</button>
+                            <label class="task-option-button">
+                                <input type="checkbox" id="keep-pool-mode">
+                                <span>Kaydetme sonrasında Müdürlük modunu açık tut</span>
+                            </label>
+                        </div>
+
                         <label class="task-option-button" style="grid-column:1/-1; color:var(--danger); border-color:var(--danger);">
                             <input type="checkbox" id="strict-limit-check" checked> 
                             <b>KOTA SINIRINI ZORLA (Aşımı Engelle)</b>
@@ -1220,6 +1233,7 @@
             artanLimitDevri: {enabled:false, startMonth:''},
             hakedisKesimTarihleri: {},
             limitTrash: {general:[], special:[], cutoff:[]},
+            havuzTahakkukYetkisi: false,
             bypassSef: false
         },
         user: null,
@@ -1234,6 +1248,8 @@
         personnelManagementFilter: {query: '', archived: false},
         showHiddenReceiptMonths: false,
         keepSelectedAfterSave: true,
+        poolMode: false,
+        keepPoolModeAfterSave: false,
         unvanlar: ["Gümrük Memuru", "Gümrük Muayene Memuru", "Gümrük Muhafaza Memuru", "Gümrük Şefi", "Kısım Amiri", "Bölge Amiri", "Gümrük Müdür Yardımcısı", "Gümrük Müdürü", "KİM Müdürü", "Diğer"],
         toggleTransferDetails() {
             this.showTransferDetails = !this.showTransferDetails;
@@ -1611,6 +1627,51 @@ hardBackup() {
                     ? '🧪 Simülatör Açık<br><small style="color:#d7a8ff">Yönetmek için tıklayın</small>'
                     : '🧪 Deneme Simülatörü<br><small style="color:var(--muted)">Buluta göndermeden görev ve tutar denemesi yap</small>';
             }
+            const poolTile = document.getElementById('admin-pool-toggle-tile');
+            if (poolTile) {
+                poolTile.innerHTML = this.db.havuzTahakkukYetkisi
+                    ? '🏛️ Müdürlük Modu — AÇIK<br><small style="color:var(--success)">Müdürlük adına tahakkuk kaydı yapılabilir</small>'
+                    : '🏛️ Müdürlük Modunu Aç<br><small style="color:var(--muted)">Müdürlük tahakkuk kaydına izin ver</small>';
+                poolTile.style.borderColor = this.db.havuzTahakkukYetkisi ? '#9b59b6' : '';
+            }
+        },
+
+        togglePoolAccrualPermission() {
+            if (!this.user || this.user.rol !== 'Admin') return alert('Bu ayarı yalnızca Admin değiştirebilir.');
+            const enabled = !this.db.havuzTahakkukYetkisi;
+            const message = enabled
+                ? 'Müdürlük modunu açmak istiyor musunuz? Kullanıcılar personel seçmeden MÜDÜRLÜK adına kayıt oluşturabilecek.'
+                : 'Müdürlük modunu kapatmak istiyor musunuz? Mevcut Müdürlük kayıtları korunacak, yeni kayıt oluşturulamayacak.';
+            if (!confirm(message)) return;
+            this.db.havuzTahakkukYetkisi = enabled;
+            if (!enabled) this.poolMode = false;
+            this.markSystemSettingsUpdated();
+            this.addLog('Sistem Ayarı', `Müdürlük modu yetkisi ${enabled ? 'açıldı' : 'kapatıldı'}.`);
+            this.updateAdminMenuState();
+            this.updatePoolTaskUI();
+            this.save();
+        },
+
+        togglePoolTaskMode() {
+            if (!this.db.havuzTahakkukYetkisi) return alert('Müdürlük modu Admin tarafından açılmamış.');
+            this.poolMode = !this.poolMode;
+            this.updatePoolTaskUI();
+        },
+
+        updatePoolTaskUI() {
+            const controls = document.getElementById('pool-task-controls');
+            const button = document.getElementById('pool-task-toggle');
+            const keep = document.getElementById('keep-pool-mode');
+            const allowed = this.db.havuzTahakkukYetkisi === true;
+            if (!allowed) this.poolMode = false;
+            if (controls) controls.classList.toggle('hidden', !allowed);
+            if (button) {
+                button.classList.toggle('active', allowed && this.poolMode);
+                button.innerHTML = allowed && this.poolMode
+                    ? '🏛️ MÜDÜRLÜK MODU AÇIK'
+                    : '🏛️ MÜDÜRLÜK MODU';
+            }
+            if (keep) keep.checked = !!this.keepPoolModeAfterSave;
         },
 
         updateSimulationUI() {
@@ -2570,11 +2631,17 @@ hardBackup() {
             const manualTutar = parseFloat(document.getElementById('manual-tutar').value) || 0;
             const manualTip = document.getElementById('manual-tip').value;
             const repeatCount = parseInt(document.getElementById('task-repeat').value) || 1;
+            const isPool = this.poolMode === true && this.db.havuzTahakkukYetkisi === true;
 
-            if(this.selectedPs.length === 0 || (selTypes.length === 0 && manualTutar === 0)) 
-                return alert("Hata: Personel ve en az bir ücret girilmelidir!");
+            if (this.poolMode && !this.db.havuzTahakkukYetkisi) {
+                this.poolMode = false;
+                this.updatePoolTaskUI();
+                return alert('Müdürlük modu yetkisi kapalı.');
+            }
+            if((!isPool && this.selectedPs.length === 0) || (selTypes.length === 0 && manualTutar === 0))
+                return alert(isPool ? "Hata: Müdürlük kaydı için en az bir ücret girilmelidir!" : "Hata: Personel ve en az bir ücret girilmelidir!");
             
-            for (let p of this.selectedPs) {
+            for (let p of (isPool ? [] : this.selectedPs)) {
                 const conflict = this.checkConflict(p);
                 if (conflict) {
                     alert(`HOOP! 🛑\n\n${p} isimli personel şu an "${conflict.tur}" sebebiyle izinli/raporlu!\n(${conflict.baslangic} - ${conflict.bitis})\n\nGörev yazılamaz.`);
@@ -2582,7 +2649,7 @@ hardBackup() {
                 }
             }
 
-            const personelSayisi = this.selectedPs.length;
+            const personelSayisi = isPool ? 0 : this.selectedPs.length;
             let toplamMesai = 0, toplamYolluk = 0;
             
             selTypes.forEach(t => {
@@ -2604,7 +2671,7 @@ hardBackup() {
             const hakedisAyStr = this.getAccrualMonthForDate(`${ayStr}-${String(now.getDate()).padStart(2,'0')}`);
 
             // --- 🛑 YENİ: İSTEĞE BAĞLI KOTA KORUMA KONTROLÜ 🛑 ---
-            const siniriZorla = document.getElementById('strict-limit-check').checked;
+            const siniriZorla = !isPool && document.getElementById('strict-limit-check').checked;
             
             let gecerliLimit = 50600; 
             if (typeof this.db.yollukSiniri === 'object' && this.db.yollukSiniri !== null) {
@@ -2616,11 +2683,15 @@ hardBackup() {
 
             const plannedShares = [];
             const simulatedUsed = {};
-            this.selectedPs.forEach(name => {
+            (isPool ? [] : this.selectedPs).forEach(name => {
                 simulatedUsed[name] = this.getMonthlyPersonYolluk(name, hakedisAyStr);
             });
 
             for (let repeatIndex = 0; repeatIndex < repeatCount; repeatIndex++) {
+                if (isPool) {
+                    plannedShares.push([]);
+                    continue;
+                }
                 if (siniriZorla && toplamYolluk > 0) {
                     const distribution = this.distributeTaskAmounts(
                         hakedisAyStr, this.selectedPs, toplamYolluk, toplamMesai, simulatedUsed
@@ -2651,7 +2722,7 @@ hardBackup() {
                 if (!confirm(`⚠️ Bu işlem aynı görevi TAM ${repeatCount} kez kaydedecek!\n\nHer biri ayrı referans numarası alacak.\nDevam etmek istiyor musunuz?`)) return;
             }
 
-            const snapshotDetay = this.selectedPs.map(isim => {
+            const snapshotDetay = (isPool ? [] : this.selectedPs).map(isim => {
                 const gercekPersonel = this.db.personeller.find(x => x.ad === isim) || {};
                 return {
                     ad: isim,
@@ -2668,7 +2739,8 @@ hardBackup() {
                     id: this.uuid(),
                     ref: yeniRef,
                     no: document.getElementById('task-no').value || "Belirtilmedi",
-                    personeller: [...this.selectedPs],
+                    havuzKaydi: isPool,
+                    personeller: isPool ? [] : [...this.selectedPs],
                     pDetay: snapshotDetay,
                     paylasimDetay: plannedShares[i],
                     limitKontrolu: siniriZorla,
@@ -2684,18 +2756,22 @@ hardBackup() {
                     createdAt: simdi,
                     updatedAt: simdi
                 });
-                this.addLog("Yeni Görev Kaydı", `${personelSayisi} personel için görev oluşturuldu. Tutar: ${(toplamMesai+toplamYolluk).toFixed(2)} TL`, yeniRef);
+                this.addLog(isPool ? "Müdürlük Tahakkuku" : "Yeni Görev Kaydı", isPool
+                    ? `MÜDÜRLÜK adına tahakkuk oluşturuldu. Tutar: ${(toplamMesai+toplamYolluk).toFixed(2)} TL`
+                    : `${personelSayisi} personel için görev oluşturuldu. Tutar: ${(toplamMesai+toplamYolluk).toFixed(2)} TL`, yeniRef);
             }
             
             this.keepSelectedAfterSave = document.getElementById('keep-selected').checked;
+            this.keepPoolModeAfterSave = document.getElementById('keep-pool-mode')?.checked === true;
             
-            if (!this.keepSelectedAfterSave) {
+            if (!isPool && !this.keepSelectedAfterSave) {
                 this.selectedPs = [];
             }
+            if (isPool && !this.keepPoolModeAfterSave) this.poolMode = false;
             
             document.getElementById('manual-tutar').value = "";
             document.getElementById('task-repeat').value = 1;
-            
+            this.updatePoolTaskUI();
             this.save();
         },
 
@@ -2803,7 +2879,7 @@ hardBackup() {
                 <h1>GÖREV VE TAHAKKUK FORMU</h1>
                 <h2>REF: ${yazdirmaRef}</h2>
                 <div class="line"><strong>GÖREVLİLER:</strong></div>
-                ${l.personeller.map((p, index) => {
+                ${l.havuzKaydi ? '<div class="line"><strong>MÜDÜRLÜK</strong></div>' : (l.personeller || []).map((p, index) => {
                     const d = this.db.personeller.find(x => x.ad === p);
                     return `<div class="line">${index + 1} - ${d ? d.sicil : ''} ${p} (${d ? d.unvan : ''})</div>`;
                 }).join('')}
@@ -2893,11 +2969,16 @@ hardBackup() {
             db.limitTrash.general = Array.isArray(db.limitTrash.general) ? db.limitTrash.general : [];
             db.limitTrash.special = Array.isArray(db.limitTrash.special) ? db.limitTrash.special : [];
             db.limitTrash.cutoff = Array.isArray(db.limitTrash.cutoff) ? db.limitTrash.cutoff : [];
+            db.havuzTahakkukYetkisi = db.havuzTahakkukYetkisi === true;
             const now = new Date().toISOString();
             db.kayitlar.forEach(task => {
                 if (!task.id) task.id = task.ref ? 'legacy:' + String(task.ref) : this.uuid();
                 if (!task.createdAt) task.createdAt = task.updatedAt || now;
                 if (!task.updatedAt) task.updatedAt = task.createdAt;
+                task.personeller = Array.isArray(task.personeller) ? task.personeller : [];
+                task.pDetay = Array.isArray(task.pDetay) ? task.pDetay : [];
+                task.paylasimDetay = Array.isArray(task.paylasimDetay) ? task.paylasimDetay : [];
+                task.havuzKaydi = task.havuzKaydi === true;
             });
             return db;
         },
@@ -3031,7 +3112,7 @@ hardBackup() {
             // silmesini engelle. En son ayar değişiklik zamanı esas alınır.
             const localSettingsTime = Date.parse(local.systemSettingsUpdatedAt || '') || 0;
             const cloudSettingsTime = Date.parse(cloud.systemSettingsUpdatedAt || '') || 0;
-            const settingsFields = ['yollukSiniri', 'birimUnvanLimitleri', 'artanLimitDevri', 'hakedisKesimTarihleri', 'limitTrash'];
+            const settingsFields = ['yollukSiniri', 'birimUnvanLimitleri', 'artanLimitDevri', 'hakedisKesimTarihleri', 'limitTrash', 'havuzTahakkukYetkisi'];
             if (localSettingsTime !== cloudSettingsTime) {
                 const settingsSource = localSettingsTime > cloudSettingsTime ? local : cloud;
                 settingsFields.forEach(field => {
@@ -3562,6 +3643,7 @@ hardBackup() {
                     ? '🙈 DEVİR AÇIKLAMALARINI GİZLE'
                     : '🔎 DEVİR AÇIKLAMALARINI GÖSTER';
             }
+            this.updatePoolTaskUI();
 
             const aktifPersoneller = this.db.personeller.filter(p => p.aktif === true);
 
@@ -3707,7 +3789,7 @@ hardBackup() {
             }
 
             // 1. Tüm onaylı kayıtları ESKİDEN YENİYE sırala (Kronolojik devir hesaplaması için şart)
-            const onayliKayitlar = this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih).sort((a,b) => {
+            const onayliKayitlar = this.db.kayitlar.filter(k => k.durum === "Onaylandı" && k.tarih && k.havuzKaydi !== true).sort((a,b) => {
                 const aAy = this.getAccrualMonth(a), bAy = this.getAccrualMonth(b);
                 if(aAy !== bAy) return aAy.localeCompare(bAy);
                 return a.ref.localeCompare(b.ref); 
@@ -3878,12 +3960,26 @@ hardBackup() {
             }
 
             if(document.getElementById('month-totals')) {
+                const poolRecords = (this.db.kayitlar || []).filter(task => {
+                    if (task.durum !== 'Onaylandı' || task.havuzKaydi !== true) return false;
+                    if (this.hakedisDateFilter.start && this.hakedisDateFilter.end) {
+                        const date = this.getTaskDate(task);
+                        return date && date >= this.hakedisDateFilter.start && date <= this.hakedisDateFilter.end;
+                    }
+                    return this.getAccrualMonth(task) === hedefAy;
+                });
+                const poolYolluk = poolRecords.reduce((sum, task) => sum + (Number(task.yTotal ?? task.toplamYolluk) || 0), 0);
+                const poolMesai = poolRecords.reduce((sum, task) => sum + (Number(task.mTotal ?? task.toplamMesai) || 0), 0);
+                this.sonHesaplananHavuz = {yolluk:poolYolluk, mesai:poolMesai, toplam:poolYolluk + poolMesai};
                 const periodLabel = this.hakedisDateFilter.start && this.hakedisDateFilter.end
                     ? `<span style="color:var(--success)">${this.hakedisDateFilter.start} — ${this.hakedisDateFilter.end}</span> | `
                     : '';
                 document.getElementById('month-totals').innerHTML = 
                     periodLabel + `<span style="color:var(--warning)">TOPLAM YOLLUK: ${this.formatTrAmount(ayinToplamYollugu)} TL</span> | ` + 
-                    `<span style="color:var(--accent)">TOPLAM MESAİ: ${this.formatTrAmount(ayinToplamMesaisi)} TL</span>`;
+                    `<span style="color:var(--accent)">TOPLAM MESAİ: ${this.formatTrAmount(ayinToplamMesaisi)} TL</span>` +
+                    ((this.db.havuzTahakkukYetkisi || poolYolluk || poolMesai)
+                        ? ` | <span class="pool-total">🏛️ MÜDÜRLÜK: ${this.formatTrAmount(poolYolluk)} TL</span>`
+                        : '');
             }
 
             const sortType = document.getElementById('sort-filtre') ? document.getElementById('sort-filtre').value : 'yolluk-az';
@@ -3967,7 +4063,7 @@ hardBackup() {
             let filtered = this.db.kayitlar.slice();
             if (this.taskFilter.arama) {
                 const term = this.taskFilter.arama.toLowerCase();
-                filtered = filtered.filter(k => k.ref.toLowerCase().includes(term) || k.no.toLowerCase().includes(term) || k.personeller.some(p => p.toLowerCase().includes(term)));
+                filtered = filtered.filter(k => k.ref.toLowerCase().includes(term) || k.no.toLowerCase().includes(term) || (k.personeller || []).some(p => p.toLowerCase().includes(term)) || (k.havuzKaydi && ('müdürlük'.includes(term) || 'havuz'.includes(term))));
             }
             if (this.taskFilter.durum) filtered = filtered.filter(k => k.durum === this.taskFilter.durum);
             if (this.taskFilter.onayBekleyen) {
@@ -4059,7 +4155,7 @@ hardBackup() {
 
                 return `<tr>
                     <td><b>${formatReference(l)}</b></td><td>${l.no}</td>
-                    <td>${l.personeller.map(p=>`<span class="tag">${p}</span>`).join('')}</td>
+                    <td>${l.havuzKaydi ? '<span class="pool-tag">🏛️ MÜDÜRLÜK</span>' : (l.personeller || []).map(p=>`<span class="tag">${p}</span>`).join('')}</td>
                     <td>${yardirHtml}</td>
                     <td style="color:var(--warning); font-weight:bold">${l.durum}</td>
                     <td>${l.ebys} ${canEditExtra?`<button onclick="app.updateExtra('${l.ref}','EBYS')">✎</button>`:''}</td>
@@ -4073,7 +4169,8 @@ hardBackup() {
 
         exportLimitliExcel() {
             const hedefAy = this.seciliAy || this.mevcutAy();
-            if (!this.sonHesaplananHakedis || this.sonHesaplananHakedis.length === 0) return alert("Dışa aktarılacak veri yok! Lütfen önce tabloyu görüntüleyin.");
+            const pool = this.sonHesaplananHavuz || {yolluk:0, mesai:0, toplam:0};
+            if ((!this.sonHesaplananHakedis || this.sonHesaplananHakedis.length === 0) && !pool.toplam) return alert("Dışa aktarılacak veri yok! Lütfen önce tabloyu görüntüleyin.");
             
             const excelData = this.sonHesaplananHakedis.map(p => ({
                 "Birim": p.birim, 
@@ -4084,6 +4181,12 @@ hardBackup() {
                 "Ödenecek Mesai": Number(p.mesai.toFixed(2)), 
                 "Genel Toplam (Ödenecek)": Number(p.toplam.toFixed(2))
             }));
+            if (pool.toplam) excelData.push({
+                "Birim":"MÜDÜRLÜK", "Sicil":"-", "Ad Soyad":"MÜDÜRLÜK", "Unvan":"Müdürlük Tahakkuku",
+                "Ödenecek Yolluk (Limitli)":Number(pool.yolluk.toFixed(2)),
+                "Ödenecek Mesai":Number(pool.mesai.toFixed(2)),
+                "Genel Toplam (Ödenecek)":Number(pool.toplam.toFixed(2))
+            });
             const ws = XLSX.utils.json_to_sheet(excelData);
             ['E', 'F', 'G'].forEach(column => {
                 for (let row = 2; row <= excelData.length + 1; row++) {
@@ -4152,6 +4255,13 @@ hardBackup() {
                 "Ham Mesai Kazancı": Number(p.mesai.toFixed(2)), 
                 "Genel Ham Toplam": Number(p.toplam.toFixed(2))
             }));
+            const pool = this.sonHesaplananHavuz || {yolluk:0, mesai:0, toplam:0};
+            if (pool.toplam) excelData.push({
+                "Birim":"MÜDÜRLÜK", "Sicil":"-", "Ad Soyad":"MÜDÜRLÜK", "Unvan":"Müdürlük Tahakkuku",
+                "Ham Yolluk Kazancı (Limitsiz)":Number(pool.yolluk.toFixed(2)),
+                "Ham Mesai Kazancı":Number(pool.mesai.toFixed(2)),
+                "Genel Ham Toplam":Number(pool.toplam.toFixed(2))
+            });
             const ws = XLSX.utils.json_to_sheet(excelData);
             ['E', 'F', 'G'].forEach(column => {
                 for (let row = 2; row <= excelData.length + 1; row++) {
@@ -4200,7 +4310,7 @@ hardBackup() {
             const data = filtered.map(k => ({
                 "Referans": k.ref, 
                 "Evrak No": k.no, 
-                "Personeller": k.personeller.join(", "),
+                "Personeller": k.havuzKaydi ? "MÜDÜRLÜK" : (k.personeller || []).join(", "),
                 "Yolluk Tutarı": (k.yTotal || k.toplamYolluk).toFixed(2), 
                 "Mesai Tutarı": (k.mTotal || k.toplamMesai).toFixed(2),
                 "Genel Toplam": ((k.yTotal || k.toplamYolluk) + (k.mTotal || k.toplamMesai)).toFixed(2), 
@@ -4375,15 +4485,33 @@ hardBackup() {
                     analizAdaylari.push({ ad: isim, birim: "Arşiv", unvan: "Silinmiş Kayıt", sicil: "---", aktif: false });
                 }
             });
+            const mudurlukGorevleri = filtreliGorevler.filter(k => k.havuzKaydi === true);
+            if (this.db.havuzTahakkukYetkisi || mudurlukGorevleri.length > 0) {
+                analizAdaylari.push({
+                    ad: "MÜDÜRLÜK",
+                    birim: "MÜDÜRLÜK",
+                    unvan: "Müdürlük Tahakkuku",
+                    sicil: "-",
+                    aktif: true,
+                    isMudurluk: true
+                });
+            }
 
             let analizVerisi = analizAdaylari.map(p => {
                 let toplamYolluk = 0;
                 let gorevSayisi = 0;
-                
-                filtreliGorevler.filter(k => k.personeller.includes(p.ad)).forEach(k => {
-                    toplamYolluk += this.getTaskPersonAmount(k, p.ad, 'yolluk');
-                    gorevSayisi++;
-                });
+
+                if (p.isMudurluk) {
+                    mudurlukGorevleri.forEach(k => {
+                        toplamYolluk += Number(k.yTotal ?? k.toplamYolluk) || 0;
+                        gorevSayisi++;
+                    });
+                } else {
+                    filtreliGorevler.filter(k => (k.personeller || []).includes(p.ad)).forEach(k => {
+                        toplamYolluk += this.getTaskPersonAmount(k, p.ad, 'yolluk');
+                        gorevSayisi++;
+                    });
+                }
 
                 return { ...p, toplamYolluk, gorevSayisi };
             }).filter(p => p.ad.toLowerCase().includes(searchTerm) || p.sicil.includes(searchTerm));
@@ -4470,13 +4598,18 @@ hardBackup() {
                 baslangic: document.getElementById('kisi-arsiv-baslangic').value,
                 bitis: document.getElementById('kisi-arsiv-bitis').value
             };
-            const gorevler = this.db.kayitlar.filter(k => k.durum === "Onaylandı" && this.taskMatchesAnalizPeriod(k, period) && k.personeller.includes(ad));
-            const p = this.db.personeller.find(x => x.ad === ad) || {ad, sicil: '-', unvan: '-'};
+            const isMudurluk = ad === 'MÜDÜRLÜK';
+            const gorevler = this.db.kayitlar.filter(k => k.durum === "Onaylandı" && this.taskMatchesAnalizPeriod(k, period) && (isMudurluk ? k.havuzKaydi === true : (k.personeller || []).includes(ad)));
+            const p = isMudurluk
+                ? {ad:'MÜDÜRLÜK', sicil:'-', unvan:'Müdürlük Tahakkuku'}
+                : (this.db.personeller.find(x => x.ad === ad) || {ad, sicil: '-', unvan: '-'});
             const icerik = document.getElementById('kisi-detay-icerik');
             const baslikAlani = document.getElementById('kisi-detay-baslik-alani');
             
             let toplamY = 0;
-            gorevler.forEach(k => toplamY += this.getTaskPersonAmount(k, ad, 'yolluk'));
+            gorevler.forEach(k => toplamY += isMudurluk
+                ? (Number(k.yTotal ?? k.toplamYolluk) || 0)
+                : this.getTaskPersonAmount(k, ad, 'yolluk'));
 
             let donemEtiketi = period.baslangic || period.bitis
                 ? `${period.baslangic || 'Başlangıç'} — ${period.bitis || 'Bugün'}`
@@ -4501,8 +4634,8 @@ hardBackup() {
                                 <td>${this.getTaskDate(k) || k.tarih || '-'}</td>
                                 <td>${k.ref}</td>
                                 <td>${k.dekont || '-'}</td>
-                                <td>${k.personeller.join(', ')}</td>
-                                <td>${this.getTaskPersonAmount(k, ad, 'yolluk').toFixed(2)} TL</td>
+                                <td>${isMudurluk ? 'MÜDÜRLÜK' : (k.personeller || []).join(', ')}</td>
+                                <td>${(isMudurluk ? (Number(k.yTotal ?? k.toplamYolluk) || 0) : this.getTaskPersonAmount(k, ad, 'yolluk')).toFixed(2)} TL</td>
                             </tr>
                         `).join('') || '<tr><td colspan="5" style="text-align:center; padding:25px; color:var(--muted);">Seçilen dönemde onaylı görev bulunamadı.</td></tr>'}
                     </tbody>
@@ -4514,12 +4647,13 @@ hardBackup() {
         },
 
         exportKisiArsivExcel(ad, yil, gorevler) {
+            const isMudurluk = ad === 'MÜDÜRLÜK';
             const data = gorevler.map(k => ({
                 "Tarih": this.getTaskDate(k) || k.tarih,
                 "Referans No": k.ref,
                 "Dekont No": k.dekont || '',
-                "Görevdeki Diğer Personeller": k.personeller.join(", "),
-                "Kişiye Dağıtılan Yolluk": this.getTaskPersonAmount(k, ad, 'yolluk').toFixed(2),
+                "Görevdeki Diğer Personeller": isMudurluk ? "MÜDÜRLÜK" : (k.personeller || []).join(", "),
+                "Kişiye Dağıtılan Yolluk": (isMudurluk ? (Number(k.yTotal ?? k.toplamYolluk) || 0) : this.getTaskPersonAmount(k, ad, 'yolluk')).toFixed(2),
                 "Durum": k.durum
             }));
             const ws = XLSX.utils.json_to_sheet(data);
@@ -4593,6 +4727,7 @@ hardBackup() {
             <button class="admin-menu-tile" onclick="app.closeAdminManagement(); app.openAnalizMerkezi()">🔍 Personel Analiz Merkezi</button>
             <button class="admin-menu-tile" onclick="app.closeAdminManagement(); app.openLogMerkezi()">📜 Sistem Log Merkezi</button>
             <button id="admin-simulator-tile" class="admin-menu-tile" onclick="app.toggleSimulation()">🧪 Deneme Simülatörü<br><small style="color:var(--muted)">Buluta göndermeden görev ve tutar denemesi yap</small></button>
+            <button id="admin-pool-toggle-tile" class="admin-menu-tile" onclick="app.togglePoolAccrualPermission()">🏛️ Müdürlük Modunu Aç<br><small style="color:var(--muted)">Müdürlük tahakkuk kaydına izin ver</small></button>
             <button id="admin-missing-receipts-tile" class="admin-menu-tile" onclick="app.closeAdminManagement(); app.showUyariModal()">🔔 Eksik Dekontlar <span style="color:var(--danger)">(<span id="admin-uyari-sayi">0</span>)</span></button>
         </div>
     </div>
