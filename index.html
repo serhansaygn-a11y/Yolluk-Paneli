@@ -36,6 +36,27 @@
       .header-center { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; }
       .header-center h1 { margin:0; font-size:24px; color:var(--accent); text-transform:uppercase; text-shadow:var(--accent-glow); }
       .header-profile-row { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:8px; }
+      .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+      .cal-head { text-align:center; font-size:11px; color:var(--muted); padding:4px 0; }
+      .cal-cell { min-height:62px; border:1px solid var(--border); border-radius:8px; padding:4px; cursor:pointer; background:rgba(255,255,255,0.02); overflow:hidden; }
+      .cal-cell:hover { border-color:var(--accent); }
+      .cal-empty { border:none; background:transparent; cursor:default; }
+      .cal-weekend { background:rgba(255,255,255,0.05); }
+      .cal-today { border-color:var(--warning); }
+      .cal-selected { outline:2px solid var(--accent); }
+      .cal-day { font-size:12px; font-weight:700; }
+      .cal-chip { font-size:10px; border-radius:6px; padding:1px 4px; margin:2px 2px 0 0; display:inline-block; }
+      .cal-leave { background:rgba(231,76,60,.2); color:#ff8f84; }
+      .cal-task { background:rgba(0,246,210,.15); color:var(--accent); }
+      .cal-detail { margin-top:12px; display:flex; gap:16px; flex-wrap:wrap; font-size:12px; }
+      .cal-detail h4 { width:100%; margin:0; color:var(--accent); }
+      .cal-col { flex:1; min-width:260px; background:rgba(0,0,0,.3); border:1px solid var(--border); border-radius:8px; padding:10px; }
+      .cal-col div { padding:3px 0; border-bottom:1px dashed rgba(255,255,255,.08); }
+      .cal-muted { color:var(--muted); font-size:10px; }
+      .cal-hint { color:var(--muted); font-size:12px; width:100%; text-align:center; padding:10px; }
+      @media (max-width:600px) { .cal-cell { min-height:46px; } .cal-chip { font-size:9px; } }
+      #announcement-bar { background:linear-gradient(90deg,rgba(241,196,15,.18),rgba(230,126,34,.18)); border-bottom:1px solid var(--warning); color:#ffe9a8; padding:8px 14px; font-size:13px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+      #announcement-bar small { margin-left:auto; color:var(--muted); }
       #user-display.role-switchable { cursor:pointer; user-select:none; }
       #user-display.role-switchable:hover { background:rgba(0,246,210,.2); }
       .role-menu { position:absolute; top:100%; right:0; margin-top:6px; min-width:220px; background:#0d1117; border:1px solid var(--accent); border-radius:10px; box-shadow:var(--accent-glow); z-index:10050; padding:6px; display:flex; flex-direction:column; gap:4px; }
@@ -422,11 +443,14 @@
           <img src="https://i.pinimg.com/1200x/b7/3f/34/b73f34bfd2705436fb27183f5ad3d665.jpg">
         </div>
         <div id="header-profile-row" class="header-profile-row hidden" style="position:relative;">
+          <button id="header-approval-badge" class="btn btn-warning hidden" style="padding:3px 10px; font-size:11px;" onclick="app.showPendingTasks()" title="Onayınızı bekleyen görevler">⏳ 0</button>
+          <button id="header-delete-badge" class="btn btn-danger hidden" style="padding:3px 10px; font-size:11px;" onclick="app.showDeleteRequests()" title="Silme talebi bekleyen görevler">🗑 0</button>
           <p id="user-display">Giriş Bekleniyor...</p>
           <button class="btn btn-danger header-account-btn" onclick="localStorage.removeItem('currentUser'); location.reload();">🚪 ÇIKIŞ YAP</button>
         </div>
       </div>
     </header>
+    <div id="announcement-bar" class="hidden"><span>📢</span><b id="announcement-text"></b><small id="announcement-meta"></small></div>
 
     <div class="main-container">
       <div id="login-screen">
@@ -455,6 +479,8 @@
                 <button id="btn-admin-management" class="btn btn-success hidden" onclick="app.openAdminManagement()">🛠️ SİSTEM YÖNETİMİ</button>
                 <button id="btn-analiz" class="btn btn-primary" style="background:#8e44ad; color:#fff;" onclick="app.openAnalizMerkezi()">🔍 PERSONEL ANALİZ MERKEZİ</button>
                 <button id="btn-system-health-public" class="btn btn-success" onclick="app.openSystemHealth()">🩺 SİSTEM SAĞLIĞI</button>
+                <button id="btn-calendar" class="btn btn-primary" onclick="app.openCalendar()">📅 TAKVİM</button>
+                <button id="btn-announcement" class="btn btn-warning hidden" onclick="app.openAnnouncementModal()">📢 DUYURU YAZ</button>
             </div>
             <button id="btn-log" class="btn" style="background:#e67e22; color:#fff;" onclick="app.openLogMerkezi()">📜 SİSTEM LOG MERKEZİ</button>
             <button id="btn-uyari" class="btn hidden" style="background:var(--danger); color:#fff;" onclick="app.showUyariModal()">🔔 EKSİK DEKONTLAR (<span id="uyari-sayi">0</span>)</button>
@@ -748,6 +774,7 @@
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:15px;">
                 <h3 style="border:none; padding:0; margin:0;">İşlem Takip Listesi</h3>
                 <div>
+                    <button id="btn-deleted-tasks" class="btn btn-danger hidden" onclick="app.openDeletedTasks()" style="margin-right:8px;">🗑️ SİLİNEN GÖREVLER</button>
                     <button id="btn-pending-tasks" class="btn btn-warning hidden" onclick="app.showPendingTasks()" style="margin-right:8px;">⏳ ONAY BEKLEYENLER</button>
                     <button id="btn-bulk-approve" class="btn btn-warning hidden" onclick="app.bulkApproveTasks()" style="margin-right:8px;">✅ TOPLU GÖREV ONAYLA</button>
                     <button class="btn btn-primary" onclick="app.exportTaskListExcel()">LİSTEYİ EXCEL AKTAR</button>
@@ -787,7 +814,72 @@
     </footer>
   </div>
 
+  <div id="calendar-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:10002; display:flex; justify-content:center; align-items:center;">
+    <div style="background:#0d1117; width:96%; max-width:1000px; max-height:92vh; overflow:auto; border:1px solid var(--accent); border-radius:15px; padding:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+        <h2 style="margin:0; color:var(--accent);">📅 İzin ve Görev Takvimi</h2>
+        <button class="btn btn-danger" onclick="app.closeCalendar()">KAPAT [X]</button>
+      </div>
+      <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin:12px 0;">
+        <button class="btn btn-primary" onclick="app.shiftCalendarMonth(-1)">◀</button>
+        <b id="calendar-title" style="min-width:160px; text-align:center;"></b>
+        <button class="btn btn-primary" onclick="app.shiftCalendarMonth(1)">▶</button>
+        <button class="btn" onclick="app.openCalendar()">BUGÜN</button>
+      </div>
+      <div style="font-size:11px; color:var(--muted); text-align:center; margin-bottom:8px;">🏖 izinli/raporlu personel sayısı · 📋 o günün görev sayısı · ayrıntı için güne tıklayın</div>
+      <div id="calendar-grid" class="cal-grid"></div>
+      <div id="calendar-detail" class="cal-detail"></div>
+    </div>
+  </div>
+
+  <div id="deleted-tasks-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:10002; display:flex; justify-content:center; align-items:center;">
+    <div style="background:#0d1117; width:96%; max-width:1100px; max-height:90vh; overflow:auto; border:1px solid var(--danger); border-radius:15px; padding:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+        <h2 style="margin:0; color:var(--danger);">🗑️ Silinen Görevler</h2>
+        <button class="btn btn-danger" onclick="app.closeDeletedTasks()">KAPAT [X]</button>
+      </div>
+      <p style="font-size:11px; color:var(--muted);">Silinen görevler en fazla 90 gün veya son 100 kayıt boyunca burada tutulur. “GERİ GETİR” görevi silinmeden önceki haliyle listeye döndürür.</p>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Referans</th><th>Personel</th><th>Tutar</th><th>Durum</th><th>Silen</th><th>Silinme Zamanı</th><th>İşlem</th></tr></thead>
+          <tbody id="deleted-tasks-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="announcement-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:10002; display:flex; justify-content:center; align-items:center;">
+    <div style="background:#0d1117; width:92%; max-width:560px; border:1px solid var(--warning); border-radius:15px; padding:16px;">
+      <h2 style="margin:0 0 8px; color:var(--warning);">📢 Duyuru</h2>
+      <p style="font-size:11px; color:var(--muted); margin:0 0 8px;">Yayınlanan duyuru tüm kullanıcıların ekranının üstünde görünür. En fazla 500 karakter.</p>
+      <textarea id="announcement-input" maxlength="500" rows="4" style="width:100%; box-sizing:border-box;" placeholder="Örn: Kasım ayı ödeme kesim tarihi 20'sidir."></textarea>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px; flex-wrap:wrap;">
+        <button class="btn btn-danger" onclick="app.saveAnnouncement(true)">DUYURUYU KALDIR</button>
+        <button class="btn btn-success" onclick="app.saveAnnouncement(false)">YAYINLA</button>
+        <button class="btn" onclick="app.closeAnnouncementModal()">KAPAT</button>
+      </div>
+    </div>
+  </div>
+
   <script>
+    // ── VERİ SÜRÜMÜ ─────────────────────────────────────────────────
+    // Sistem sıfırlandığında (veya yerel kopyaların geçersiz kılınması gerektiğinde) bu değeri
+    // değiştirip HTML'i yükleyin. Sayfayı ilk açan her bilgisayar, eski yerel veri kopyasını,
+    // bekleyen gönderimlerini ve açık oturumunu bir kez kendiliğinden siler. Cihaz kodu korunur.
+    const APP_DATA_VERSION = '2026-11-01-v1';
+    const DATA_VERSION_KEY = 'gumruk_data_version_v1';
+    (function applyDataVersion() {
+        try {
+            if (localStorage.getItem(DATA_VERSION_KEY) === APP_DATA_VERSION) return;
+            ['gumruk_final_v60', 'gumruk_pending_sync_v1', 'gumruk_pending_task_versions_v1',
+             'gumruk_cloud_cursor_v1', 'gumruk_cloud_revision_v1', 'gumruk_last_cloud_write_at',
+             'gumruk_last_cloud_read_at', 'currentUser'].forEach(key => localStorage.removeItem(key));
+            Object.keys(localStorage).filter(key => key.indexOf('gumruk_last_role_') === 0)
+                .forEach(key => localStorage.removeItem(key));
+            window.__localDbWipePending = true;
+        } catch (error) { console.error('Veri sürümü kontrolü yapılamadı:', error); }
+    })();
+
     const app = {
         lastLocalChange: 0,
         CLOUD_URL: 'https://script.google.com/macros/s/AKfycbw16QOlPJI-oH_4wF5nzvPURyLT1AGeS1-fQoLi8gwu78qv4MFKaenOtTRbijY2n0XB/exec',
@@ -1441,6 +1533,11 @@ downloadBackup(fileName) {
                 if (id) tombstones.set(id, { id, deletedAt:now });
             });
 
+            const kisiIsaretleri = new Map();
+            (db.deletedPersonIds || []).forEach(item => { if (item && item.id) kisiIsaretleri.set(String(item.id), item); });
+            (db.personeller || []).forEach(person => { const id = this.personKey(person); if (id) kisiIsaretleri.set(id, { id, deletedAt: now }); });
+            db.deletedPersonIds = Array.from(kisiIsaretleri.values());
+            db.silinenGorevler = [];
             db.kayitlar = [];
             db.personeller = [];
             db.izinler = [];
@@ -1516,6 +1613,7 @@ downloadBackup(fileName) {
                 });
                 restored.deletedTaskIds = Array.from(tombstones.values());
                 restored.sistemSifirlamaZamani = now;
+                (restored.personeller || []).forEach(person => { person.updatedAt = now; });
 
                 this.db = restored;
                 this.selectedPs = [];
@@ -1574,7 +1672,7 @@ downloadBackup(fileName) {
                 if (sayac) sayac.innerText = eksikler.length;
                 if (adminSayac) adminSayac.innerText = eksikler.length;
                 
-                const today = new Date().toISOString().slice(0,10);
+                const today = this.localDateString();
                 const okunduMu = localStorage.getItem(`dekont_uyari_okundu_${this.user.user}_${today}`);
                 
                 if (!okunduMu && this.user.rol !== 'Admin') {
@@ -1674,7 +1772,7 @@ downloadBackup(fileName) {
 
         closeUyariModal() {
             document.getElementById('uyari-modal').classList.add('hidden');
-            const today = new Date().toISOString().slice(0,10);
+            const today = this.localDateString();
             localStorage.setItem(`dekont_uyari_okundu_${this.user.user}_${today}`, "true");
             this.checkDekontUyarilari(); // Yanıp sönmeyi durdur
         },
@@ -2058,10 +2156,8 @@ downloadBackup(fileName) {
             localStorage.setItem('gumruk_last_role_' + this.user.user, role);
             this.selectedPs = [];
             this.poolMode = false;
-            ['admin-management-modal', 'limit-trash-modal'].forEach(id => {
-                const modal = document.getElementById(id);
-                if (modal) modal.classList.add('hidden');
-            });
+            document.querySelectorAll('[id$="-modal"]').forEach(modal => modal.classList.add('hidden'));
+            this.closeSystemHealth();
             this.hideAdminModuleSections();
             this.applyRoleUI();
             this.addLog('Yetki Değişimi', `${this.user.user} kullanıcısı aktif yetkisini "${eski}" yerine "${role}" olarak değiştirdi.`);
@@ -2315,6 +2411,20 @@ downloadBackup(fileName) {
             person.personelGecmisi.sort((a, b) => String(a.from).localeCompare(String(b.from)));
         },
 
+        // Bir personelin adını görev ve izin kayıtlarında da yeni ada çevirir.
+        renamePersonEverywhere(eskiAd, yeniAd) {
+            let gorev = 0, izin = 0;
+            (this.db.kayitlar || []).forEach(k => {
+                let degisti = false;
+                if ((k.personeller || []).includes(eskiAd)) { k.personeller = k.personeller.map(ad => ad === eskiAd ? yeniAd : ad); degisti = true; }
+                (k.pDetay || []).forEach(d => { if (d && d.ad === eskiAd) { d.ad = yeniAd; degisti = true; } });
+                (k.paylasimDetay || []).forEach(d => { if (d && d.ad === eskiAd) { d.ad = yeniAd; degisti = true; } });
+                if (degisti) gorev++;
+            });
+            (this.db.izinler || []).forEach(x => { if (x.personel === eskiAd) { x.personel = yeniAd; izin++; } });
+            return { gorev, izin };
+        },
+
         updatePersonel(i, alan, yeniDeger) {
             if (!this.canManagePersonnel()) return alert('Personel düzenleme yetkiniz bulunmamaktadır.');
             const p = this.db.personeller[i];
@@ -2323,7 +2433,7 @@ downloadBackup(fileName) {
                 const yeniAd = String(yeniDeger || '').trim();
                 if (!yeniAd) { alert('Ad soyad boş bırakılamaz.'); this.render(); return; }
                 if (yeniAd === eskiDeger) { this.render(); return; }
-                if (this.db.personeller.some((x, xi) => xi !== i && x.ad === yeniAd)) {
+                if (this.findPersonByName(yeniAd, p)) {
                     alert('Bu ad soyada sahip başka bir personel zaten kayıtlı.');
                     this.render();
                     return;
@@ -2337,12 +2447,7 @@ downloadBackup(fileName) {
                     this.render();
                     return;
                 }
-                gorevler.forEach(k => {
-                    k.personeller = (k.personeller || []).map(ad => ad === eskiDeger ? yeniAd : ad);
-                    (k.pDetay || []).forEach(d => { if (d && d.ad === eskiDeger) d.ad = yeniAd; });
-                    (k.paylasimDetay || []).forEach(d => { if (d && d.ad === eskiDeger) d.ad = yeniAd; });
-                });
-                izinler.forEach(x => { x.personel = yeniAd; });
+                this.renamePersonEverywhere(eskiDeger, yeniAd);
                 yeniDeger = yeniAd;
             }
             if ((alan === 'birim' || alan === 'unvan') && eskiDeger !== yeniDeger) {
@@ -2376,7 +2481,14 @@ downloadBackup(fileName) {
         deletePersonel(i) {
             if (!this.canManagePersonnel()) return alert('Personel silme yetkiniz bulunmamaktadır.');
             if(confirm("Bu personeli silmek istiyor musunuz?")) {
-                const silinenAd = this.db.personeller[i].ad;
+                const silinen = this.db.personeller[i];
+                if (!silinen) return;
+                const silinenAd = silinen.ad;
+                const silinenId = this.personKey(silinen);
+                if (silinenId) {
+                    if (!Array.isArray(this.db.deletedPersonIds)) this.db.deletedPersonIds = [];
+                    this.db.deletedPersonIds.push({ id: silinenId, deletedAt: new Date().toISOString() });
+                }
                 this.db.personeller.splice(i, 1);
                 this.addLog("Personel İşlemi", `${silinenAd} isimli personel sistemden tamamen silindi.`);
                 this.save();
@@ -2389,6 +2501,10 @@ downloadBackup(fileName) {
             const birim = document.getElementById('p-birim').value;
             const unvan = document.getElementById('p-unvan').value;
             if(sicil && ad && birim && unvan) {
+                const ayniAd = this.findPersonByName(ad);
+                if (ayniAd) return alert(`"${ad}" adıyla kayıtlı bir personel zaten var (Sicil: ${ayniAd.sicil}).\n\nAynı ad soyada sahip iki kişi sistemde ayırt edilemez. Lütfen ayırt edici bir ad yazın (örn. ikinci isim veya baba adı).`);
+                const ayniSicil = (this.db.personeller || []).find(p => String(p.sicil || '').trim().toLocaleLowerCase('tr-TR') === sicil.toLocaleLowerCase('tr-TR'));
+                if (ayniSicil) return alert(`Bu sicil numarası (${sicil}) zaten "${ayniSicil.ad}" adlı personelde kayıtlı.`);
                 const now = new Date().toISOString();
                 this.db.personeller.push({id:this.uuid(), sicil, ad, birim, unvan, aktif:true, createdAt:now, updatedAt:now, personelGecmisi:[]});
                 this.sortPersoneller();
@@ -2445,8 +2561,8 @@ downloadBackup(fileName) {
 
             body.innerHTML = filtered.length ? filtered.map(({personel:p, originalIndex:i}) => `
                 <tr ${!p.aktif ? 'class="pasif"' : ''}>
-                    <td><input value="${p.sicil}" onchange="app.updatePersonel(${i}, 'sicil', this.value)"></td>
-                    <td><input value="${p.ad}" onchange="app.updatePersonel(${i}, 'ad', this.value)"></td>
+                    <td><input value="${app.escapeHtml(p.sicil)}" onchange="app.updatePersonel(${i}, 'sicil', this.value)"></td>
+                    <td><input value="${app.escapeHtml(p.ad)}" onchange="app.updatePersonel(${i}, 'ad', this.value)"></td>
                     <td>
                         <select onchange="app.updatePersonel(${i}, 'birim', this.value)">
                             <option value="Gümrük" ${p.birim==='Gümrük'?'selected':''}>Gümrük</option>
@@ -2535,7 +2651,7 @@ downloadBackup(fileName) {
                     if (!(basliqVar(['sicil', 'sicilno', 'sicilnumarasi']) && basliqVar(['adsoyad', 'adisoyadi', 'personel']) && basliqVar(['birim']) && basliqVar(['unvan']))) {
                         return alert("Excel’de sütun başlıkları bulunamadı!\n\nİlk satırda 'Sicil', 'Ad Soyad', 'Birim' ve 'Ünvan' başlıkları olmalıdır.");
                     }
-                    let added = 0, updated = 0, skipped = 0;
+                    let added = 0, updated = 0, skipped = 0, renamed = 0, adCakisma = 0;
                     const now = new Date().toISOString();
                     for (const row of rawRows) {
                         const sicil = readColumn(row, ['sicil', 'sicilno', 'sicilnumarasi']);
@@ -2545,6 +2661,11 @@ downloadBackup(fileName) {
                         if (!sicil || !ad || !birim || !unvan) { skipped++; continue; }
                         const existing = (this.db.personeller || []).find(p => String(p.sicil || '').trim().toLocaleLowerCase('tr-TR') === sicil.toLocaleLowerCase('tr-TR'));
                         if (existing) {
+                            if (existing.ad !== ad) {
+                                if (this.findPersonByName(ad, existing)) { skipped++; adCakisma++; continue; }
+                                this.renamePersonEverywhere(existing.ad, ad);
+                                renamed++;
+                            }
                             if (existing.birim !== birim || existing.unvan !== unvan) {
                                 this.recordPersonnelHistoryChange(existing, birim, unvan, importEffectiveMonth.trim());
                             }
@@ -2554,14 +2675,17 @@ downloadBackup(fileName) {
                             existing.updatedAt = now;
                             updated++;
                         } else {
+                            if (this.findPersonByName(ad)) { skipped++; adCakisma++; continue; }
                             this.db.personeller.push({ id:this.uuid(), sicil, ad, birim, unvan, aktif:true, createdAt:now, updatedAt:now, personelGecmisi:[] });
                             added++;
                         }
                     }
                     this.sortPersoneller();
-                    this.addLog('Personel İşlemi', `Excel aktarımı: ${added} yeni, ${updated} güncellenen, ${skipped} atlanan satır.`);
+                    this.addLog('Personel İşlemi', `Excel aktarımı: ${added} yeni, ${updated} güncellenen (${renamed} adı değişti), ${skipped} atlanan satır.`);
                     this.save();
-                    alert(`Excel aktarımı tamamlandı.\n\nYeni eklenen: ${added}\nGüncellenen: ${updated}\nAtlanan/eksik: ${skipped}`);
+                    alert(`Excel aktarımı tamamlandı.\n\nYeni eklenen: ${added}\nGüncellenen: ${updated}\nAtlanan/eksik: ${skipped}` +
+                        (renamed ? `\n\nAdı değişen: ${renamed} (görev ve izin kayıtlarındaki ad da güncellendi)` : '') +
+                        (adCakisma ? `\nBaşka bir personelde aynı ad bulunduğu için atlanan: ${adCakisma}` : ''));
                 } catch (error) {
                     console.error('Personel Excel içe aktarma hatası:', error);
                     alert('Excel dosyası okunamadı. İlk satırda Sicil, Ad Soyad, Birim ve Ünvan başlıklarının bulunduğunu kontrol edin.');
@@ -2684,7 +2808,7 @@ downloadBackup(fileName) {
 
         checkConflict(personel) {
             if (!this.db.izinler) return null;
-            const today = new Date().toISOString().slice(0, 10);
+            const today = this.localDateString();
             return this.db.izinler.find(i => i.personel === personel && today >= i.baslangic && today <= i.bitis);
         },
 
@@ -2912,15 +3036,29 @@ downloadBackup(fileName) {
             if (silinecekKayit) {
                 if (!silinecekKayit.id) silinecekKayit.id = this.uuid();
                 if (!Array.isArray(this.db.deletedTaskIds)) this.db.deletedTaskIds = [];
-                this.db.deletedTaskIds.push({ id: silinecekKayit.id, deletedAt: new Date().toISOString() });
+                const silinmeZamani = new Date().toISOString();
+                this.db.deletedTaskIds.push({ id: silinecekKayit.id, deletedAt: silinmeZamani });
+                if (!Array.isArray(this.db.silinenGorevler)) this.db.silinenGorevler = [];
+                this.db.silinenGorevler.push({
+                    id: String(silinecekKayit.id) + '@' + silinmeZamani,
+                    taskId: String(silinecekKayit.id),
+                    ref: silinecekKayit.ref,
+                    silenKullanici: this.user ? this.user.user : '',
+                    silenRol: this.user ? this.user.rol : '',
+                    silinmeZamani,
+                    gorev: JSON.parse(JSON.stringify(silinecekKayit))
+                });
+                this.db.silinenGorevler = this.trimTrash(this.db.silinenGorevler);
             }
             this.db.kayitlar = this.db.kayitlar.filter(x => String(x.ref) !== String(ref));
             this.addLog("Görev İptali", "Görev ve hakedişler sistemden tamamen silindi.", ref);
             this.save();
         },
 
-        process(ref, s) { 
-            this.db.kayitlar.find(x=>x.ref===ref).durum = s; 
+        process(ref, s) {
+            const kayit = this.db.kayitlar.find(x => x.ref === ref);
+            if (!kayit) { alert('Kayıt bulunamadı. Başka bir kullanıcı silmiş olabilir, liste yenileniyor.'); this.render(); return; }
+            kayit.durum = s;
             this.addLog("Durum Güncellemesi", `Görev durumu "${s}" olarak güncellendi.`, ref);
             this.save(); 
         },
@@ -2954,7 +3092,9 @@ downloadBackup(fileName) {
                         return;
                     }
                 }
-                this.db.kayitlar.find(x=>x.ref===ref)[key.toLowerCase()] = v; 
+                const hedefKayit = this.db.kayitlar.find(x => x.ref === ref);
+                if (!hedefKayit) { alert('Kayıt bulunamadı. Başka bir kullanıcı silmiş olabilir, liste yenileniyor.'); this.render(); return; }
+                hedefKayit[key.toLowerCase()] = v; 
                 this.save(); 
             }
         },
@@ -3063,6 +3203,9 @@ downloadBackup(fileName) {
             }
             db.kayitlar = Array.isArray(db.kayitlar) ? db.kayitlar : [];
             db.deletedTaskIds = Array.isArray(db.deletedTaskIds) ? db.deletedTaskIds : [];
+            db.deletedPersonIds = Array.isArray(db.deletedPersonIds) ? db.deletedPersonIds : [];
+            db.silinenGorevler = Array.isArray(db.silinenGorevler) ? db.silinenGorevler : [];
+            if (!db.duyuru || typeof db.duyuru !== 'object') db.duyuru = null;
             db.birimUnvanLimitleri = db.birimUnvanLimitleri &&
                 typeof db.birimUnvanLimitleri === 'object' &&
                 !Array.isArray(db.birimUnvanLimitleri)
@@ -3269,6 +3412,29 @@ downloadBackup(fileName) {
                 personnel.set(key, selected);
             });
             result.personeller = Array.from(personnel.values());
+            // Silinen personel işaretleri: başka bir bilgisayardaki eski kopya kişiyi geri getirmesin.
+            const personTombs = new Map();
+            [...(cloud.deletedPersonIds || []), ...(local.deletedPersonIds || [])].forEach(item => {
+                if (!item || !item.id) return;
+                const old = personTombs.get(String(item.id));
+                if (!old || String(item.deletedAt || '') > String(old.deletedAt || '')) personTombs.set(String(item.id), item);
+            });
+            result.personeller = result.personeller.filter(person => {
+                const tomb = personTombs.get(this.personKey(person));
+                return !tomb || String(tomb.deletedAt || '') < String(person.updatedAt || person.createdAt || '');
+            });
+            result.deletedPersonIds = Array.from(personTombs.values());
+            // Silinen görevler çöp kutusu: kayıt kimliğine göre birleştir, geri getirilmiş olan baskın gelir.
+            const trash = new Map();
+            [...(cloud.silinenGorevler || []), ...(local.silinenGorevler || [])].forEach(entry => {
+                if (!entry || !entry.id) return;
+                const old = trash.get(entry.id);
+                if (!old || (entry.restoredAt && !old.restoredAt)) trash.set(entry.id, entry);
+            });
+            result.silinenGorevler = this.trimTrash(Array.from(trash.values()));
+            // Duyuru: en son yazılan geçerli olur.
+            const pickNewer = (a, b) => (!a ? (b || null) : (!b ? a : ((Date.parse(b.updatedAt || '') || 0) > (Date.parse(a.updatedAt || '') || 0) ? b : a)));
+            result.duyuru = pickNewer(local.duyuru, cloud.duyuru);
             const tombstones = new Map();
             [...(cloud.deletedTaskIds || []), ...(local.deletedTaskIds || [])].forEach(item => {
                 const tomb = typeof item === 'string' ? { id: item, deletedAt: '1970-01-01T00:00:00.000Z' } : item;
@@ -3567,8 +3733,8 @@ downloadBackup(fileName) {
                 event.returnValue = '';
             });
             try {
-                let stored = await this.readLocalDatabase();
-                if (!stored) {
+                let stored = window.__localDbWipePending ? await this.wipeLocalDatabaseForNewVersion() : await this.readLocalDatabase();
+                if (!stored && !window.__localDbWipePending) {
                     try { stored = JSON.parse(localStorage.getItem(this.DB_KEY) || 'null'); } catch (_) {}
                     if (stored) {
                         await this.writeLocalDatabase(stored);
@@ -3596,6 +3762,296 @@ downloadBackup(fileName) {
                 this.setSyncStatus('Bekleyen kayıt yeniden gönderiliyor…');
                 this.queueCloudWrite(0);
             }
+        },
+
+        // ── Veri sürümü: yeni sürümde eski yerel kopyayı sil ──
+        async wipeLocalDatabaseForNewVersion() {
+            try {
+                const database = await this.openLocalDatabase();
+                await new Promise((resolve, reject) => {
+                    const transaction = database.transaction('state', 'readwrite');
+                    transaction.objectStore('state').clear();
+                    transaction.oncomplete = resolve;
+                    transaction.onerror = () => reject(transaction.error || new Error('Yerel veri silinemedi'));
+                    transaction.onabort = () => reject(transaction.error || new Error('Yerel veri silme iptal edildi'));
+                });
+                localStorage.setItem(DATA_VERSION_KEY, APP_DATA_VERSION);
+            } catch (error) {
+                console.error('Eski yerel veri temizlenemedi, sonraki açılışta yeniden denenecek:', error);
+            }
+            return null;
+        },
+
+        reloadPage() { location.reload(); },
+
+        // Şifresi değişen veya hesabı silinen kullanıcının açık oturumunu düşürür.
+        validateSession() {
+            if (!this.user || this.sessionDropping) return true;
+            const accounts = this.db.accounts || [];
+            if (!accounts.length) return true; // hesap listesi henüz inmediyse oturumu düşürme
+            const acc = accounts.find(a => a.user === this.user.user);
+            if (acc && acc.pass === this.user.pass) {
+                const roller = this.getAccountRoles(acc);
+                this.user.roller = roller;
+                if (!roller.includes(this.user.rol)) {
+                    this.user.rol = roller[0];
+                    localStorage.setItem('currentUser', JSON.stringify(this.user));
+                    this.applyRoleUI();
+                }
+                return true;
+            }
+            this.sessionDropping = true;
+            localStorage.removeItem('currentUser');
+            alert('Şifreniz değiştirilmiş veya hesabınız kaldırılmış. Lütfen yeni bilgilerinizle tekrar giriş yapın.');
+            this.reloadPage();
+            return false;
+        },
+
+        updateAccountField(index, field, value) {
+            const acc = this.db.accounts[index];
+            if (!acc || !['user', 'pass'].includes(field)) return;
+            const yeni = String(value);
+            if (field === 'user') {
+                if (!yeni.trim()) { alert('Kullanıcı adı boş bırakılamaz.'); this.render(); return; }
+                if (this.db.accounts.some((a, i) => i !== index && a.user === yeni)) { alert('Bu kullanıcı adı zaten kullanılıyor.'); this.render(); return; }
+            }
+            if (field === 'pass' && !yeni) { alert('Şifre boş bırakılamaz.'); this.render(); return; }
+            const kendisi = this.user && acc.user === this.user.user;
+            acc[field] = yeni;
+            if (kendisi) {
+                this.user[field] = yeni;
+                localStorage.setItem('currentUser', JSON.stringify(this.user));
+            }
+            this.save();
+        },
+
+        // ── Personel: aynı ad kontrolü ──
+        normalizeAd(value) {
+            return String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('tr-TR');
+        },
+
+        findPersonByName(ad, exceptPerson = null) {
+            const hedef = this.normalizeAd(ad);
+            if (!hedef) return null;
+            return (this.db.personeller || []).find(p => p !== exceptPerson && this.normalizeAd(p.ad) === hedef) || null;
+        },
+
+        // ── Onay bekleyen rozetleri ──
+        getPendingStatuses() {
+            const rol = this.user && this.user.rol;
+            if (rol === 'Gümrük Şefi') return new Set(['Şef Onayında']);
+            return new Set(['Taslak', 'Şef Onayında', 'Müdür Yrd. Onayında']);
+        },
+
+        updateApprovalBadges() {
+            const rol = this.user.rol;
+            const tamYetkili = ['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(rol);
+            const gorebilir = tamYetkili || rol === 'Gümrük Şefi';
+            const durumlar = this.getPendingStatuses();
+            const bekleyen = (this.db.kayitlar || []).filter(t => durumlar.has(t.durum)).length;
+            const silme = tamYetkili ? (this.db.kayitlar || []).filter(t => t.durum === 'Silme Talebinde').length : 0;
+            const onay = document.getElementById('header-approval-badge');
+            if (onay) {
+                onay.classList.toggle('hidden', !gorebilir || bekleyen === 0);
+                onay.textContent = `⏳ ${bekleyen} onay bekliyor`;
+            }
+            const del = document.getElementById('header-delete-badge');
+            if (del) {
+                del.classList.toggle('hidden', !tamYetkili || silme === 0);
+                del.textContent = `🗑 ${silme} silme talebi`;
+            }
+        },
+
+        showDeleteRequests() {
+            this.taskFilter = { arama: '', durum: 'Silme Talebinde', baslangic: '', bitis: '', onayBekleyen: false };
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+            set('search-text', ''); set('durum-filter', 'Silme Talebinde'); set('tarih-baslangic', ''); set('tarih-bitis', '');
+            this.render();
+        },
+
+        updateExtraButtons() {
+            const rol = this.user.rol;
+            const tamYetkili = ['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(rol);
+            const duyuru = document.getElementById('btn-announcement');
+            if (duyuru) duyuru.classList.toggle('hidden', !this.canEditAnnouncement());
+            const cop = document.getElementById('btn-deleted-tasks');
+            if (cop) {
+                cop.classList.toggle('hidden', !tamYetkili);
+                const adet = (this.db.silinenGorevler || []).filter(e => e && !e.restoredAt).length;
+                cop.textContent = `🗑️ SİLİNEN GÖREVLER (${adet})`;
+            }
+        },
+
+        // ── Silinen görevler ──
+        trimTrash(list) {
+            const sinir = Date.now() - 90 * 24 * 60 * 60 * 1000;
+            return (list || [])
+                .filter(e => e && e.id && (Date.parse(e.silinmeZamani || '') || 0) >= sinir)
+                .sort((a, b) => String(b.silinmeZamani || '').localeCompare(String(a.silinmeZamani || '')))
+                .slice(0, 100);
+        },
+
+        canManageDeletedTasks() {
+            return !!this.user && ['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(this.user.rol);
+        },
+
+        openDeletedTasks() {
+            if (!this.canManageDeletedTasks()) return alert('Silinen görevleri yalnızca Admin, Gümrük Müdürü ve Müdür Yardımcısı görebilir.');
+            document.getElementById('deleted-tasks-modal').classList.remove('hidden');
+            this.renderDeletedTasks();
+        },
+
+        closeDeletedTasks() { document.getElementById('deleted-tasks-modal').classList.add('hidden'); },
+
+        renderDeletedTasks() {
+            const liste = (this.db.silinenGorevler || []).filter(e => e && !e.restoredAt)
+                .sort((a, b) => String(b.silinmeZamani || '').localeCompare(String(a.silinmeZamani || '')));
+            const esc = v => this.escapeHtml(v);
+            document.getElementById('deleted-tasks-body').innerHTML = liste.length ? liste.map(e => {
+                const g = e.gorev || {};
+                const y = Number(g.yTotal || g.toplamYolluk || 0), m = Number(g.mTotal || g.toplamMesai || 0);
+                const tutar = [y > 0 ? `Y: ${y.toFixed(2)}` : '', m > 0 ? `M: ${m.toFixed(2)}` : ''].filter(Boolean).join(' · ') || '0.00';
+                const zaman = e.silinmeZamani ? new Date(e.silinmeZamani).toLocaleString('tr-TR') : '';
+                const kisiler = g.havuzKaydi ? 'MÜDÜRLÜK' : (g.personeller || []).map(esc).join(', ');
+                return `<tr><td><b>${esc(e.ref)}</b></td><td>${kisiler}</td><td>${esc(tutar)}</td><td>${esc(g.durum)}</td><td>${esc(e.silenKullanici)} <span style="color:var(--muted); font-size:9px;">(${esc(e.silenRol)})</span></td><td>${esc(zaman)}</td><td><button class="btn btn-success" onclick="app.restoreDeletedTask('${esc(e.id)}')">GERİ GETİR</button></td></tr>`;
+            }).join('') : `<tr><td colspan="7" style="text-align:center; padding:30px; color:#666;">Silinmiş görev bulunmuyor.</td></tr>`;
+        },
+
+        restoreDeletedTask(entryId) {
+            if (!this.canManageDeletedTasks()) return alert('Bu işlem için yetkiniz bulunmamaktadır.');
+            if (this.isMaintenanceBlocked(true)) return;
+            const entry = (this.db.silinenGorevler || []).find(e => e && e.id === entryId && !e.restoredAt);
+            if (!entry || !entry.gorev) return alert('Kayıt bulunamadı veya zaten geri getirilmiş.');
+            const task = JSON.parse(JSON.stringify(entry.gorev));
+            if (this.db.kayitlar.some(k => k.id === task.id || k.ref === task.ref)) return alert('Bu görev zaten listede bulunuyor.');
+            if (!confirm(`${task.ref} referanslı görev geri getirilsin mi?`)) return;
+            if (task.durum === 'Silme Talebinde') task.durum = 'Onaylandı';
+            task.updatedAt = new Date().toISOString();
+            this.db.kayitlar.push(task);
+            this.db.deletedTaskIds = (this.db.deletedTaskIds || []).filter(t => String(typeof t === 'string' ? t : t && t.id) !== String(task.id));
+            entry.restoredAt = task.updatedAt;
+            entry.restoredBy = this.user.user;
+            this.addLog('Silinen Görev Geri Getirildi', `Silinmiş görev geri getirildi (durum: ${task.durum}).`, task.ref);
+            this.save();
+            this.renderDeletedTasks();
+        },
+
+        // ── Takvim ──
+        openCalendar() {
+            this.calendarMonth = this.localDateString().slice(0, 7);
+            this.calendarDay = this.localDateString();
+            document.getElementById('calendar-modal').classList.remove('hidden');
+            this.renderCalendar();
+        },
+
+        closeCalendar() { document.getElementById('calendar-modal').classList.add('hidden'); },
+
+        shiftCalendarMonth(delta) {
+            const [y, m] = this.calendarMonth.split('-').map(Number);
+            const d = new Date(y, m - 1 + delta, 1);
+            this.calendarMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            this.calendarDay = '';
+            this.renderCalendar();
+        },
+
+        selectCalendarDay(day) {
+            this.calendarDay = day;
+            this.renderCalendar();
+        },
+
+        getCalendarData(monthStr) {
+            const [y, m] = monthStr.split('-').map(Number);
+            const days = new Date(y, m, 0).getDate();
+            const pad = n => String(n).padStart(2, '0');
+            const key = d => `${monthStr}-${pad(d)}`;
+            const first = key(1), last = key(days);
+            const leaves = {}, tasks = {};
+            (this.db.izinler || []).forEach(izin => {
+                if (!izin || !izin.baslangic || !izin.bitis) return;
+                const s = izin.baslangic < first ? first : izin.baslangic;
+                const e = izin.bitis > last ? last : izin.bitis;
+                if (s > e) return;
+                for (let d = Number(s.slice(8, 10)); d <= Number(e.slice(8, 10)); d++) {
+                    (leaves[key(d)] = leaves[key(d)] || []).push(izin);
+                }
+            });
+            (this.db.kayitlar || []).forEach(task => {
+                if (!task || task.durum === 'Reddedildi') return;
+                const date = this.getTaskDate(task);
+                if (!date || date.indexOf(monthStr + '-') !== 0) return;
+                (tasks[date] = tasks[date] || []).push(task);
+            });
+            return { days, leaves, tasks };
+        },
+
+        renderCalendar() {
+            const monthStr = this.calendarMonth;
+            const [y, m] = monthStr.split('-').map(Number);
+            const aylar = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+            document.getElementById('calendar-title').textContent = `${aylar[m - 1]} ${y}`;
+            const { days, leaves, tasks } = this.getCalendarData(monthStr);
+            const startOffset = (new Date(y, m - 1, 1).getDay() + 6) % 7; // Pazartesi ilk sütun
+            const today = this.localDateString();
+            const pad = n => String(n).padStart(2, '0');
+            let html = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map(d => `<div class="cal-head">${d}</div>`).join('');
+            for (let i = 0; i < startOffset; i++) html += '<div class="cal-cell cal-empty"></div>';
+            for (let d = 1; d <= days; d++) {
+                const key = `${monthStr}-${pad(d)}`;
+                const l = (leaves[key] || []).length, t = (tasks[key] || []).length;
+                const weekend = (startOffset + d - 1) % 7 >= 5;
+                html += `<div class="cal-cell${key === today ? ' cal-today' : ''}${key === this.calendarDay ? ' cal-selected' : ''}${weekend ? ' cal-weekend' : ''}" onclick="app.selectCalendarDay('${key}')"><div class="cal-day">${d}</div>${l ? `<span class="cal-chip cal-leave">🏖 ${l}</span>` : ''}${t ? `<span class="cal-chip cal-task">📋 ${t}</span>` : ''}</div>`;
+            }
+            document.getElementById('calendar-grid').innerHTML = html;
+
+            const detail = document.getElementById('calendar-detail');
+            if (!this.calendarDay || this.calendarDay.indexOf(monthStr) !== 0) {
+                detail.innerHTML = '<div class="cal-hint">Ayrıntı için bir güne tıklayın.</div>';
+                return;
+            }
+            const esc = v => this.escapeHtml(v);
+            const dl = leaves[this.calendarDay] || [];
+            const dt = tasks[this.calendarDay] || [];
+            const [yy, mm, dd] = this.calendarDay.split('-');
+            detail.innerHTML = `<h4>${Number(dd)} ${aylar[Number(mm) - 1]} ${yy}</h4>
+                <div class="cal-col"><b>🏖 İzinli / Raporlu (${dl.length})</b>${dl.length ? dl.map(i => `<div>${esc(i.personel)} <span class="cal-muted">${esc(i.tur || '')} (${esc(i.baslangic)} → ${esc(i.bitis)})</span></div>`).join('') : '<div class="cal-muted">Kayıt yok</div>'}</div>
+                <div class="cal-col"><b>📋 Görevde (${dt.length})</b>${dt.length ? dt.map(t => `<div>${t.havuzKaydi ? 'MÜDÜRLÜK' : (t.personeller || []).map(esc).join(', ')} <span class="cal-muted">${esc(t.ref)} · ${esc(t.durum)}</span></div>`).join('') : '<div class="cal-muted">Kayıt yok</div>'}</div>`;
+        },
+
+        // ── Duyuru bandı ──
+        canEditAnnouncement() {
+            return !!this.user && ['Admin', 'Gümrük Müdürü'].includes(this.user.rol);
+        },
+
+        openAnnouncementModal() {
+            if (!this.canEditAnnouncement()) return alert('Duyuruyu yalnızca Admin ve Gümrük Müdürü yazabilir.');
+            document.getElementById('announcement-input').value = (this.db.duyuru && this.db.duyuru.metin) || '';
+            document.getElementById('announcement-modal').classList.remove('hidden');
+        },
+
+        closeAnnouncementModal() { document.getElementById('announcement-modal').classList.add('hidden'); },
+
+        saveAnnouncement(clear) {
+            if (!this.canEditAnnouncement()) return alert('Duyuruyu yalnızca Admin ve Gümrük Müdürü yazabilir.');
+            if (this.isMaintenanceBlocked(true)) return;
+            const metin = clear ? '' : document.getElementById('announcement-input').value.trim().slice(0, 500);
+            // Bilgisayar saatleri farklı olsa bile yeni kayıt, bu bilgisayarın gördüğü sürümden daha yeni sayılsın.
+            const oncekiZaman = Date.parse((this.db.duyuru && this.db.duyuru.updatedAt) || '') || 0;
+            this.db.duyuru = { metin, yazan: this.user.user, rol: this.user.rol, updatedAt: new Date(Math.max(Date.now(), oncekiZaman + 1)).toISOString() };
+            this.addLog('Duyuru', metin ? `Duyuru yayınlandı: ${metin}` : 'Duyuru kaldırıldı.');
+            this.closeAnnouncementModal();
+            this.save();
+        },
+
+        renderAnnouncement() {
+            const bar = document.getElementById('announcement-bar');
+            if (!bar) return;
+            const d = this.db.duyuru;
+            const goster = !!(this.user && d && d.metin);
+            bar.classList.toggle('hidden', !goster);
+            if (!goster) return;
+            document.getElementById('announcement-text').textContent = d.metin;
+            const zaman = d.updatedAt ? new Date(d.updatedAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+            document.getElementById('announcement-meta').textContent = [d.rol || d.yazan, zaman].filter(Boolean).join(' · ');
         },
 
         hideSplash() {
@@ -3635,7 +4091,11 @@ downloadBackup(fileName) {
 
         render() {
             if (!this.user) return; // Sadece hesaplamaları durdurur, perdeye dokunmaz.
+            if (!this.validateSession()) return;
             this.updateMaintenanceUI();
+            this.renderAnnouncement();
+            this.updateApprovalBadges();
+            this.updateExtraButtons();
             this.sortPersoneller();
             const bulkApproveButton = document.getElementById('btn-bulk-approve');
             if (bulkApproveButton) {
@@ -3644,10 +4104,10 @@ downloadBackup(fileName) {
             }
             const pendingTasksButton = document.getElementById('btn-pending-tasks');
             if (pendingTasksButton) {
-                const canViewPending = ['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı'].includes(this.user.rol);
+                const canViewPending = ['Admin', 'Gümrük Müdürü', 'Gümrük Müdür Yardımcısı', 'Gümrük Şefi'].includes(this.user.rol);
                 pendingTasksButton.classList.toggle('hidden', !canViewPending);
                 pendingTasksButton.style.outline = this.taskFilter.onayBekleyen ? '2px solid #fff' : '';
-                const pendingStatuses = new Set(['Taslak', 'Şef Onayında', 'Müdür Yrd. Onayında']);
+                const pendingStatuses = this.getPendingStatuses();
                 const pendingApprovalCount = (this.db.kayitlar || []).filter(task => pendingStatuses.has(task.durum)).length;
                 pendingTasksButton.innerText = `⏳ ONAY BEKLEYENLER (${pendingApprovalCount})`;
             }
@@ -3688,7 +4148,7 @@ downloadBackup(fileName) {
             const aktifPersoneller = this.db.personeller.filter(p => p.aktif === true);
 
             const opt = (b) => aktifPersoneller.filter(x => x.birim === b).map(p => {
-                return `<option value="${p.ad}">${p.ad} (${p.unvan})</option>`;
+                return `<option value="${app.escapeHtml(p.ad)}">${app.escapeHtml(p.ad)} (${app.escapeHtml(p.unvan)})</option>`;
             }).join('');
             
             if(document.getElementById('sel-g')) {
@@ -3696,10 +4156,10 @@ downloadBackup(fileName) {
                 document.getElementById('sel-m').innerHTML = opt('Muhafaza');
                 document.getElementById('sel-k').innerHTML = opt('KİM');
                 const taskTypesSelect = document.getElementById('task-types');
-                taskTypesSelect.innerHTML = this.db.yolluklar.map((y,i)=>`<option value="${i}">${y.ad} (${y.tip} - ${y.tutar} TL)</option>`).join('');
+                taskTypesSelect.innerHTML = this.db.yolluklar.map((y,i)=>`<option value="${i}">${app.escapeHtml(y.ad)} (${app.escapeHtml(y.tip)} - ${y.tutar} TL)</option>`).join('');
                 taskTypesSelect.size = Math.max(1, Math.min(13, this.db.yolluklar.length));
                 
-                const allP = aktifPersoneller.map(p => `<option value="${p.ad}">${p.ad}</option>`).join('');
+                const allP = aktifPersoneller.map(p => `<option value="${app.escapeHtml(p.ad)}">${app.escapeHtml(p.ad)}</option>`).join('');
                 document.getElementById('ps-personel-select').innerHTML = allP;
             }
             if(document.getElementById('selected-list')) {
@@ -4094,7 +4554,7 @@ downloadBackup(fileName) {
                         
                         tbodyHTML += `
                             <td class="sicil-cell">${p.sicil || '-'}</td>
-                            <td>${p.ad}</td>
+                            <td>${app.escapeHtml(p.ad)}</td>
                             <td>${p.unvan}</td>
                             <td class="tutar-cell" style="color:${color}; line-height: 1.4;">${this.formatTrAmount(value)} TL ${ekDetay}</td>`;
                     } else {
@@ -4113,11 +4573,11 @@ downloadBackup(fileName) {
                 document.getElementById('acc-list-body').innerHTML = this.db.accounts.map((a, i) => {
                     const roller = this.getAccountRoles(a);
                     const rolHtml = this.rolListesi.map((r, ri) => `<label style="display:inline-flex;align-items:center;gap:3px;margin:2px 10px 2px 0;font-size:10px;white-space:nowrap;cursor:pointer;"><input type="checkbox" style="width:auto;margin:0;" ${roller.includes(r) ? 'checked' : ''} onchange="app.toggleAccountRole(${i},${ri},this)">${r}${r === a.rol ? ' <small style="color:var(--accent)">(varsayılan)</small>' : ''}</label>`).join('');
-                    return `<tr><td><input value="${this.escapeHtml(a.user)}" onchange="app.db.accounts[${i}].user = this.value; app.save();"></td><td><input type="password" value="${this.escapeHtml(a.pass)}" onchange="app.db.accounts[${i}].pass = this.value; app.save();"></td><td>${rolHtml}</td><td><button class="btn btn-danger" onclick="app.deleteAccount(${i})">SİL</button></td></tr>`;
+                    return `<tr><td><input value="${this.escapeHtml(a.user)}" onchange="app.updateAccountField(${i},'user',this.value)"></td><td><input type="password" value="${this.escapeHtml(a.pass)}" onchange="app.updateAccountField(${i},'pass',this.value)"></td><td>${rolHtml}</td><td><button class="btn btn-danger" onclick="app.deleteAccount(${i})">SİL</button></td></tr>`;
                 }).join('');
             }
             if (document.getElementById('y-list')) {
-                document.getElementById('y-list').innerHTML = this.db.yolluklar.map((y,i)=>`<div style="font-size:11px; padding:4px 0; border-bottom:1px solid var(--border);">${y.ad} (${y.tip}) - ${y.tutar} TL <button onclick="app.db.yolluklar.splice(${i},1);app.save()" style="float:right; font-size:9px;">X</button></div>`).join('');
+                document.getElementById('y-list').innerHTML = this.db.yolluklar.map((y,i)=>`<div style="font-size:11px; padding:4px 0; border-bottom:1px solid var(--border);">${app.escapeHtml(y.ad)} (${y.tip}) - ${y.tutar} TL <button onclick="app.db.yolluklar.splice(${i},1);app.save()" style="float:right; font-size:9px;">X</button></div>`).join('');
             }
 
             let filtered = this.db.kayitlar.slice();
@@ -4127,7 +4587,7 @@ downloadBackup(fileName) {
             }
             if (this.taskFilter.durum) filtered = filtered.filter(k => k.durum === this.taskFilter.durum);
             if (this.taskFilter.onayBekleyen) {
-                const pendingStatuses = new Set(['Taslak', 'Şef Onayında', 'Müdür Yrd. Onayında']);
+                const pendingStatuses = this.getPendingStatuses();
                 filtered = filtered.filter(k => pendingStatuses.has(k.durum));
             }
             if (this.taskFilter.baslangic || this.taskFilter.bitis) {
@@ -4596,7 +5056,7 @@ downloadBackup(fileName) {
             body.innerHTML = analizVerisi.map(p => `
                 <tr>
                     <td>${p.sicil}</td>
-                    <td><b>${p.ad}</b></td>
+                    <td><b>${app.escapeHtml(p.ad)}</b></td>
                     <td>${p.birim}</td>
                     <td><span class="tag">${p.gorevSayisi} Görev</span></td>
                     <td style="color:var(--warning); font-weight:bold;">${p.toplamYolluk.toFixed(2)} TL</td>
@@ -4674,7 +5134,7 @@ downloadBackup(fileName) {
             let donemEtiketi = period.baslangic || period.bitis
                 ? `${period.baslangic || 'Başlangıç'} — ${period.bitis || 'Bugün'}`
                 : `${period.yil}${period.ay ? '-' + period.ay : ''}`;
-            baslikAlani.innerHTML = `<h2 style="color:var(--warning); margin:0;">${p.ad} - Detaylı Arşiv</h2><div style="color:var(--muted); margin-top:4px;">Dönem: ${donemEtiketi}</div>`;
+            baslikAlani.innerHTML = `<h2 style="color:var(--warning); margin:0;">${app.escapeHtml(p.ad)} - Detaylı Arşiv</h2><div style="color:var(--muted); margin-top:4px;">Dönem: ${donemEtiketi}</div>`;
 
             // İÇERİK KISMINDA SADECE İSTATİSTİKLER VE TABLO KALIYOR
             icerik.innerHTML = `
