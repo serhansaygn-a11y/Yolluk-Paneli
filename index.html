@@ -3361,7 +3361,12 @@ downloadBackup(fileName) {
 
         mergeDatabases(localData, cloudData) {
             const local = this.normalizeDb(localData || {});
-            const cloud = this.normalizeDb(cloudData || {});
+            const cloudSource = cloudData && typeof cloudData === 'object' && !Array.isArray(cloudData) ? cloudData : {};
+            const cloud = this.normalizeDb(cloudSource);
+            // Kısmi delta yanıtında alan yoksa varsayılan false değerini gerçek ayar sanıp yetkiyi kapatma.
+            if (!Object.prototype.hasOwnProperty.call(cloudSource, 'havuzTahakkukYetkisi')) {
+                cloud.havuzTahakkukYetkisi = local.havuzTahakkukYetkisi;
+            }
             // Personel, hesaplar ve sistem ayarlarında bulut güncel kaynak olsun.
             // Görevler aşağıda ayrıca UUID üzerinden iki yönlü birleştirilir.
             const result = Object.assign({}, local, cloud);
@@ -3697,9 +3702,12 @@ downloadBackup(fileName) {
                 if (delta && delta.status === 'error') throw new Error(delta.message || 'Değişiklikler alınamadı');
                 const changedCount = (delta.kayitlar || []).length + (delta.deletedTaskIds || []).length;
                 const maintenanceChanged = delta.maintenanceMode && JSON.stringify(delta.maintenanceMode) !== JSON.stringify(this.db.maintenanceMode || { enabled:false });
+                const poolPermissionChanged = Object.prototype.hasOwnProperty.call(delta, 'havuzTahakkukYetkisi') &&
+                    (delta.havuzTahakkukYetkisi === true) !== (this.db.havuzTahakkukYetkisi === true);
                 const settingsChanged = String(delta.systemSettingsUpdatedAt || '') !== String(this.db.systemSettingsUpdatedAt || '') ||
                     JSON.stringify(delta.hakedisKesimTarihleri || {}) !== JSON.stringify(this.db.hakedisKesimTarihleri || {}) ||
-                    JSON.stringify(delta.birimUnvanLimitleri || {}) !== JSON.stringify(this.db.birimUnvanLimitleri || {});
+                    JSON.stringify(delta.birimUnvanLimitleri || {}) !== JSON.stringify(this.db.birimUnvanLimitleri || {}) ||
+                    poolPermissionChanged;
                 const personnelSignature = list => JSON.stringify((list || []).map(person => [this.personKey(person), person.updatedAt || '', (person.personelGecmisi || []).length]));
                 const personnelChanged = Array.isArray(delta.personeller) && personnelSignature(delta.personeller) !== personnelSignature(this.db.personeller);
                 if (changedCount > 0 || maintenanceChanged || settingsChanged || personnelChanged) {
